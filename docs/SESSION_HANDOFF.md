@@ -6,12 +6,12 @@
 - **Phase:** M00 — repository security, architecture, roadmap, and GitHub workflow
 - **Branch:** `docs/phase3-architecture`
 - **Base/default branch:** `main`
-- **Last committed revision:** `3af082b` (`chore(setup): secure repository bootstrap`)
+- **Architecture baseline revision:** `5dece87` (`docs(architecture): define phase 3 system design`)
 - **Remote:** `https://github.com/DanielHC16/do-well`
 - **Visibility:** `PRIVATE` (verified with GitHub CLI)
 - **Current issue:** [#1 — M00 secure repository and approve Phase 3 architecture](https://github.com/DanielHC16/do-well/issues/1)
 - **Milestone issues:** [#2](https://github.com/DanielHC16/do-well/issues/2) through [#15](https://github.com/DanielHC16/do-well/issues/15) track M01 through M14
-- **Documentation PR:** not open yet; record its URL immediately after creation
+- **Documentation PR:** [#16 — docs(architecture): define Phase 3 system design](https://github.com/DanielHC16/do-well/pull/16) — open, not merged
 - **Application implementation:** not started
 
 This file records repository evidence, not chat state. Re-run the commands below because documentation is being authored concurrently and working-tree details can change after this snapshot.
@@ -29,7 +29,7 @@ This file records repository evidence, not chat state. Re-run the commands below
 - The delegated read-only reviewer pass completed. Its material findings were resolved in the documentation: the evidence-submission transaction, zero-cost GitHub Actions gate, Expo/Jest test stack, SDK 58 New Architecture guidance, reset-password route, label taxonomy, shared-directory layout, and handoff state now agree across documents.
 - Phase 3 documentation is being created on this branch. No application packages, native projects, database migrations, or features were installed/implemented in this session.
 
-The M00 issue and M01-M14 tracking issues exist. The documentation pull request is still pending creation; do not report it complete until its URL is recorded here.
+The M00 issue and M01-M14 tracking issues exist. Documentation PR #16 is open for owner review and must not be merged automatically.
 
 ## Current local tool evidence
 
@@ -63,10 +63,9 @@ The exact non-destructive setup plan is in `SETUP_GUIDE.md`.
 
 ## Immediate next actions for M00
 
-1. Re-run documentation, link, staged-diff, ignore, and count-only secret-pattern verification.
-2. Commit the Phase 3 documentation with a Conventional Commit and push `docs/phase3-architecture`.
-3. Open the documentation PR to `main`, linking M00 issue #1; record the PR URL in this handoff and push that final handoff update.
-4. Wait for the owner's approval. Do not merge substantive work automatically and do not start M01.
+1. Review PR #16 and resolve any owner feedback on `docs/phase3-architecture`.
+2. Obtain explicit owner approval for the proposed ADRs and architecture gate.
+3. Merge only through the approved repository workflow. Do not merge automatically and do not start M01 before approval.
 
 Suggested verification:
 
