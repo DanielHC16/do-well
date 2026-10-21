@@ -2,9 +2,9 @@
 
 ## Status and target
 
-This is the setup plan for M01; it does not claim the app has been initialized. No software installation or environment mutation was performed while writing this guide.
+M01 Task 1 corrected the local Node and Android toolchain on 2026-10-22. The Expo application has not yet been initialized.
 
-Target baseline, verified on 2026-10-21:
+Target baseline, revalidated on 2026-10-22:
 
 - Windows PowerShell
 - Node.js `22.23.2` pinned in `.nvmrc`
@@ -20,21 +20,20 @@ Expo SDK 58 requires Node 22.13.x or newer and uses Android compile SDK 37/targe
 
 | Check | Current state | Required action before M01 |
 |---|---|---|
-| Node | `22.12.0` via nvm-windows 1.2.2 | Install/use pinned 22.23.2; current version is below Expo 58 minimum |
-| npm | `10.9.0` | Use/pin 10.9.9 with the selected Node installation |
+| Node | `22.23.2` selected through nvm-windows 1.2.2 | Ready; repository pin is in `.nvmrc` |
+| npm | `10.9.9` | Ready; add the matching `packageManager` pin when `package.json` is created |
 | pnpm | `12.8.1` | Not selected; do not create a second lockfile |
-| `java` | Oracle Java 8 first on PATH | Put JDK 17 `bin` before the Java 8 shim or remove that shim from the user/system PATH |
-| `javac` / `JAVA_HOME` | Eclipse Adoptium 17.0.10 | Keep as the Java 17 home |
-| Android SDK | `%LOCALAPPDATA%\Android\Sdk`; platforms 29/31/33/34/35 | Install Platform 37 and current compatible Build Tools |
-| ADB | File exists under `platform-tools`, not on PATH | Add `%ANDROID_HOME%\platform-tools` to user PATH |
-| `ANDROID_HOME` | Unset | Set to `%LOCALAPPDATA%\Android\Sdk` |
+| `java` / `javac` | Eclipse Temurin 17.0.10 when the verified JDK is selected | User `JAVA_HOME` and PATH are aligned; the machine-wide Oracle Java 8 shim can still win in a newly opened shell and must be removed/reordered by an administrator |
+| Android SDK | `%LOCALAPPDATA%\Android\Sdk`; Platform 37.0 and Build-Tools 37.0.0 installed | Ready; SDK Manager package ID is `platforms;android-37.0` |
+| ADB | Platform-Tools 35.0.2 installed and added to user PATH | Ready; no physical device was attached during Task 1 |
+| `ANDROID_HOME` | Set at user scope to `%LOCALAPPDATA%\Android\Sdk` | Ready |
 | Expo app/lockfile | Absent | Initialize only after architecture approval |
 | Legacy global Expo CLI | Previously detected | Do not use it; use project-local `npx expo` |
 | EAS/Supabase CLI | Not project-pinned | Add exact dev dependencies during M01 |
 
 ## 1. Select Node and npm
 
-Run only after M01 is approved:
+For this machine the install/select step is complete. On a clean workstation, run:
 
 ```powershell
 nvm install 22.23.2
@@ -50,11 +49,11 @@ Do not use the deprecated global `expo-cli`. After the project exists, `npx expo
 
 ## 2. Correct Java 17 selection
 
-The machine already has JDK 17 at the `JAVA_HOME` location, but `java.exe` currently resolves through the Oracle Java 8 shim. In **System Properties > Environment Variables**:
+The machine has JDK 17 at the `JAVA_HOME` location. M01 set user `JAVA_HOME` and placed its `bin` first in the user PATH. The Oracle Java 8 shim remains in the machine PATH, which Windows evaluates before the user PATH. An administrator must remove or move that machine-wide entry before relying on a newly opened shell without a session override. In **System Properties > Environment Variables**:
 
 1. keep/set user `JAVA_HOME` to the installed JDK 17 directory;
-2. add `%JAVA_HOME%\bin` near the top of the user PATH;
-3. move/remove `C:\Program Files (x86)\Common Files\Oracle\Java\java8path` from ahead of it;
+2. keep `%JAVA_HOME%\bin` first in the user PATH;
+3. move/remove the machine-wide `C:\Program Files (x86)\Common Files\Oracle\Java\java8path` entry;
 4. open a new PowerShell window.
 
 Do not rewrite the full PATH with `setx`; it can lose or truncate entries. Verify:
@@ -69,22 +68,22 @@ Both compiler and runtime must report Java 17 from the same JDK family/path befo
 
 ## 3. Configure Android SDK and ADB
 
-In **Android Studio > SDK Manager** install/check:
+M01 installed the required packages through the official command-line SDK Manager and accepted the official Android licenses. In **Android Studio > SDK Manager**, verify:
 
-- Android SDK Platform 37;
+- Android SDK Platform 37.0 (`platforms;android-37.0` in `sdkmanager`);
 - Android SDK Platform 36 (target compatibility/tools as needed);
 - Android SDK Build-Tools 37.0.0;
 - Android SDK Platform-Tools;
 - Android SDK Command-line Tools (latest);
 - one emulator image only if emulator testing is desired.
 
-Set user `ANDROID_HOME` to:
+User `ANDROID_HOME` is set to:
 
 ```text
 %LOCALAPPDATA%\Android\Sdk
 ```
 
-Add these existing directories to the user PATH:
+These existing directories were added to the user PATH:
 
 ```text
 %ANDROID_HOME%\platform-tools
@@ -98,6 +97,8 @@ Add these existing directories to the user PATH:
 adb version
 sdkmanager --list
 ```
+
+The Android SDK currently emits a non-blocking warning because a pre-existing `platform-tools.backup` directory duplicates the installed `platform-tools` package. It was preserved because its provenance is unknown; do not delete it as part of M01 without an explicit cleanup decision.
 
 The Expo documentation recommends development builds for production projects and a real device for representative testing ([Expo environment setup](https://docs.expo.dev/get-started/set-up-your-environment/)).
 
@@ -178,11 +179,11 @@ See `FREE_TIER_AND_COST_POLICY.md` for quotas and stop conditions.
 
 ## Readiness checklist
 
-- [ ] `node --version` is exactly the repository pin and satisfies Expo SDK 58.
-- [ ] `npm --version` matches `packageManager`; only `package-lock.json` exists.
-- [ ] `java` and `javac` both resolve to JDK 17.
-- [ ] Android Platform 37 and platform-tools are installed.
-- [ ] `ANDROID_HOME` is correct and `adb` is on PATH.
+- [x] `node --version` is exactly the repository pin and satisfies Expo SDK 58.
+- [x] `npm --version` is 10.9.9; add the matching `packageManager` field and lockfile in Task 2.
+- [x] `java` and `javac` both report Temurin JDK 17 in the corrected M01 shell; remove/reorder the machine Java 8 shim before treating new-shell selection as durable.
+- [x] Android Platform 37.0, Build-Tools 37.0.0, and platform-tools are installed.
+- [x] `ANDROID_HOME` is correct and platform-tools is on the user PATH.
 - [ ] The authorized physical device appears in `adb devices -l`.
 - [ ] `npx expo-doctor` passes or every warning is documented.
 - [ ] A local development APK installs and launches on the named device.

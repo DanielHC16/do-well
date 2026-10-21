@@ -3,15 +3,15 @@
 ## Snapshot
 
 - **Last verified:** 2026-10-22 (Asia/Manila)
-- **Phase:** M00 — repository security, architecture, roadmap, and GitHub workflow
-- **Branch:** `docs/phase3-architecture`
+- **Phase:** M01 — Expo initialization and Android development proof
+- **Branch:** `chore/expo-initialization`
 - **Base/default branch:** `main`
 - **Architecture baseline revision:** `5dece87` (`docs(architecture): define phase 3 system design`)
 - **Remote:** `https://github.com/DanielHC16/do-well`
 - **Visibility:** `PRIVATE` (verified with GitHub CLI)
-- **Current issue:** [#1 — M00 secure repository and approve Phase 3 architecture](https://github.com/DanielHC16/do-well/issues/1)
+- **Current issue:** [#2 — M01 Initialize Expo and prove Android development](https://github.com/DanielHC16/do-well/issues/2)
 - **Milestone issues:** [#2](https://github.com/DanielHC16/do-well/issues/2) through [#15](https://github.com/DanielHC16/do-well/issues/15) track M01 through M14
-- **Documentation PR:** [#16 — docs(architecture): define Phase 3 system design](https://github.com/DanielHC16/do-well/pull/16) — open, not merged
+- **Documentation PR:** [#16 — docs(architecture): define Phase 3 system design](https://github.com/DanielHC16/do-well/pull/16) — merged
 - **Application implementation:** not started
 
 This file records repository evidence, not chat state. Re-run the commands below because documentation is being authored concurrently and working-tree details can change after this snapshot.
@@ -27,9 +27,9 @@ This file records repository evidence, not chat state. Re-run the commands below
 - Workspace skills/agent configuration was already synchronized; no sync was run.
 - Fourteen requested labels plus one issue for each M00-M14 milestone exist in the private GitHub repository.
 - The delegated read-only reviewer pass completed. Its material findings were resolved in the documentation: the evidence-submission transaction, zero-cost GitHub Actions gate, Expo/Jest test stack, SDK 58 New Architecture guidance, reset-password route, label taxonomy, shared-directory layout, and handoff state now agree across documents.
-- Phase 3 documentation is being created on this branch. No application packages, native projects, database migrations, or features were installed/implemented in this session.
+- Phase 3 documentation is merged. M01 Task 1 installed no application packages, native projects, database migrations, or product features.
 
-The M00 issue and M01-M14 tracking issues exist. Documentation PR #16 is open for owner review and must not be merged automatically.
+The M00 architecture PR was approved and merged. M01 Task 1 corrected the supported local toolchain; later M01 tasks remain in progress.
 
 ## Current local tool evidence
 
@@ -38,14 +38,13 @@ The M00 issue and M01-M14 tracking issues exist. Documentation PR #16 is open fo
 | Git | 2.45.1 | Ready |
 | GitHub CLI | 2.102.0, authenticated sufficiently to inspect the private repo | Ready for approved repo operations |
 | nvm-windows | 1.2.2 | Ready |
-| Node.js | 22.12.0 | **Blocked for Expo SDK 58**; minimum is 22.13.x |
-| npm | 10.9.0 | Update/pin during M01 |
+| Node.js | 22.23.2 selected through nvm-windows 1.2.2 | Ready; pinned in `.nvmrc` |
+| npm | 10.9.9 | Ready; `packageManager` pin follows with the scaffold |
 | pnpm | 12.8.1 | Installed but not selected |
-| Java runtime on PATH | Java 8 Oracle shim | **Misconfigured** |
-| `javac` / `JAVA_HOME` | Eclipse Adoptium JDK 17.0.10 | Installed; PATH must align `java` |
-| Android SDK | `%LOCALAPPDATA%\Android\Sdk`, platforms through API 35 | Install Platform 37 for Expo SDK 58 |
-| ADB | Exists under SDK `platform-tools`, absent from PATH | Add SDK paths during setup |
-| `ANDROID_HOME` / `ANDROID_SDK_ROOT` | Unset | Set `ANDROID_HOME` |
+| Java runtime/compiler | Eclipse Temurin JDK 17.0.10 in the corrected shell | User `JAVA_HOME`/PATH aligned; machine PATH still contains an earlier Oracle Java 8 shim that requires administrator cleanup |
+| Android SDK | `%LOCALAPPDATA%\Android\Sdk`; Platform 37.0 and Build-Tools 37.0.0 installed | Ready |
+| ADB | 1.0.41 / Platform-Tools 35.0.2; added to user PATH | Ready; `adb devices -l` returned no attached device |
+| `ANDROID_HOME` | Set at user scope to `%LOCALAPPDATA%\Android\Sdk` | Ready |
 | Expo app/lockfile | None | Deliberately deferred to M01 |
 
 The exact non-destructive setup plan is in `SETUP_GUIDE.md`.
@@ -61,11 +60,14 @@ The exact non-destructive setup plan is in `SETUP_GUIDE.md`.
 - Supabase and Expo Free are hard-capped operating dependencies with documented recovery/fallback; no paid upgrade is an acceptable incident response.
 - AI is not selected. A real-inference hardware/network feasibility experiment must pass before an AI claim; manual brief creation remains available.
 
-## Immediate next actions for M00
+## M01 Task 1 evidence and next actions
 
-1. Review PR #16 and resolve any owner feedback on `docs/phase3-architecture`.
-2. Obtain explicit owner approval for the proposed ADRs and architecture gate.
-3. Merge only through the approved repository workflow. Do not merge automatically and do not start M01 before approval.
+1. Node `v22.23.2` and npm `10.9.9` are selected; `.nvmrc` records the Node pin.
+2. Official Android Platform 37.0 and Build-Tools 37.0.0 are installed and Android SDK licenses are accepted.
+3. User `JAVA_HOME`, `ANDROID_HOME`, and PATH entries are configured from verified installed directories.
+4. Before device-build acceptance, remove/reorder the machine-wide Oracle Java 8 shim, open a fresh terminal, and prove both `java` and `javac` resolve to JDK 17.
+5. Connect and authorize the intended physical Android phone; no device was present during Task 1.
+6. Continue with M01 Task 2: generate and inspect the Expo SDK 58 scaffold in a checked temporary directory.
 
 Suggested verification:
 
@@ -94,11 +96,11 @@ For uncommitted documentation, also inspect `git diff --no-index -- NUL <file>` 
 - Map tile/style source if an interactive map remains desired. The list experience is not blocked.
 - Remote push decision. Local notifications/activity center are not blocked.
 
-## Exact next milestone after approval
+## Exact next task
 
-**M01 — Expo initialization, strict TypeScript/tooling, and first local Android development build.**
+**M01 Task 2 — generate and review the Expo SDK 58 scaffold.**
 
-Start only after the documentation PR is approved/merged and the competition framework gate is accepted. Use branch `chore/expo-initialization`; follow `SETUP_GUIDE.md`; create no product feature. M01 is done only when the pinned toolchain passes, CI scripts exist, an APK installs/launches on the named physical device, and no secret is present in Git or the public Expo config.
+Continue on `chore/expo-initialization`; follow `SETUP_GUIDE.md`; create no product feature. M01 is done only when the pinned toolchain passes, CI scripts exist, an APK installs/launches on the named physical device, and no secret is present in Git or the public Expo config.
 
 ## Stop conditions
 
