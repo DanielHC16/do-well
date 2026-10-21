@@ -2,7 +2,7 @@
 
 ## Status and target
 
-M01 Task 1 corrected the local Node and Android toolchain on 2026-10-22. The Expo application has not yet been initialized.
+M01 corrected the local Node and Android toolchain, initialized the Expo SDK 58 scaffold, and added cost-safe local/EAS build configuration on 2026-10-22. Physical-device build proof remains pending.
 
 Target baseline, revalidated on 2026-10-22:
 
@@ -12,24 +12,25 @@ Target baseline, revalidated on 2026-10-22:
 - Expo SDK `58` / React Native `0.88`
 - JDK 17
 - Android SDK Platform 37, Build-Tools 37.0.0, target SDK 36, Android platform-tools/ADB
-- project-local/pinned `eas-cli@25.3.0` and `supabase@2.121.0`
+- project-local/pinned `eas-cli@25.3.0`; Supabase CLI deferred to its approved milestone
 
 Expo SDK 58 requires Node 22.13.x or newer and uses Android compile SDK 37/target SDK 36 ([Expo SDK reference](https://docs.expo.dev/versions/v58.0.0/)); the SDK 58 build-properties reference uses Build-Tools 37.0.0 ([Expo BuildProperties](https://docs.expo.dev/versions/latest/sdk/build-properties/)). Expo's SDK 58 Android build image uses Java 17 and Node 22.23.2, which is why this plan pins those versions ([EAS build infrastructure](https://docs.expo.dev/build-reference/infrastructure/)). The SDK 58 template is explicitly selected because the default scaffold may remain on SDK 57 during the transition ([create an Expo project](https://docs.expo.dev/get-started/create-a-project/)).
 
 ## Current machine findings
 
-| Check | Current state | Required action before M01 |
-|---|---|---|
-| Node | `22.23.2` selected through nvm-windows 1.2.2 | Ready; repository pin is in `.nvmrc` |
-| npm | `10.9.9` | Ready; add the matching `packageManager` pin when `package.json` is created |
-| pnpm | `12.8.1` | Not selected; do not create a second lockfile |
-| `java` / `javac` | Eclipse Temurin 17.0.10 when the verified JDK is selected | User `JAVA_HOME` and PATH are aligned; the machine-wide Oracle Java 8 shim can still win in a newly opened shell and must be removed/reordered by an administrator |
-| Android SDK | `%LOCALAPPDATA%\Android\Sdk`; Platform 37.0 and Build-Tools 37.0.0 installed | Ready; SDK Manager package ID is `platforms;android-37.0` |
-| ADB | Platform-Tools 35.0.2 installed and added to user PATH | Ready; no physical device was attached during Task 1 |
-| `ANDROID_HOME` | Set at user scope to `%LOCALAPPDATA%\Android\Sdk` | Ready |
-| Expo app/lockfile | Absent | Initialize only after architecture approval |
-| Legacy global Expo CLI | Previously detected | Do not use it; use project-local `npx expo` |
-| EAS/Supabase CLI | Not project-pinned | Add exact dev dependencies during M01 |
+| Check                        | Current state                                                                | Required action before M01                                                                                                                                         |
+| ---------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Node                         | `22.23.2` selected through nvm-windows 1.2.2                                 | Ready; repository pin is in `.nvmrc`                                                                                                                               |
+| npm                          | `10.9.9`                                                                     | Ready; matching `packageManager` pin and lockfile are present                                                                                                      |
+| pnpm                         | `12.8.1`                                                                     | Not selected; do not create a second lockfile                                                                                                                      |
+| `java` / `javac`             | Eclipse Temurin 17.0.10 when the verified JDK is selected                    | User `JAVA_HOME` and PATH are aligned; the machine-wide Oracle Java 8 shim can still win in a newly opened shell and must be removed/reordered by an administrator |
+| Android SDK                  | `%LOCALAPPDATA%\Android\Sdk`; Platform 37.0 and Build-Tools 37.0.0 installed | Ready; SDK Manager package ID is `platforms;android-37.0`                                                                                                          |
+| ADB                          | Platform-Tools 35.0.2 installed and added to user PATH                       | Ready; no physical device was attached during Task 1                                                                                                               |
+| `ANDROID_HOME`               | Set at user scope to `%LOCALAPPDATA%\Android\Sdk`                            | Ready                                                                                                                                                              |
+| Expo app/lockfile            | Expo SDK 58 scaffold and npm lockfile present                                | Ready for local verification                                                                                                                                       |
+| Legacy global Expo CLI       | Previously detected                                                          | Do not use it; use project-local `npx expo`                                                                                                                        |
+| EAS CLI / development client | `eas-cli` 25.3.0 pinned locally; Expo resolved `expo-dev-client` 58.0.14     | Ready for local development builds; no EAS project was linked and no cloud build was invoked                                                                       |
+| Supabase CLI                 | Not project-pinned                                                           | Add only in the approved Supabase milestone                                                                                                                        |
 
 ## 1. Select Node and npm
 
@@ -127,16 +128,18 @@ Reference scaffold command:
 npx create-expo-app@5.0.0 do-well-sdk58 --template default@sdk-58
 ```
 
-Then pin project-local operational CLIs in the repository package:
+The project-local EAS CLI and Expo-supported development client are pinned in the repository package:
 
 ```powershell
-npm install --save-dev eas-cli@25.3.0 supabase@2.121.0
+npm install --save-dev --save-exact eas-cli@25.3.0
+npx expo install expo-dev-client
 npx expo --version
 npx eas --version
-npx supabase --version
 ```
 
-The versions above were read from the npm registry on 2026-10-21. The M01 PR must verify them against official release notes, commit the lockfile, and update the pins through reviewed dependency PRs only. Do not install EAS, Supabase, or Expo CLI globally.
+The local CLI reports `eas-cli/25.3.0`, and its bundled `@expo/eas-json` 25.3.0 parser resolves the committed `development` and `preview` profiles. Do not install EAS, Supabase, or Expo CLI globally. Add the Supabase CLI only when its milestone needs it.
+
+Expo Doctor currently passes 19 of 20 checks and reports one known policy conflict: it recommends that `eas-cli` not be a project dependency, while the approved M01 plan explicitly requires project-local `eas-cli@25.3.0`. The exception is documented and not suppressed; changing the pinning policy requires owner approval. All Expo SDK/native-package compatibility checks pass.
 
 After dependencies are present:
 
@@ -170,8 +173,10 @@ git diff --check
 ## 7. EAS and Supabase use
 
 - Stay on Expo/EAS Free and Supabase Free; do not add a payment method.
-- Use local `npx expo run:android` for ordinary development builds.
-- Use the limited EAS Android queue only for approved shared/release builds.
+- Use `npx expo run:android` for the guaranteed zero-external-cost local development compilation path. This is the default for ordinary development.
+- `eas.json` defines only `development` and `preview` build profiles. Development enables the development client with internal distribution; preview uses internal distribution and Android APK output. There is no production build or submission profile.
+- A cloud build is optional and may be invoked only after confirming the Expo account remains on Free and has sufficient included Android quota. If quota is unavailable, wait for reset and build locally; never upgrade or add billing.
+- The optional cloud commands are `npx eas build --platform android --profile development` and `npx eas build --platform android --profile preview`. Neither was invoked while configuring M01.
 - `eas login`, `eas init`, Supabase linking, OAuth dashboard changes, FCM credential upload, and signing-key generation are explicit milestone/manual actions because they mutate external state.
 - Never pass tokens on a command line that will be logged. Use interactive login or a protected environment/secret store.
 
