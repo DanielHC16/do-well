@@ -9,8 +9,12 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "format": "prettier --write app tests app.config.ts expo-env.d.ts eslint.config.js jest.config.js package.json tsconfig.json",
+    "format:check": "prettier --check app tests app.config.ts expo-env.d.ts eslint.config.js jest.config.js package.json tsconfig.json",
     "lint": "expo lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "jest --watch",
+    "test:run": "jest --runInBand"
   },
   "dependencies": {
     "@expo/ui": "~58.0.21",
@@ -38,7 +42,14 @@
     "react-native-worklets": "0.13.0"
   },
   "devDependencies": {
+    "@testing-library/react-native": "^14.1.0",
+    "@types/jest": "30.0.0",
     "@types/react": "~19.3.0",
+    "eslint": "^9.39.5",
+    "eslint-config-expo": "~58.0.4",
+    "jest": "~30.5.2",
+    "jest-expo": "~58.0.11",
+    "prettier": "^3.9.10",
     "typescript": "~6.0.3"
   }
 }
