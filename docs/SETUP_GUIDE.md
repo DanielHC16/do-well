@@ -12,7 +12,7 @@ Target baseline, revalidated on 2026-10-22:
 - Expo SDK `58` / React Native `0.88`
 - JDK 17
 - Android SDK Platform 37, Build-Tools 37.0.0, target SDK 36, Android platform-tools/ADB
-- project-local/pinned `eas-cli@25.3.0`; Supabase CLI deferred to its approved milestone
+- on-demand pinned `eas-cli@25.3.0` through `npx`; Supabase CLI deferred to its approved milestone
 
 Expo SDK 58 requires Node 22.13.x or newer and uses Android compile SDK 37/target SDK 36 ([Expo SDK reference](https://docs.expo.dev/versions/v58.0.0/)); the SDK 58 build-properties reference uses Build-Tools 37.0.0 ([Expo BuildProperties](https://docs.expo.dev/versions/latest/sdk/build-properties/)). Expo's SDK 58 Android build image uses Java 17 and Node 22.23.2, which is why this plan pins those versions ([EAS build infrastructure](https://docs.expo.dev/build-reference/infrastructure/)). The SDK 58 template is explicitly selected because the default scaffold may remain on SDK 57 during the transition ([create an Expo project](https://docs.expo.dev/get-started/create-a-project/)).
 
@@ -29,7 +29,7 @@ Expo SDK 58 requires Node 22.13.x or newer and uses Android compile SDK 37/targe
 | `ANDROID_HOME`               | Set at user scope to `%LOCALAPPDATA%\Android\Sdk`                            | Ready                                                                                                                                                              |
 | Expo app/lockfile            | Expo SDK 58 scaffold and npm lockfile present                                | Ready for local verification                                                                                                                                       |
 | Legacy global Expo CLI       | Previously detected                                                          | Do not use it; use project-local `npx expo`                                                                                                                        |
-| EAS CLI / development client | `eas-cli` 25.3.0 pinned locally; Expo resolved `expo-dev-client` 58.0.14     | Ready for local development builds; no EAS project was linked and no cloud build was invoked                                                                       |
+| EAS CLI / development client | `eas-cli` 25.3.0 pinned in `eas.json` and invoked on demand; Expo resolved `expo-dev-client` 58.0.14 | Ready for local development builds; no EAS project was linked and no cloud build was invoked |
 | Supabase CLI                 | Not project-pinned                                                           | Add only in the approved Supabase milestone                                                                                                                        |
 
 ## 1. Select Node and npm
@@ -128,18 +128,15 @@ Reference scaffold command:
 npx create-expo-app@5.0.0 do-well-sdk58 --template default@sdk-58
 ```
 
-The project-local EAS CLI and Expo-supported development client are pinned in the repository package:
+Expo Doctor prohibits `eas-cli` as a project dependency. Keep the CLI non-global and version-pinned by invoking its exact package version on demand; the Expo-supported development client remains pinned in the repository package:
 
 ```powershell
-npm install --save-dev --save-exact eas-cli@25.3.0
 npx expo install expo-dev-client
 npx expo --version
-npx eas --version
+npx --yes eas-cli@25.3.0 --version
 ```
 
-The local CLI reports `eas-cli/25.3.0`, and its bundled `@expo/eas-json` 25.3.0 parser resolves the committed `development` and `preview` profiles. Do not install EAS, Supabase, or Expo CLI globally. Add the Supabase CLI only when its milestone needs it.
-
-Expo Doctor currently passes 19 of 20 checks and reports one known policy conflict: it recommends that `eas-cli` not be a project dependency, while the approved M01 plan explicitly requires project-local `eas-cli@25.3.0`. The exception is documented and not suppressed; changing the pinning policy requires owner approval. All Expo SDK/native-package compatibility checks pass.
+The pinned command reports `eas-cli/25.3.0`, while `eas.json#cli.version` requires the same release. Do not install EAS, Supabase, or Expo CLI globally. Add the Supabase CLI only when its milestone needs it. With EAS CLI kept out of project dependencies, Expo Doctor passes all checks.
 
 After dependencies are present:
 
@@ -176,7 +173,7 @@ git diff --check
 - Use `npx expo run:android` for the guaranteed zero-external-cost local development compilation path. This is the default for ordinary development.
 - `eas.json` defines only `development` and `preview` build profiles. Development enables the development client with internal distribution; preview uses internal distribution and Android APK output. There is no production build or submission profile.
 - A cloud build is optional and may be invoked only after confirming the Expo account remains on Free and has sufficient included Android quota. If quota is unavailable, wait for reset and build locally; never upgrade or add billing.
-- The optional cloud commands are `npx eas build --platform android --profile development` and `npx eas build --platform android --profile preview`. Neither was invoked while configuring M01.
+- The optional cloud commands are `npx --yes eas-cli@25.3.0 build --platform android --profile development` and `npx --yes eas-cli@25.3.0 build --platform android --profile preview`. Neither was invoked while configuring M01.
 - `eas login`, `eas init`, Supabase linking, OAuth dashboard changes, FCM credential upload, and signing-key generation are explicit milestone/manual actions because they mutate external state.
 - Never pass tokens on a command line that will be logged. Use interactive login or a protected environment/secret store.
 
