@@ -1,0 +1,68 @@
+# Environment files (templates remain version-controlled)
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# OAuth clients, service accounts, and downloaded cloud credentials
+client_secret*.json
+*service-account*.json
+service-account*.json
+credentials*.json
+firebase-adminsdk*.json
+
+# Signing keys, certificates, and local Android secrets
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+*.key
+*.mobileprovision
+secrets.properties
+local.properties
+
+# Supabase local state and Edge Function secrets
+.supabase/
+supabase/.temp/
+supabase/functions/.env
+supabase/functions/.env.*
+!supabase/functions/.env.example
+
+# Dependencies and package-manager caches
+node_modules/
+.npm/
+.pnpm-store/
+.yarn/cache/
+.yarn/install-state.gz
+
+# Expo and React Native generated output
+.expo/
+.expo-shared/
+dist/
+web-build/
+android/
+ios/
+*.apk
+*.aab
+
+# Tests, tooling, and logs
+coverage/
+.turbo/
+.cache/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local editors and operating systems
+.idea/
+.vscode/settings.json
+.vscode/*.local.json
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+Desktop.ini
+
