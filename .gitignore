@@ -10,6 +10,9 @@ client_secret*.json
 service-account*.json
 credentials*.json
 firebase-adminsdk*.json
+firebase-service-account*.json
+google-services.json
+GoogleService-Info.plist
 
 # Signing keys, certificates, and local Android secrets
 *.jks
