@@ -28,4 +28,10 @@ Application setup commands will be added in Milestone M01 after the Phase 3 arch
 
 ## Documentation
 
-The durable product, architecture, security, setup, workflow, roadmap, and session-handoff documentation is developed on `docs/phase3-architecture` and will appear under `docs/` after review and approval.
+The durable product, architecture, security, setup, workflow, roadmap, and session-handoff documentation lives in [`docs/`](docs/README.md). Start with:
+
+1. [`docs/README.md`](docs/README.md) for the document map and recovery order.
+2. [`docs/SESSION_HANDOFF.md`](docs/SESSION_HANDOFF.md) for verified current state.
+3. [`docs/IMPLEMENTATION_ROADMAP.md`](docs/IMPLEMENTATION_ROADMAP.md) for M00-M14 dependencies and acceptance criteria.
+
+The Phase 3 plan is under review on `docs/phase3-architecture`. Do not begin M01 or merge the documentation pull request until the project owner approves the proposed ADRs and roadmap.
