@@ -4,14 +4,14 @@
 
 - **Last verified:** 2026-10-22 (Asia/Manila)
 - **Active milestone:** M01 — Expo initialization and Android development proof
-- **Status:** `IN PROGRESS`; local APK compilation is proven, physical-device install/launch evidence is pending
+- **Status:** `READY TO MERGE`; local APK compilation and emulator/physical-device launch evidence are proven
 - **Branch:** `chore/expo-initialization`
 - **Base/default branch:** `main`
 - **Architecture baseline:** `85122ea` (`docs(architecture): define Phase 3 system design`)
 - **Remote:** `https://github.com/DanielHC16/do-well`
 - **Visibility:** `PRIVATE`
 - **Issue:** [#2 — M01 Initialize Expo and prove Android development](https://github.com/DanielHC16/do-well/issues/2)
-- **M01 draft PR:** [#17](https://github.com/DanielHC16/do-well/pull/17); keep draft and unmerged until physical-device evidence is attached
+- **M01 PR:** [#17](https://github.com/DanielHC16/do-well/pull/17); physical-device evidence is attached and the PR is ready for final review/merge
 - **M00 PR:** [#16](https://github.com/DanielHC16/do-well/pull/16), squash-merged
 
 This file records repository evidence, not chat state. Re-run the verification commands before relying on it.
@@ -27,6 +27,8 @@ This file records repository evidence, not chat state. Re-run the verification c
 - Kept EAS CLI out of project dependencies; use the exact on-demand `npx --yes eas-cli@25.3.0` command.
 - Added `expo-build-properties` with Android CMake `3.31.6`. Its bundled Ninja supports the long native paths produced by Expo SDK 58's required New Architecture on Windows.
 - Generated native Android files and APKs remain ignored.
+- Installed and launched the debug APK on the `medium_phone` Android 15/API 35 emulator and an authorized Infinix X6840 running Android API 36.
+- Verified the physical-device UI hierarchy exposes “Do Well” and “Development setup ready”; the non-sensitive screenshot is [`docs/evidence/m01-physical-device.png`](evidence/m01-physical-device.png).
 
 Branch commits before the final documentation/status commit:
 
@@ -88,16 +90,15 @@ After the final Expo-supported patch updates, `npm audit` reported 48 advisories
 - Existing environment/OAuth credential files were not opened or printed and remain ignored.
 - No paid service or payment method was enabled.
 
-## Remaining M01 acceptance work
+## M01 physical-device acceptance evidence
 
-1. Connect and authorize the intended physical Android phone; record its model and Android/API version.
-2. Confirm `adb devices -l` shows exactly that device with state `device`.
-3. In a JDK 17 shell, run `npm run android` or install the verified debug APK.
-4. Launch the development client and confirm the smoke screen renders “Do Well” and “Development setup ready”.
-5. Capture a non-sensitive screenshot and attach the command/log evidence to issue #2 and the M01 PR.
-6. Run the complete verification suite again, obtain reviewer/owner approval, and merge only then.
+1. `adb devices -l` detected one authorized physical phone: Infinix X6840, Android API 36.
+2. `adb install -r android/app/build/outputs/apk/debug/app-debug.apk` completed with `Success`.
+3. `adb reverse tcp:8081 tcp:8081` exposed Metro only over the authorized USB connection.
+4. Metro bundled 1,376 modules and launched `com.anghulingpullrequest.dowell/.MainActivity`.
+5. The physical-device UI hierarchy contained `Do Well` and `Development setup ready`; [`docs/evidence/m01-physical-device.png`](evidence/m01-physical-device.png) records the non-sensitive screen.
 
-M01 must not be marked complete and M02 must not start until those device steps are proven.
+M01 verification is complete. Merge PR #17 after final review, then begin M02 on a fresh branch from updated `main`.
 
 ## Known local administration item
 

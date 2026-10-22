@@ -2,7 +2,7 @@
 
 ## Status and target
 
-M01 corrected the local Node and Android toolchain, initialized the Expo SDK 58 scaffold, and added cost-safe local/EAS build configuration on 2026-10-22. Physical-device build proof remains pending.
+M01 corrected the local Node and Android toolchain, initialized the Expo SDK 58 scaffold, and added cost-safe local/EAS build configuration on 2026-10-22. Emulator and physical-device launch proof are complete.
 
 Target baseline, revalidated on 2026-10-22:
 
@@ -25,7 +25,7 @@ Expo SDK 58 requires Node 22.13.x or newer and uses Android compile SDK 37/targe
 | pnpm                         | `12.8.1`                                                                                                       | Not selected; do not create a second lockfile                                                                                                                      |
 | `java` / `javac`             | Eclipse Temurin 17.0.10 when the verified JDK is selected                                                      | User `JAVA_HOME` and PATH are aligned; the machine-wide Oracle Java 8 shim can still win in a newly opened shell and must be removed/reordered by an administrator |
 | Android SDK                  | `%LOCALAPPDATA%\Android\Sdk`; Platform 37.0, Build-Tools 37.0.0, NDK 27.1.12297006, and CMake 3.31.6 installed | Ready; CMake 3.31.6 supplies Ninja 1.12+ for Windows long-path support                                                                                             |
-| ADB                          | Platform-Tools 35.0.2 installed and added to user PATH                                                         | Ready; no physical device was attached during Task 1                                                                                                               |
+| ADB                          | Platform-Tools 35.0.2 installed and added to user PATH                                                         | Ready; authorized Infinix X6840 verified on Android API 36                                                                                                         |
 | `ANDROID_HOME`               | Set at user scope to `%LOCALAPPDATA%\Android\Sdk`                                                              | Ready                                                                                                                                                              |
 | Expo app/lockfile            | Expo SDK 58 scaffold and npm lockfile present                                                                  | Ready for local verification                                                                                                                                       |
 | Legacy global Expo CLI       | Previously detected                                                                                            | Do not use it; use project-local `npx expo`                                                                                                                        |
@@ -162,7 +162,7 @@ npx expo prebuild --platform android --clean --no-install
 .\android\gradlew.bat -p android assembleDebug --no-daemon
 ```
 
-On 2026-10-22 this produced `app-debug.apk` locally with Gradle reporting `BUILD SUCCESSFUL` after 702 tasks. Generated `android/` content and APKs remain ignored and must not be committed. Installation, launch, and screenshot proof still require the authorized physical device.
+On 2026-10-22 this produced `app-debug.apk` locally with Gradle reporting `BUILD SUCCESSFUL` after 702 tasks. The APK was installed and launched on both the `medium_phone` Android 15 emulator and an authorized Infinix X6840 running Android API 36. Generated `android/` content and APKs remain ignored and must not be committed.
 
 MapLibre, notifications, or other config-plugin changes require rebuilding the development client; Expo Go cannot load arbitrary native code ([MapLibre Expo setup](https://maplibre.org/maplibre-react-native/docs/setup/expo/), [Expo development build FAQ](https://docs.expo.dev/develop/development-builds/faq/)).
 
@@ -204,10 +204,10 @@ See `FREE_TIER_AND_COST_POLICY.md` for quotas and stop conditions.
 - [x] `java` and `javac` both report Temurin JDK 17 in the corrected M01 shell; remove/reorder the machine Java 8 shim before treating new-shell selection as durable.
 - [x] Android Platform 37.0, Build-Tools 37.0.0, CMake 3.31.6, and platform-tools are installed.
 - [x] `ANDROID_HOME` is correct and platform-tools is on the user PATH.
-- [ ] The authorized physical device appears in `adb devices -l`.
+- [x] The authorized Infinix X6840 appears in `adb devices -l` with state `device`.
 - [x] `npx expo-doctor` passes all 20 checks.
 - [x] A local debug APK compiles with JDK 17 and the pinned CMake/Ninja toolchain.
-- [ ] A local development APK installs and launches on the named device.
-- [ ] `.env.local` and credential files are ignored and no secret appears in Expo public config.
-- [ ] No billing method or paid plan was enabled.
-- [ ] Exact commands/results are attached to the M01 issue and PR.
+- [x] A local development APK installs and launches on the named device.
+- [x] `.env.local` and credential files are ignored and no secret appears in Expo public config.
+- [x] No billing method or paid plan was enabled.
+- [x] Exact commands/results and non-sensitive launch evidence are attached to the M01 issue and PR.
