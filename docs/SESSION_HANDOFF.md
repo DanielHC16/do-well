@@ -3,105 +3,119 @@
 ## Snapshot
 
 - **Last verified:** 2026-10-22 (Asia/Manila)
-- **Phase:** M01 — Expo initialization and Android development proof
+- **Active milestone:** M01 — Expo initialization and Android development proof
+- **Status:** `IN PROGRESS`; local APK compilation is proven, physical-device install/launch evidence is pending
 - **Branch:** `chore/expo-initialization`
 - **Base/default branch:** `main`
-- **Architecture baseline revision:** `5dece87` (`docs(architecture): define phase 3 system design`)
+- **Architecture baseline:** `85122ea` (`docs(architecture): define Phase 3 system design`)
 - **Remote:** `https://github.com/DanielHC16/do-well`
-- **Visibility:** `PRIVATE` (verified with GitHub CLI)
-- **Current issue:** [#2 — M01 Initialize Expo and prove Android development](https://github.com/DanielHC16/do-well/issues/2)
-- **Milestone issues:** [#2](https://github.com/DanielHC16/do-well/issues/2) through [#15](https://github.com/DanielHC16/do-well/issues/15) track M01 through M14
-- **Documentation PR:** [#16 — docs(architecture): define Phase 3 system design](https://github.com/DanielHC16/do-well/pull/16) — merged
-- **Application implementation:** not started
+- **Visibility:** `PRIVATE`
+- **Issue:** [#2 — M01 Initialize Expo and prove Android development](https://github.com/DanielHC16/do-well/issues/2)
+- **M00 PR:** [#16](https://github.com/DanielHC16/do-well/pull/16), squash-merged
 
-This file records repository evidence, not chat state. Re-run the commands below because documentation is being authored concurrently and working-tree details can change after this snapshot.
+This file records repository evidence, not chat state. Re-run the verification commands before relying on it.
 
-## Completed and verified
+## Implemented on the M01 branch
 
-- The initial repository bootstrap exists on `main`.
-- The current planning branch is `docs/phase3-architecture`.
-- GitHub remote `origin` points to `DanielHC16/do-well`; GitHub reports the repository private and default branch `main`.
-- `.gitignore` excludes `.env*` except templates, OAuth/service-account downloads, signing material, local Android configuration, Supabase function secrets, dependencies, Expo/native output, APK/AAB files, caches, and logs.
-- `.env.example` contains only public Supabase URL/publishable-key placeholders and warnings against privileged values.
-- Existing credential files were preserved. This documentation agent did not open or print their contents.
-- Workspace skills/agent configuration was already synchronized; no sync was run.
-- Fourteen requested labels plus one issue for each M00-M14 milestone exist in the private GitHub repository.
-- The delegated read-only reviewer pass completed. Its material findings were resolved in the documentation: the evidence-submission transaction, zero-cost GitHub Actions gate, Expo/Jest test stack, SDK 58 New Architecture guidance, reset-password route, label taxonomy, shared-directory layout, and handoff state now agree across documents.
-- Phase 3 documentation is merged. M01 Task 1 installed no application packages, native projects, database migrations, or product features.
+- Pinned Node `22.23.2` in `.nvmrc` and npm `10.9.9` in `package.json`.
+- Initialized the official Expo SDK 58 TypeScript/Expo Router scaffold with React Native 0.88 and package identity `com.anghulingpullrequest.dowell`.
+- Added Jest 30, `jest-expo`, React Native Testing Library, ESLint, Prettier, strict TypeScript checks, and npm verification scripts.
+- Added typed `app.config.ts` and tests for public identity, secret-shaped config fields, and the Windows Android CMake pin.
+- Added an accessible neutral setup smoke screen that displays “Do Well” and “Development setup ready”.
+- Added `expo-dev-client` and cost-safe `eas.json` development/preview profiles only; no production/submit profile exists.
+- Kept EAS CLI out of project dependencies; use the exact on-demand `npx --yes eas-cli@25.3.0` command.
+- Added `expo-build-properties` with Android CMake `3.31.6`. Its bundled Ninja supports the long native paths produced by Expo SDK 58's required New Architecture on Windows.
+- Generated native Android files and APKs remain ignored.
 
-The M00 architecture PR was approved and merged. M01 Task 1 corrected the supported local toolchain; later M01 tasks remain in progress.
+Branch commits before the final documentation/status commit:
+
+- `4f7dff6 chore(setup): pin supported Node and Android toolchain`
+- `9b25cdc chore(setup): initialize Expo SDK 58 project`
+- `1a57c3d test(setup): enforce Expo application configuration`
+- `6af5dc1 chore(setup): add Android smoke screen`
+- `78138ce chore(setup): format router layout`
+- `877eb84 chore(android): configure zero-cost development builds`
+- `672958d fix(setup): align EAS CLI with Expo Doctor`
+
+## Verification evidence
+
+The following passed on 2026-10-22 before branch publication; re-run after any change:
+
+- `npm run format:check`
+- `npm run lint`
+- `npm run typecheck`
+- `npm run test:run`
+- `npx expo-doctor` — 20/20 checks
+- `npx expo install --check`
+- `npx --yes eas-cli@25.3.0 --version` — `eas-cli/25.3.0`
+- public Expo config inspection — no secret-shaped field or privileged value
+- `npx expo prebuild --platform android --clean --no-install`
+- `.\android\gradlew.bat -p android assembleDebug --no-daemon` with Temurin JDK 17 — final patched-graph rebuild `BUILD SUCCESSFUL in 10m 6s`, 702 tasks
+
+Local artifact evidence (ignored, not committed):
+
+- File: `android/app/build/outputs/apk/debug/app-debug.apk`
+- Size: `268,167,727` bytes
+- SHA-256: `C0841CAAF1B0DA5A6EC8745E88A3AC0FFCE6C865A84C4B4570B06C0AF4DFAE1E`
+
+The first native compile attempts exposed Windows/Ninja path failures with Android's default CMake 3.22.1/Ninja 1.10. A junction and a shorter worktree did not eliminate every generated path. The supported Expo SDK 57+ solution—`expo-build-properties` with CMake 3.31.6—then compiled successfully in the original workspace. Both temporary paths were removed after verification.
 
 ## Current local tool evidence
 
-| Tool | Observed | Readiness |
-|---|---|---|
-| Git | 2.45.1 | Ready |
-| GitHub CLI | 2.102.0, authenticated sufficiently to inspect the private repo | Ready for approved repo operations |
-| nvm-windows | 1.2.2 | Ready |
-| Node.js | 22.23.2 selected through nvm-windows 1.2.2 | Ready; pinned in `.nvmrc` |
-| npm | 10.9.9 | Ready; `packageManager` pin follows with the scaffold |
-| pnpm | 12.8.1 | Installed but not selected |
-| Java runtime/compiler | Eclipse Temurin JDK 17.0.10 in the corrected shell | User `JAVA_HOME`/PATH aligned; machine PATH still contains an earlier Oracle Java 8 shim that requires administrator cleanup |
-| Android SDK | `%LOCALAPPDATA%\Android\Sdk`; Platform 37.0 and Build-Tools 37.0.0 installed | Ready |
-| ADB | 1.0.41 / Platform-Tools 35.0.2; added to user PATH | Ready; `adb devices -l` returned no attached device |
-| `ANDROID_HOME` | Set at user scope to `%LOCALAPPDATA%\Android\Sdk` | Ready |
-| Expo app/lockfile | None | Deliberately deferred to M01 |
+| Tool        | Observed                                       | Readiness                                                                            |
+| ----------- | ---------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Node.js     | 22.23.2                                        | Ready; repository-pinned                                                             |
+| npm         | 10.9.9                                         | Ready; repository-pinned                                                             |
+| Java        | Eclipse Temurin JDK 17.0.10                    | Ready when explicitly selected; machine PATH still has an earlier Oracle Java 8 shim |
+| Android SDK | Platform 37, Build-Tools 37.0.0, target SDK 36 | Ready                                                                                |
+| Android NDK | 27.1.12297006                                  | Ready                                                                                |
+| CMake/Ninja | CMake 3.31.6 / bundled Ninja 1.12+             | Ready; app config pin is tested                                                      |
+| ADB         | Platform-Tools 35.0.2                          | Ready; `adb devices -l` returned no attached device                                  |
+| EAS CLI     | 25.3.0 through exact `npx` invocation          | Ready; no global/local dependency                                                    |
 
-The exact non-destructive setup plan is in `SETUP_GUIDE.md`.
+The SDK also contains a pre-existing `platform-tools.backup` directory, so Android tooling emits a duplicate package-location warning. Its provenance is unknown and it was preserved.
 
-## Architecture decisions relevant to continuation
+## Dependency audit
 
-- Android/Expo development build, TypeScript, Expo Router, Supabase Auth/Postgres/RLS/private Storage remain confirmed.
-- Nearby discovery is list-first and map-independent. Google Maps/billing is prohibited.
-- MapLibre is only a renderer candidate; an interactive map is blocked until a tile/style provider passes license, no-card, hard-quota, attribution, caching, and outage review.
-- P0 requests foreground/approximate location in context and always provides manual locality.
-- P0 uses private image evidence and an in-app activity center plus local notifications. FCM/Expo remote push is optional and must remain on Firebase Spark/no billing.
-- Offline levels are separate: cached reads (L1), drafts/explicit pending actions (L2), and reliable background synchronization (L3). L3 is deferred.
-- Supabase and Expo Free are hard-capped operating dependencies with documented recovery/fallback; no paid upgrade is an acceptable incident response.
-- AI is not selected. A real-inference hardware/network feasibility experiment must pass before an AI claim; manual brief creation remains available.
+After the final Expo-supported patch updates, `npm audit` reported 48 advisories: 18 moderate, 30 high, 0 critical. `npm audit --omit=dev` reported 40 runtime-tree advisories: 19 moderate, 21 high, 0 critical. These flow through the Expo/React Native/Jest supported dependency graph. npm's proposed broad fixes change or downgrade supported framework pins and may be breaking, so no `npm audit fix` or `--force` rewrite was applied. Reassess with Expo-supported upgrades; do not silently force the graph.
 
-## M01 Task 1 evidence and next actions
+## External and cost state
 
-1. Node `v22.23.2` and npm `10.9.9` are selected; `.nvmrc` records the Node pin.
-2. Official Android Platform 37.0 and Build-Tools 37.0.0 are installed and Android SDK licenses are accepted.
-3. User `JAVA_HOME`, `ANDROID_HOME`, and PATH entries are configured from verified installed directories.
-4. Before device-build acceptance, remove/reorder the machine-wide Oracle Java 8 shim, open a fresh terminal, and prove both `java` and `javac` resolve to JDK 17.
-5. Connect and authorize the intended physical Android phone; no device was present during Task 1.
-6. Continue with M01 Task 2: generate and inspect the Expo SDK 58 scaffold in a checked temporary directory.
+- No EAS login, project link, cloud build, production build, submission, or billing action occurred.
+- No Supabase project was linked and no database change occurred.
+- No hosted GitHub Actions workflow was added because the required zero-dollar billing guard is not yet verified. Local checks are authoritative for M01.
+- Existing environment/OAuth credential files were not opened or printed and remain ignored.
+- No paid service or payment method was enabled.
 
-Suggested verification:
+## Remaining M01 acceptance work
+
+1. Connect and authorize the intended physical Android phone; record its model and Android/API version.
+2. Confirm `adb devices -l` shows exactly that device with state `device`.
+3. In a JDK 17 shell, run `npm run android` or install the verified debug APK.
+4. Launch the development client and confirm the smoke screen renders “Do Well” and “Development setup ready”.
+5. Capture a non-sensitive screenshot and attach the command/log evidence to issue #2 and the M01 PR.
+6. Run the complete verification suite again, obtain reviewer/owner approval, and merge only then.
+
+M01 must not be marked complete and M02 must not start until those device steps are proven.
+
+## Known local administration item
+
+The user-scoped `JAVA_HOME` points to Temurin JDK 17, but the machine-wide Oracle Java 8 shim may take precedence in a newly opened shell. An administrator should remove/reorder that machine PATH entry. Until then, explicitly set JDK 17 for Android builds and verify both `java -version` and `javac -version`.
+
+## Suggested continuation commands
 
 ```powershell
 git status --short --branch
 git diff --check
-git diff --name-status main...HEAD
-git remote -v
-gh repo view DanielHC16/do-well --json nameWithOwner,visibility,defaultBranchRef,url
-gh pr list --repo DanielHC16/do-well --state all
-gh issue list --repo DanielHC16/do-well --state all
+npm run format:check
+npm run lint
+npm run typecheck
+npm run test:run
+npx expo-doctor
+npx expo install --check
+adb devices -l
 ```
-
-For uncommitted documentation, also inspect `git diff --no-index -- NUL <file>` or the editor preview; `main...HEAD` does not include uncommitted files.
-
-## Blockers and decisions still needed
-
-- Official UMAK 2026 eligibility/mechanics: Expo/React Native acceptance, deadline, submission package, judging device/API, demo duration, and network conditions.
-- Physical Android test device model and Android/API version.
-- Phase 2 final UI/wireframes.
-- Product rules before schema freeze: pilot radius, categories/prohibited work, mutual agreement, cancellation/disputes, evidence retention, and moderation process.
-- Supabase dashboard state and final owner-controlled Auth/redirect settings.
-- Expo/EAS account or organization ownership.
-- GitHub Actions billing guard: verify no valid payment method or configure an enforced zero-dollar stop-usage budget before adding hosted workflows; local checks remain authoritative meanwhile.
-- AI benchmark hardware, candidate model/license, secured laptop-to-phone network design, and measurable success thresholds.
-- Map tile/style source if an interactive map remains desired. The list experience is not blocked.
-- Remote push decision. Local notifications/activity center are not blocked.
-
-## Exact next task
-
-**M01 Task 2 — generate and review the Expo SDK 58 scaffold.**
-
-Continue on `chore/expo-initialization`; follow `SETUP_GUIDE.md`; create no product feature. M01 is done only when the pinned toolchain passes, CI scripts exist, an APK installs/launches on the named physical device, and no secret is present in Git or the public Expo config.
 
 ## Stop conditions
 
-Stop and update the issue/handoff instead of improvising if a step asks for billing, a paid plan, a privileged key in client code, destructive database action, history rewrite, production deployment, automatic merge, or unapproved feature implementation.
+Stop and update issue #2 instead of improvising if a step asks for billing, a paid plan, a privileged key in client code, destructive database action, history rewrite, production deployment, or unapproved product-feature implementation.

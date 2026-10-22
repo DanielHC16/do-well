@@ -4,7 +4,7 @@ Do Well is an Android productivity application for the UMAK IT Skills Olympics 2
 
 ## Status
 
-Phase 3 architecture and development planning are in progress. The Expo application has not been initialized and no product feature is represented as implemented.
+Phase 3 architecture is approved and merged. M01 has initialized the Expo SDK 58 application, added an accessible setup smoke screen, and proven a local Android debug APK build. Physical-device installation and launch evidence are still pending, so M01 remains in progress and no product feature is represented as implemented.
 
 Confirmed foundations:
 
@@ -20,11 +20,17 @@ Only `.env.example` is version-controlled. Local environment files, OAuth client
 
 ## Getting started
 
-Application setup commands will be added in Milestone M01 after the Phase 3 architecture is approved. Until then:
+Prerequisites: Node `22.23.2`, npm `10.9.9`, JDK 17, Android SDK Platform 37/Build-Tools 37, CMake `3.31.6`, and an authorized Android device.
 
-1. Read `AGENTS.md`.
-2. Review the open Phase 3 architecture pull request.
-3. Do not initialize or install application dependencies on `main`.
+```powershell
+nvm use 22.23.2
+npm ci
+npm run test:run
+npm run lint
+npm run android
+```
+
+The Android command generates ignored native files, builds the development client locally, and installs it on the connected device. See [`docs/SETUP_GUIDE.md`](docs/SETUP_GUIDE.md) for the Windows toolchain, device authorization, and verification details.
 
 ## Documentation
 
@@ -34,4 +40,4 @@ The durable product, architecture, security, setup, workflow, roadmap, and sessi
 2. [`docs/SESSION_HANDOFF.md`](docs/SESSION_HANDOFF.md) for verified current state.
 3. [`docs/IMPLEMENTATION_ROADMAP.md`](docs/IMPLEMENTATION_ROADMAP.md) for M00-M14 dependencies and acceptance criteria.
 
-The Phase 3 plan is under review on `docs/phase3-architecture`. Do not begin M01 or merge the documentation pull request until the project owner approves the proposed ADRs and roadmap.
+M01 work is on `chore/expo-initialization`. Do not start M02 until M01 has physical-device install/launch evidence and the M01 PR is approved and merged.
