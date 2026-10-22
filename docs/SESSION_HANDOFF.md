@@ -2,16 +2,17 @@
 
 ## Snapshot
 
-- **Last verified:** 2026-10-22 (Asia/Manila)
-- **Completed milestone:** M01 — Expo initialization and Android development proof
-- **Current milestone:** M02 — Supabase schema and authorization foundation
-- **Status:** `IN PROGRESS`; do not mark M02 complete yet
-- **Branch:** `feat/database-schema`
+- **Last verified:** 2026-10-23 (Asia/Manila)
+- **Completed milestones:** M01 — Expo initialization and Android development proof; M02 — Supabase schema and authorization foundation
+- **Current milestone:** M03 — Authentication, session restoration, and profile onboarding
+- **Status:** `NOT STARTED`; M02 is complete and merged
+- **Branch:** `main` after the M02 closeout PR
 - **Base/default branch:** `main`
-- **Current base commit:** `a205ae9` (`docs(roadmap): close M01 after merge (#18)`)
+- **Current implementation merge:** `f7a3317` (`Merge pull request #19`)
 - **Remote:** `https://github.com/DanielHC16/do-well` (`PRIVATE`)
-- **Issue:** [#3 — M02 Establish Supabase schema and authorization foundation](https://github.com/DanielHC16/do-well/issues/3)
+- **Next issue:** [#4 — M03 Implement authentication, session restoration and profile onboarding](https://github.com/DanielHC16/do-well/issues/4)
 - **M01 PR:** [#17](https://github.com/DanielHC16/do-well/pull/17), squash-merged as `d073c4b`
+- **M02 PR:** [#19](https://github.com/DanielHC16/do-well/pull/19), merge commit `f7a3317`
 
 This file records repository evidence, not chat state. Re-run the verification commands before relying on it.
 
@@ -19,7 +20,7 @@ This file records repository evidence, not chat state. Re-run the verification c
 
 M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android development build, and emulator/physical-device launch proof are on `main`. The authorized Infinix X6840/API 36 evidence remains at [`docs/evidence/m01-physical-device.png`](evidence/m01-physical-device.png).
 
-## M02 implementation state
+## M02 completed state
 
 - Supabase CLI `2.121.0` is pinned as a project development dependency and exposed through `db:start`, `db:stop`, `db:reset`, `db:lint`, `db:test`, `db:types`, and `db:types:check`.
 - Docker runs the disposable local stack on isolated ports `55320`-`55329` plus Edge Runtime inspector `5583`.
@@ -53,10 +54,10 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 
 ## Exact next steps
 
-1. Run the complete app and database verification gate from the clean install.
-2. Review the migration, RLS, Storage, seed, generated-type, and documentation diffs together.
-3. Update issue #3 and open the M02 PR only after the full local gate passes.
-4. Keep M02 `IN PROGRESS` until review evidence satisfies its acceptance criteria.
+1. Read issue #4 and the M03 authentication/onboarding acceptance criteria.
+2. Create the short-lived M03 branch from current `main`.
+3. Add real local Auth HTTP/JWT integration tests before implementing authentication UI and session restoration.
+4. Keep hosted configuration changes and credential values out of Git and logs.
 
 ## Suggested continuation commands
 
@@ -76,4 +77,4 @@ npm run test:run
 
 ## Stop conditions
 
-Stop and update issue #3 instead of improvising if a step asks for a hosted Supabase link/apply, destructive remote migration, billing/payment setup, a privileged key in client code, history rewrite, production deployment, or an unresolved cancellation/agreement/retention decision.
+Stop and update the active milestone issue instead of improvising if a step asks for a hosted Supabase link/apply, destructive remote migration, billing/payment setup, a privileged key in client code, history rewrite, production deployment, or an unresolved cancellation/agreement/retention decision.

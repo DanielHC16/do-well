@@ -4,7 +4,7 @@ Do Well is an Android productivity application for the UMAK IT Skills Olympics 2
 
 ## Status
 
-Phase 3 architecture and M01 are approved and merged. M02 is in progress on `feat/database-schema`: local Supabase migrations now establish the schema, deny-by-default authorization foundation, and private evidence bucket, but the milestone is not complete. No product feature is represented as implemented.
+Phase 3 architecture, M01, and M02 are approved and merged. The repository now includes the verified Expo/Android foundation plus local Supabase schema, deny-by-default authorization, and private evidence Storage foundations. M03 authentication and onboarding implementation is next; no end-user product workflow is represented as complete yet.
 
 Confirmed foundations:
 
@@ -98,4 +98,4 @@ The durable product, architecture, security, setup, workflow, roadmap, and sessi
 2. [`docs/SESSION_HANDOFF.md`](docs/SESSION_HANDOFF.md) for verified current state.
 3. [`docs/IMPLEMENTATION_ROADMAP.md`](docs/IMPLEMENTATION_ROADMAP.md) for M00-M14 dependencies and acceptance criteria.
 
-M01 was merged in [PR #17](https://github.com/DanielHC16/do-well/pull/17), and its physical-device evidence is recorded in the repository. M02 is currently being implemented on `feat/database-schema`.
+M01 was merged in [PR #17](https://github.com/DanielHC16/do-well/pull/17), and its physical-device evidence is recorded in the repository. M02 was merged in [PR #19](https://github.com/DanielHC16/do-well/pull/19) with its local database and security verification evidence.
