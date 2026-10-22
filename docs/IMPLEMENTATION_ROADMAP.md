@@ -56,7 +56,7 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 | --------- | ------------------------------------------------------------------------- | --------------- | ------------------------------------------------------ |
 | M00       | Repository security, architecture documentation, private GitHub setup     | **COMPLETED**   | [#1](https://github.com/DanielHC16/do-well/issues/1)   |
 | M01       | Expo initialization, pinned tooling, CI, Android development build        | **COMPLETED**   | [#2](https://github.com/DanielHC16/do-well/issues/2)   |
-| M02       | Supabase local config, schema foundations, migrations and generated types | **NOT STARTED** | [#3](https://github.com/DanielHC16/do-well/issues/3)   |
+| M02       | Supabase local config, schema foundations, migrations and generated types | **IN PROGRESS** | [#3](https://github.com/DanielHC16/do-well/issues/3)   |
 | M03       | Authentication, session restoration, profile onboarding                   | **NOT STARTED** | [#4](https://github.com/DanielHC16/do-well/issues/4)   |
 | M04       | Shared shell and worker/employer navigation                               | **NOT STARTED** | [#5](https://github.com/DanielHC16/do-well/issues/5)   |
 | M05       | Gig creation and employer management                                      | **NOT STARTED** | [#6](https://github.com/DanielHC16/do-well/issues/6)   |
@@ -102,14 +102,14 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 
 ## M02 — Establish Supabase schema and authorization foundation
 
-**Status:** `NOT STARTED`
+**Status:** `IN PROGRESS` on `feat/database-schema`. The pinned local CLI, isolated stack, ordered schema/RLS/Storage migrations, seed data, pgTAP tests, performance-plan suite, and generated-type workflow exist. The latest verified evidence is a clean reset, 5 functional pgTAP files / 50 passing tests, a separate 5-assertion performance suite, clean database lint, and current generated types.
 
 - **Goal:** represent the approved domain in repeatable migrations with deny-by-default RLS and local integration tests.
-- **Dependencies:** M01; approved data/state decisions for categories, cancellation, agreements, and evidence retention where schema-affecting.
-- **Scope/tasks:** initialize local Supabase config; write enum/check types and tables for profiles, preferences, gigs, applications, assignments, milestones, submissions, activity events, and reports; add constraints/indexes/timestamps; profile provisioning; RLS policies; private evidence bucket policy; transactional/idempotent RPC skeletons; representative seed fixtures; generate TypeScript types. Follow expand/migrate/contract for revisions.
+- **Dependencies:** M01 is complete. Cancellation semantics, agreement confirmation, and evidence-retention duration remain unresolved. The eight-category list is provisional and encoded with a named `CHECK` constraint so a later allowlist change is a backward-compatible migration.
+- **Scope/tasks:** initialize local Supabase config; write check-constrained tables for profiles, preferences, gigs, applications, assignments, milestones, submissions, activity events, and reports; add constraints/indexes/timestamps; profile provisioning; RLS policies; private evidence bucket policy; representative seed fixtures; generate TypeScript types. Actual transactional/idempotent workflow RPCs are deferred to the milestones that implement those workflows; until then, direct workflow mutations remain fail-closed rather than being represented by no-op functions. Follow expand/migrate/contract for revisions.
 - **Likely files:** `supabase/config.toml`, `supabase/migrations/*.sql`, `supabase/seed.sql`, `supabase/tests/**/*.sql`, `src/types/database.generated.ts`, `docs/DATABASE_SCHEMA.md`, `docs/SECURITY_AND_RLS.md`, relevant ADRs.
-- **Credentials/config:** local Supabase uses local credentials; linking the hosted free project requires operator authentication/project reference outside Git. Never place DB password or privileged key in chat/committed files.
-- **Verification:** project scripts for `db:start`, `db:reset`, `db:lint`, `db:test`, and `db:types:check`; tests impersonate anonymous, user A, user B, and owner roles. Expected: clean reset, no lint errors, cross-user reads/writes denied, generated types unchanged after regeneration.
+- **Credentials/config:** Supabase CLI `2.121.0` runs locally through Docker on isolated ports `55320`-`55329` plus inspector `5583`. `.env.local` must remain ignored and valid dotenv. Hosted linking/apply, billing, and payment methods are outside M02.
+- **Verification:** project scripts are `db:start`, `db:stop`, `db:reset`, `db:lint`, `db:test`, `db:test:performance`, `db:types`, and `db:types:check`. The verified baseline is a clean reset, 5 files / 50 functional pgTAP tests, 5 performance assertions over 10,000 gigs and 50,000 applications, clean lint, and current generated types. Real JWT HTTP-path integration is deferred to M03.
 - **Acceptance / DoD:** fresh local stack reaches current schema solely through migrations; constraints encode one worker/assignment and legal relationships; every exposed table has enabled/tested RLS; private bucket policy is tested; docs/diagram match migrations; no destructive hosted migration is applied in this milestone without separate approval.
 - **Branch / commits:** `feat/database-schema`; `feat(db): add marketplace schema migrations`, `feat(security): enforce row level policies`, `test(db): verify tenant and role isolation`.
 - **Issue / PR:** M02 issue links schema/RLS matrix and open product decisions. PR includes migration plan, test principals/results, data-loss/security review, and hosted-apply status.
@@ -308,6 +308,6 @@ Before changing any row to `COMPLETED`:
 - [ ] `docs/SESSION_HANDOFF.md`, affected architecture docs/ADRs, and this status table are updated on `main`.
 - [ ] Next issue is selected, but its branch has not absorbed unrelated work.
 
-## Current blockers and exact next milestone
+## Current milestone and blockers
 
-M01 is complete, including installation and launch on an authorized Infinix X6840 running Android API 36. The screenshot and command evidence are attached to closed issue #2 and merged PR #17. M02 is the next approved milestone and must start on a fresh branch from `main`.
+M01 is complete and merged. M02 is in progress on `feat/database-schema`; reset, 50 functional assertions, 5 performance assertions, database lint, and generated-type drift are verified locally. Focused review and milestone closeout remain before merge. The product decisions for cancellation, two-party agreement confirmation, and evidence retention remain unresolved and must stay out of executable workflow policy until approved.

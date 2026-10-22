@@ -2,7 +2,7 @@
 
 ## Status and security model
 
-This is the proposed authorization contract for M02-M14. It is not deployed or tested yet. Supabase Auth establishes identity; PostgreSQL Row-Level Security (RLS) and narrowly granted transactional functions establish authority. Hiding controls in the app is never an authorization check.
+M02 is implementing the local authorization foundation for this M02-M14 contract. It is not hosted or deployed. Local migrations enable and force RLS, narrow grants, protect the private evidence bucket, and keep unimplemented workflow writes fail-closed. The latest verified run covered 5 functional pgTAP files / 50 passing tests, 5 performance assertions, clean database lint, and current generated types. Real JWT HTTP integration remains deferred to M03. Supabase Auth establishes identity; PostgreSQL RLS and narrowly granted transactional functions establish authority. Hiding controls in the app is never an authorization check.
 
 Primary references: [Supabase RLS](https://supabase.com/docs/guides/database/postgres/row-level-security), [database function security](https://supabase.com/docs/guides/database/functions), [Storage access control](https://supabase.com/docs/guides/storage/security/access-control), and [Securing Edge Functions](https://supabase.com/docs/guides/functions/auth).
 
@@ -32,20 +32,20 @@ RLS does not replace SQL privileges. Migrations should:
 
 `own` means the relevant identity equals `auth.uid()`. `participant` means the current user is the assignment's `employer_id` or `worker_id`. All subqueries use indexed foreign keys.
 
-| Resource | Read | Insert | Update | Delete |
-|---|---|---|---|---|
-| `profiles` | authenticated users may read safe profile-card columns; no email/provider data is stored | trigger only | own `display_name`, `avatar_path`, `bio`, `preferred_mode`, `home_area`, onboarding fields through validated RPC/update grant | none from client |
-| `worker_preferences` | own | own `profile_id = auth.uid()` | own; identity immutable | own before an active assignment, otherwise retain/update |
-| `gigs` | published; or owner; or user with application/assignment | own employer, `status = draft`, onboarding complete | owner while current and new state are `draft`; workflow changes via RPC | owner only when draft and no application/assignment |
-| `gig_private_locations` | gig owner; or confirmed non-terminal assignment worker | gig owner while gig draft | gig owner while gig draft | gig owner while gig draft |
-| `applications` | own worker; or employer owning parent gig | RPC only | RPC only | none |
-| `assignments` | participant | RPC only | RPC only | none |
-| `milestones` | assignment participant | selection/agreement RPC only | workflow RPC only | none |
-| `submissions` | assignment participant | RPC only | review RPC only | none |
-| `submission_files` | assignment participant | finalization RPC only | none | cleanup service only |
-| `activity_events` | own recipient | trusted RPC/server only | `mark_activity_read` RPC only | none in MVP |
-| `reports` | own reporter; trusted moderator/server | `create_report` RPC only | trusted moderator/server only | none |
-| `ai_request_log` | no direct client access | reservation RPC/server | finalization RPC/server | cleanup service only |
+| Resource                | Read                                                                                     | Insert                                              | Update                                                                                                                        | Delete                                                   |
+| ----------------------- | ---------------------------------------------------------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| `profiles`              | authenticated users may read safe profile-card columns; no email/provider data is stored | trigger only                                        | own `display_name`, `avatar_path`, `bio`, `preferred_mode`, `home_area`; onboarding completion through a validated RPC only   | none from client                                         |
+| `worker_preferences`    | own                                                                                      | own `profile_id = auth.uid()`                       | own; identity immutable                                                                                                       | own before an active assignment, otherwise retain/update |
+| `gigs`                  | published; or owner; or user with application/assignment                                 | own employer, `status = draft`, onboarding complete | owner while current and new state are `draft`; workflow changes via RPC                                                       | owner only when draft and no application/assignment      |
+| `gig_private_locations` | gig owner; or confirmed non-terminal assignment worker                                   | gig owner while gig draft                           | gig owner while gig draft                                                                                                     | gig owner while gig draft                                |
+| `applications`          | own worker; or employer owning parent gig                                                | RPC only                                            | RPC only                                                                                                                      | none                                                     |
+| `assignments`           | participant                                                                              | RPC only                                            | RPC only                                                                                                                      | none                                                     |
+| `milestones`            | assignment participant                                                                   | selection/agreement RPC only                        | workflow RPC only                                                                                                             | none                                                     |
+| `submissions`           | assignment participant                                                                   | RPC only                                            | review RPC only                                                                                                               | none                                                     |
+| `submission_files`      | assignment participant                                                                   | finalization RPC only                               | none                                                                                                                          | cleanup service only                                     |
+| `activity_events`       | own recipient                                                                            | trusted RPC/server only                             | `mark_activity_read` RPC only                                                                                                 | none in MVP                                              |
+| `reports`               | own reporter; trusted moderator/server                                                   | `create_report` RPC only                            | trusted moderator/server only                                                                                                 | none                                                     |
+| `ai_request_log`        | no direct client access                                                                  | reservation RPC/server                              | finalization RPC/server                                                                                                       | cleanup service only                                     |
 
 The profile read policy is safe only while `profiles` contains public-card fields. Adding phone, email, precise address, birth date, verification data, or moderation flags requires a private table and a migration/RLS review; never append such columns casually.
 
@@ -82,7 +82,7 @@ Use `(select auth.uid())` in policies so PostgreSQL can init-plan the value, fol
 
 ## Secure transactional functions
 
-Functions named in `DATABASE_SCHEMA.md` are the only public workflow mutation boundary. Each function must:
+Functions named in `DATABASE_SCHEMA.md` are the planned public workflow mutation boundary. M02 deliberately does not create no-op RPCs: actual transactional implementations are deferred to their workflow milestones, while direct mutation grants/policies remain absent so those paths fail closed. Each future function must:
 
 - accept business inputs and an idempotency UUID, never an acting user ID;
 - reject a null `auth.uid()` and incomplete onboarding;
@@ -129,12 +129,12 @@ The filename is generated by the app from random data, never from user text. The
 
 Storage policies on `storage.objects` must enforce:
 
-| Operation | Rule |
-|---|---|
-| Insert | bucket matches; first folder equals `auth.uid()`; assignment worker equals caller; submission belongs to assignment/caller; object extension and declared MIME are allowlisted |
-| Select/download | caller is assignment worker or employer via the referenced `submission_files` row |
-| Update | denied; evidence is immutable |
-| Delete | denied to ordinary clients; cleanup service handles abandoned/rejected objects |
+| Operation       | Rule                                                                                                                                                                           |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Insert          | bucket matches; first folder equals `auth.uid()`; assignment worker equals caller; submission belongs to assignment/caller; object extension and declared MIME are allowlisted |
+| Select/download | caller is assignment worker or employer via the referenced `submission_files` row                                                                                              |
+| Update          | denied; evidence is immutable                                                                                                                                                  |
+| Delete          | denied to ordinary clients; cleanup service handles abandoned/rejected objects                                                                                                 |
 
 Client-declared MIME and size are advisory. Before finalizing `submission_files`, trusted code verifies actual object metadata and enforces the proposed P0 limit of 5 MiB per file, at most 5 files per submission, and JPEG/PNG/WebP only. Strip EXIF/location metadata on-device when supported or during a later trusted processing step; until verified, warn users not to upload images containing sensitive location information. Never render uploaded content as HTML.
 
@@ -167,14 +167,14 @@ Use strict Zod schemas in the TypeScript client and Edge Functions, derived from
 
 Rate limits are product controls in addition to platform quotas. Limits are proposed starting values and must be configurable without an app release.
 
-| Action | Proposed limit | Enforcement |
-|---|---:|---|
-| Apply | 10/hour and 30/day/user | RPC count plus unique active application and idempotency key |
-| Publish gig | 10/day/user | RPC count on owned gigs |
-| Report | 5/hour and 10/day/user | RPC count plus idempotency key |
-| AI brief | 5/10 minutes and 20/day/user | atomic `ai_request_log` reservation before provider call |
-| Submission attempts | 10/hour/assignment | RPC count; revisions still bounded |
-| Signed evidence URL | 30/10 minutes/user | Edge Function or RPC; short expiry |
+| Action              |               Proposed limit | Enforcement                                                  |
+| ------------------- | ---------------------------: | ------------------------------------------------------------ |
+| Apply               |      10/hour and 30/day/user | RPC count plus unique active application and idempotency key |
+| Publish gig         |                  10/day/user | RPC count on owned gigs                                      |
+| Report              |       5/hour and 10/day/user | RPC count plus idempotency key                               |
+| AI brief            | 5/10 minutes and 20/day/user | atomic `ai_request_log` reservation before provider call     |
+| Submission attempts |           10/hour/assignment | RPC count; revisions still bounded                           |
+| Signed evidence URL |           30/10 minutes/user | Edge Function or RPC; short expiry                           |
 
 Use database time, not a client clock. Reservation must be atomic so parallel requests cannot all pass a count check. Hosted-provider quotas are a second hard ceiling; exhaustion returns `429`/fallback and never upgrades a plan. The local inference gateway adds per-token-bucket limits by user and source device.
 
@@ -189,7 +189,7 @@ Abuse/reporting controls:
 
 ## Authentication and Edge Function boundary
 
-Every restricted Edge Function requires `Authorization: Bearer <Supabase access token>`, validates it with the project's Auth service/JWT verification path, and derives the caller from the result. Do not trust a decoded-but-unverified JWT. See `AUTHENTICATION.md` for session details.
+Every restricted Edge Function requires `Authorization: Bearer <Supabase access token>`, validates it with the project's Auth service/JWT verification path, and derives the caller from the result. Do not trust a decoded-but-unverified JWT. M02's SQL tests exercise database roles/claims directly; real JWTs through the local HTTP/Auth path are deferred to M03. See `AUTHENTICATION.md` for session details.
 
 Provider secrets live only in Supabase Function secrets or the local gateway environment. They are never `EXPO_PUBLIC_*`, database rows, prompt text, issue content, or logs. CORS is not an authentication control. Browser-origin allowlists may be added for web, but native clients still require JWTs.
 
@@ -197,7 +197,7 @@ The local Ollama API has no authentication by default ([Ollama authentication](h
 
 ## Security verification plan
 
-Run repository integration tests against a disposable local Supabase/PostgreSQL instance. Seed at least `employer_a`, `employer_b`, `worker_a`, `worker_b`, and an unauthenticated client. Use the publishable/anonymous path plus real user JWTs for assertions; use elevated setup only to create fixtures.
+Run repository integration tests against a disposable local Supabase/PostgreSQL instance. The current verified M02 baseline is 5 functional pgTAP files / 50 tests plus 5 separately invoked query-plan assertions after a clean reset. Tests use database role/claim impersonation for local policy proof; M03 must add publishable/anonymous HTTP-path assertions with real user JWTs. Elevated setup is allowed only to create fixtures.
 
 ### Required positive tests
 
@@ -234,4 +234,4 @@ Run repository integration tests against a disposable local Supabase/PostgreSQL 
 - Service-role/provider secrets are rotated if ever exposed and are absent from Git history.
 - Abuse limits return deterministic `429` responses and remain fail-closed under concurrency.
 
-No part of this document claims those tests currently pass; they are acceptance gates for the corresponding milestones.
+Only the explicitly recorded M02 pgTAP baseline is currently claimed. The remaining items are acceptance gates for their corresponding milestones.
