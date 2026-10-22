@@ -4,7 +4,7 @@ Do Well is an Android productivity application for the UMAK IT Skills Olympics 2
 
 ## Status
 
-Phase 3 architecture and development planning are in progress. The Expo application has not been initialized and no product feature is represented as implemented.
+Phase 3 architecture is approved and merged. M01 initialized the Expo SDK 58 application, added an accessible setup smoke screen, and proved local Android debug builds on both an Android emulator and an authorized physical phone. M01 is verified and ready to merge; no product feature is represented as implemented.
 
 Confirmed foundations:
 
@@ -20,11 +20,57 @@ Only `.env.example` is version-controlled. Local environment files, OAuth client
 
 ## Getting started
 
-Application setup commands will be added in Milestone M01 after the Phase 3 architecture is approved. Until then:
+Prerequisites: Node `22.23.2`, npm `10.9.9`, JDK 17, Android SDK Platform 37/Build-Tools 37, CMake `3.31.6`, and either an existing Android Virtual Device (AVD) or an authorized USB-connected Android phone.
 
-1. Read `AGENTS.md`.
-2. Review the open Phase 3 architecture pull request.
-3. Do not initialize or install application dependencies on `main`.
+```powershell
+nvm use 22.23.2
+npm ci
+npm run test:run
+npm run lint
+npm run android
+```
+
+The Android command generates ignored native files, builds the development client locally, and installs it on the connected device. See [`docs/SETUP_GUIDE.md`](docs/SETUP_GUIDE.md) for the Windows toolchain, device authorization, and verification details.
+
+## Run the Android development build
+
+`npm run android` starts Metro, builds the debug development client, installs it, and launches it. If an emulator and phone are connected at the same time, first run `adb devices -l`, then pass the intended adb serial to Expo with `--device`; use that same serial with every `adb -s` command.
+
+### Existing emulator/AVD
+
+Start the AVD from Android Studio's Device Manager, wait for Android to finish booting, then run:
+
+```powershell
+adb devices -l
+$device = "emulator-5554" # Replace with the listed emulator serial.
+npm run android -- --device $device
+```
+
+### USB-connected physical device
+
+Enable Developer options and USB debugging on the phone, connect it with a data-capable cable, unlock it, and accept the RSA authorization prompt. `adb devices -l` must show the phone as `device`; if it says `unauthorized`, accept the prompt and run the command again.
+
+```powershell
+adb devices -l
+$device = "YOUR_PHONE_SERIAL" # Replace with the listed physical-device serial.
+adb -s $device reverse tcp:8081 tcp:8081
+npm run android -- --device $device
+```
+
+The reverse rule lets the USB device reach Metro on the Windows host. Reapply it after reconnecting the phone or restarting adb.
+
+### Install the existing debug APK
+
+If `android\app\build\outputs\apk\debug\app-debug.apk` already exists, install it without rebuilding, point the selected target at Metro, and start Metro in development-client/localhost mode:
+
+```powershell
+$device = "YOUR_ADB_SERIAL"
+adb -s $device install -r .\android\app\build\outputs\apk\debug\app-debug.apk
+adb -s $device reverse tcp:8081 tcp:8081
+npm run start -- --dev-client --localhost
+```
+
+Open **Do Well** on the selected target. If the Expo development launcher appears first, select the local **Do Well** server. A successful smoke launch shows **Do Well** and **Development setup ready**. The APK is generated and ignored; a clean clone must build it with `npm run android -- --device $device` first.
 
 ## Documentation
 
@@ -34,4 +80,4 @@ The durable product, architecture, security, setup, workflow, roadmap, and sessi
 2. [`docs/SESSION_HANDOFF.md`](docs/SESSION_HANDOFF.md) for verified current state.
 3. [`docs/IMPLEMENTATION_ROADMAP.md`](docs/IMPLEMENTATION_ROADMAP.md) for M00-M14 dependencies and acceptance criteria.
 
-The Phase 3 plan is under review on `docs/phase3-architecture`. Do not begin M01 or merge the documentation pull request until the project owner approves the proposed ADRs and roadmap.
+M01 work is on `chore/expo-initialization`. Its physical-device evidence is recorded in the repository; do not start M02 until the M01 PR is approved and merged.

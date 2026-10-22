@@ -6,7 +6,7 @@
 
 **Architecture:** Keep the Expo application at the repository root using Continuous Native Generation and Expo Router. Establish only configuration, a neutral smoke screen, test/tooling infrastructure, and a verified physical-device build. Preserve all Phase 3 documents and local secrets.
 
-**Tech Stack:** Node.js 22.23.2, npm 10.9.9 pinned through `packageManager`, Expo SDK 58, React Native 0.88, React 19.3, TypeScript strict, Expo Router, Jest 30 with `jest-expo`, React Native Testing Library 14+, ESLint, Prettier, project-local EAS CLI 25.3.0, JDK 17, Android SDK 37.
+**Tech Stack:** Node.js 22.23.2, npm 10.9.9 pinned through `packageManager`, Expo SDK 58, React Native 0.88, React 19.3, TypeScript strict, Expo Router, Jest 30 with `jest-expo`, React Native Testing Library 14+, ESLint, Prettier, on-demand pinned EAS CLI 25.3.0, JDK 17, Android SDK 37.
 
 ---
 
@@ -190,7 +190,7 @@
 
 1. Before creating any hosted workflow, have the owner verify that the GitHub account has no valid payment method or has an enforced zero-dollar Actions budget with **Stop usage when budget limit is reached**. Record evidence without billing details. If this cannot be verified, do not add a hosted workflow; keep local checks authoritative and mark CI cost-blocked in the issue.
 
-2. Invoke EAS CLI with the pinned project-local version; do not install a global CLI. Configure `development` with `developmentClient: true` and `preview` with internal distribution/APK output. Keep production submission out of scope.
+2. Invoke the exact EAS CLI release with `npx --yes eas-cli@25.3.0`; do not install it globally or as a project dependency, which current Expo Doctor rejects. Configure `development` with `developmentClient: true` and `preview` with internal distribution/APK output. Keep production submission out of scope.
 
 3. Document two paths:
 
