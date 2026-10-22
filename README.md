@@ -4,7 +4,7 @@ Do Well is an Android productivity application for the UMAK IT Skills Olympics 2
 
 ## Status
 
-Phase 3 architecture and M01 are approved and merged. M01 initialized the Expo SDK 58 application, added an accessible setup smoke screen, and proved local Android debug builds on both an Android emulator and an authorized physical phone. No product feature is represented as implemented.
+Phase 3 architecture and M01 are approved and merged. M02 is in progress on `feat/database-schema`: local Supabase migrations now establish the schema, deny-by-default authorization foundation, and private evidence bucket, but the milestone is not complete. No product feature is represented as implemented.
 
 Confirmed foundations:
 
@@ -31,6 +31,24 @@ npm run android
 ```
 
 The Android command generates ignored native files, builds the development client locally, and installs it on the connected device. See [`docs/SETUP_GUIDE.md`](docs/SETUP_GUIDE.md) for the Windows toolchain, device authorization, and verification details.
+
+## Run the local database
+
+Prerequisite: Docker Desktop must be installed and running. The repository pins Supabase CLI `2.121.0`; use the npm scripts rather than a global CLI. The stack is isolated to ports `55320`-`55329` plus Edge Runtime inspector port `5583`.
+
+```powershell
+npm run db:start
+npm run db:reset
+npm run db:test
+npm run db:lint
+npm run db:types:check
+```
+
+Use `npm run db:types` only when intentionally regenerating `src/types/database.generated.ts`, and stop the stack with `npm run db:stop`. M02 is local-only: do not link a hosted Supabase project, apply remote migrations, enable billing, or add a payment method.
+
+Run `npm run db:test:performance` separately when validating the 10,000-gig/50,000-application query plans; the normal database suite stays focused and fast.
+
+`.env.local` remains ignored and must use valid dotenv syntax (`NAME=value`, one assignment per line, with no PowerShell statements). Only client-safe `EXPO_PUBLIC_*` values may be exposed to the app.
 
 ## Run the Android development build
 
@@ -80,4 +98,4 @@ The durable product, architecture, security, setup, workflow, roadmap, and sessi
 2. [`docs/SESSION_HANDOFF.md`](docs/SESSION_HANDOFF.md) for verified current state.
 3. [`docs/IMPLEMENTATION_ROADMAP.md`](docs/IMPLEMENTATION_ROADMAP.md) for M00-M14 dependencies and acceptance criteria.
 
-M01 was merged in [PR #17](https://github.com/DanielHC16/do-well/pull/17), and its physical-device evidence is recorded in the repository. M02 is the next implementation milestone.
+M01 was merged in [PR #17](https://github.com/DanielHC16/do-well/pull/17), and its physical-device evidence is recorded in the repository. M02 is currently being implemented on `feat/database-schema`.

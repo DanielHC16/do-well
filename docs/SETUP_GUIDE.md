@@ -12,7 +12,7 @@ Target baseline, revalidated on 2026-10-22:
 - Expo SDK `58` / React Native `0.88`
 - JDK 17
 - Android SDK Platform 37, Build-Tools 37.0.0, target SDK 36, CMake 3.31.6, Android platform-tools/ADB
-- on-demand pinned `eas-cli@25.3.0` through `npx`; Supabase CLI deferred to its approved milestone
+- on-demand pinned `eas-cli@25.3.0` through `npx`; project-local Supabase CLI `2.121.0`
 
 Expo SDK 58 requires Node 22.13.x or newer and uses Android compile SDK 37/target SDK 36 ([Expo SDK reference](https://docs.expo.dev/versions/v58.0.0/)); the SDK 58 build-properties reference uses Build-Tools 37.0.0 ([Expo BuildProperties](https://docs.expo.dev/versions/latest/sdk/build-properties/)). Expo's SDK 58 Android build image uses Java 17 and Node 22.23.2, which is why this plan pins those versions ([EAS build infrastructure](https://docs.expo.dev/build-reference/infrastructure/)). The SDK 58 template is explicitly selected because the default scaffold may remain on SDK 57 during the transition ([create an Expo project](https://docs.expo.dev/get-started/create-a-project/)).
 
@@ -30,7 +30,7 @@ Expo SDK 58 requires Node 22.13.x or newer and uses Android compile SDK 37/targe
 | Expo app/lockfile            | Expo SDK 58 scaffold and npm lockfile present                                                                  | Ready for local verification                                                                                                                                       |
 | Legacy global Expo CLI       | Previously detected                                                                                            | Do not use it; use project-local `npx expo`                                                                                                                        |
 | EAS CLI / development client | `eas-cli` 25.3.0 pinned in `eas.json` and invoked on demand; Expo resolved `expo-dev-client` 58.0.14           | Ready for local development builds; no EAS project was linked and no cloud build was invoked                                                                       |
-| Supabase CLI                 | Not project-pinned                                                                                             | Add only in the approved Supabase milestone                                                                                                                        |
+| Supabase CLI                 | `2.121.0` in project dev dependencies                                                                          | Ready for the local-only M02 workflow through npm scripts                                                                                                          |
 
 ## 1. Select Node and npm
 
@@ -145,7 +145,7 @@ npx expo --version
 npx --yes eas-cli@25.3.0 --version
 ```
 
-The pinned command reports `eas-cli/25.3.0`, while `eas.json#cli.version` requires the same release. Do not install EAS, Supabase, or Expo CLI globally. Add the Supabase CLI only when its milestone needs it. With EAS CLI kept out of project dependencies, Expo Doctor passes all checks.
+The pinned command reports `eas-cli/25.3.0`, while `eas.json#cli.version` requires the same release. Do not install EAS, Supabase, or Expo CLI globally. M02 pins Supabase CLI `2.121.0` as a project development dependency. With EAS CLI kept out of project dependencies, Expo Doctor passes all checks.
 
 After dependencies are present:
 
@@ -173,6 +173,8 @@ Copy `.env.example` to `.env.local` manually and replace placeholders with only:
 - `EXPO_PUBLIC_SUPABASE_URL`
 - `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 
+`.env.local` must remain valid dotenv: use one `NAME=value` assignment per line, quote values only when dotenv requires it, and do not place PowerShell commands or `$env:` assignments in the file. It remains ignored and must not be committed.
+
 Both are embedded in the APK and therefore public. RLS—not key secrecy—protects user data. Never put a Supabase secret/service-role key, database password, Google OAuth client secret, FCM service-account key, signing key, or AI credential in `EXPO_PUBLIC_*`, the app config, issue, log, screenshot, or Git.
 
 Provider secrets belong in their provider dashboard or approved secret store. Supabase Edge Function local secrets belong in ignored `supabase/functions/.env`; the committed template contains names only. Do not edit or delete the preserved legacy credential files until the owner separately approves cleanup/rotation.
@@ -197,6 +199,22 @@ git diff --check
 
 See `FREE_TIER_AND_COST_POLICY.md` for quotas and stop conditions.
 
+## 8. Run the local Supabase stack (M02)
+
+Docker Desktop must be installed and running. Use the repository scripts so the pinned Supabase CLI `2.121.0` is selected:
+
+```powershell
+npm run db:start
+npm run db:reset
+npm run db:test
+npm run db:lint
+npm run db:types:check
+```
+
+Use `npm run db:types` to intentionally regenerate `src/types/database.generated.ts`, and `npm run db:stop` when finished. The local project uses isolated ports `55320`-`55329` and Edge Runtime inspector port `5583` to avoid the CLI defaults.
+
+M02 is local-only. Do not run `supabase link`, push/apply migrations to a hosted project, enable billing, add a payment method, or substitute hosted verification for the disposable local database. The current verified evidence is a clean reset, 5 functional pgTAP files / 50 passing tests, 5 separately invoked performance assertions over 10,000 gigs and 50,000 applications, clean database lint, and current generated types.
+
 ## Readiness checklist
 
 - [x] `node --version` is exactly the repository pin and satisfies Expo SDK 58.
@@ -211,3 +229,7 @@ See `FREE_TIER_AND_COST_POLICY.md` for quotas and stop conditions.
 - [x] `.env.local` and credential files are ignored and no secret appears in Expo public config.
 - [x] No billing method or paid plan was enabled.
 - [x] Exact commands/results and non-sensitive launch evidence are attached to the M01 issue and PR.
+- [x] Docker-backed local Supabase uses CLI `2.121.0` and isolated ports `55320`-`55329` plus `5583`.
+- [x] M02 database reset passed and the verified functional pgTAP baseline is 5 files / 50 tests.
+- [x] M02 database lint and generated-type drift checks are recorded as passing.
+- [x] No hosted Supabase link/apply or billing action occurred.

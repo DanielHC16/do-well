@@ -9,12 +9,20 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "format": "prettier --write app src tests app.config.ts eas.json expo-env.d.ts eslint.config.js jest.config.js package.json tsconfig.json",
-    "format:check": "prettier --check app src tests app.config.ts eas.json expo-env.d.ts eslint.config.js jest.config.js package.json tsconfig.json",
+    "format": "prettier --write app scripts src tests app.config.ts eas.json expo-env.d.ts eslint.config.js jest.config.js package.json tsconfig.json",
+    "format:check": "prettier --check app scripts src tests app.config.ts eas.json expo-env.d.ts eslint.config.js jest.config.js package.json tsconfig.json",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "test": "jest --watch",
-    "test:run": "jest --runInBand"
+    "test:run": "jest --runInBand",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset --local",
+    "db:lint": "supabase db lint --local --schema public --level warning --fail-on warning",
+    "db:test": "supabase test db --local supabase/tests/010_schema_contract.test.sql supabase/tests/020_profile_provisioning.test.sql supabase/tests/030_rls_and_grants.test.sql supabase/tests/040_storage_policies.test.sql supabase/tests/050_relationship_constraints.test.sql",
+    "db:test:performance": "supabase test db --local supabase/tests/performance/010_query_plans.test.sql",
+    "db:types": "node scripts/database-types.mjs",
+    "db:types:check": "node scripts/database-types.mjs --check"
   },
   "dependencies": {
     "@expo/ui": "~58.0.22",
@@ -52,6 +60,7 @@
     "jest": "~30.5.2",
     "jest-expo": "~58.0.12",
     "prettier": "^3.9.10",
+    "supabase": "2.121.0",
     "typescript": "~6.0.3"
   }
 }
