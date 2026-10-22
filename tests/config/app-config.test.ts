@@ -32,4 +32,15 @@ describe("Expo application configuration", () => {
   it("does not expose secret-shaped configuration fields", () => {
     expect(collectSecretShapedKeys(appConfig)).toEqual([]);
   });
+
+  it("uses a Windows long-path-capable Android CMake toolchain", () => {
+    expect(appConfig.plugins).toContainEqual([
+      "expo-build-properties",
+      {
+        android: {
+          cmakeVersion: "3.31.6",
+        },
+      },
+    ]);
+  });
 });

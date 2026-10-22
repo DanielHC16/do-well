@@ -14,7 +14,17 @@ const appConfig: ExpoConfig = {
   web: {
     output: "static",
   },
-  plugins: ["expo-router"],
+  plugins: [
+    "expo-router",
+    [
+      "expo-build-properties",
+      {
+        android: {
+          cmakeVersion: "3.31.6",
+        },
+      },
+    ],
+  ],
   experiments: {
     typedRoutes: true,
   },
