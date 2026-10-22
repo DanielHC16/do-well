@@ -5,8 +5,8 @@
 - **Last verified:** 2026-10-23 (Asia/Manila)
 - **Completed milestones:** M01 — Expo initialization and Android development proof; M02 — Supabase schema and authorization foundation
 - **Current milestone:** M03 — Authentication, session restoration, and profile onboarding
-- **Status:** `NOT STARTED`; M02 is complete and merged
-- **Branch:** `main` after the M02 closeout PR
+- **Status:** `IN PROGRESS`; executing Tasks A-C of the approved M03 plan
+- **Branch:** `feat/supabase-auth`
 - **Base/default branch:** `main`
 - **Current implementation merge:** `f7a3317` (`Merge pull request #19`)
 - **Remote:** `https://github.com/DanielHC16/do-well` (`PRIVATE`)
@@ -54,9 +54,9 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 
 ## Exact next steps
 
-1. Read issue #4 and the M03 authentication/onboarding acceptance criteria.
-2. Create the short-lived M03 branch from current `main`.
-3. Add real local Auth HTTP/JWT integration tests before implementing authentication UI and session restoration.
+1. Complete Tasks A-C in `docs/plans/2026-10-23-m03-authentication.md` test-first.
+2. Review the batch's public-config, RPC, and real local Auth/JWT evidence.
+3. Continue with the session model and client gateway only after the batch checkpoint.
 4. Keep hosted configuration changes and credential values out of Git and logs.
 
 ## Suggested continuation commands

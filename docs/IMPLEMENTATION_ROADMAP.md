@@ -57,7 +57,7 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 | M00       | Repository security, architecture documentation, private GitHub setup     | **COMPLETED**   | [#1](https://github.com/DanielHC16/do-well/issues/1)   |
 | M01       | Expo initialization, pinned tooling, CI, Android development build        | **COMPLETED**   | [#2](https://github.com/DanielHC16/do-well/issues/2)   |
 | M02       | Supabase local config, schema foundations, migrations and generated types | **COMPLETED**   | [#3](https://github.com/DanielHC16/do-well/issues/3)   |
-| M03       | Authentication, session restoration, profile onboarding                   | **NOT STARTED** | [#4](https://github.com/DanielHC16/do-well/issues/4)   |
+| M03       | Authentication, session restoration, profile onboarding                   | **IN PROGRESS** | [#4](https://github.com/DanielHC16/do-well/issues/4)   |
 | M04       | Shared shell and worker/employer navigation                               | **NOT STARTED** | [#5](https://github.com/DanielHC16/do-well/issues/5)   |
 | M05       | Gig creation and employer management                                      | **NOT STARTED** | [#6](https://github.com/DanielHC16/do-well/issues/6)   |
 | M06       | Nearby/remote discovery and explainable filtering                         | **NOT STARTED** | [#7](https://github.com/DanielHC16/do-well/issues/7)   |
@@ -117,7 +117,7 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 
 ## M03 — Implement authentication and profile onboarding
 
-**Status:** `NOT STARTED`
+**Status:** `IN PROGRESS` on `feat/supabase-auth`. Tasks A-C establish validated public configuration, server-controlled onboarding RPCs, and real local Auth/PostgREST JWT proof before client session and UI work.
 
 - **Goal:** safely authenticate, restore sessions, and ensure every user has one usable profile.
 - **Dependencies:** M02; approved Android scheme/package; Google OAuth audience/test users and Supabase redirect allowlist configured by an authorized operator.
