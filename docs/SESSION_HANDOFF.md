@@ -11,6 +11,7 @@
 - **Remote:** `https://github.com/DanielHC16/do-well`
 - **Visibility:** `PRIVATE`
 - **Issue:** [#2 — M01 Initialize Expo and prove Android development](https://github.com/DanielHC16/do-well/issues/2)
+- **M01 draft PR:** [#17](https://github.com/DanielHC16/do-well/pull/17); keep draft and unmerged until physical-device evidence is attached
 - **M00 PR:** [#16](https://github.com/DanielHC16/do-well/pull/16), squash-merged
 
 This file records repository evidence, not chat state. Re-run the verification commands before relying on it.
@@ -39,7 +40,7 @@ Branch commits before the final documentation/status commit:
 
 ## Verification evidence
 
-The following passed on 2026-10-22 before branch publication; re-run after any change:
+The following passed on 2026-10-22 before draft PR publication; re-run after any change:
 
 - `npm run format:check`
 - `npm run lint`
