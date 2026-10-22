@@ -62,6 +62,7 @@ No hosted Supabase project was linked at the M02 handoff (`docs/SESSION_HANDOFF.
    ```
 
    Expected red result: module/config parser is missing.
+
 4. Install compatible dependencies:
 
    ```powershell
@@ -99,6 +100,7 @@ No hosted Supabase project was linked at the M02 handoff (`docs/SESSION_HANDOFF.
    ```
 
    Expected green result: clean reset/lint, all functional pgTAP files pass, generated types are current.
+
 8. Checkpoint commit: `feat(profile): add secure onboarding RPCs`.
 
 ## Task C: Prove the real local Auth/JWT HTTP path
@@ -107,7 +109,7 @@ No hosted Supabase project was linked at the M02 handoff (`docs/SESSION_HANDOFF.
 
 - Create: `tests/integration/auth-http.test.ts`
 - Create: `jest.integration.config.js`
-- Create: `scripts/local-supabase-env.mjs`
+- Create: `scripts/local-supabase-env.cjs` (keeps the Node/Jest integration harness outside Expo's ESM fetch polyfill)
 - Modify: `jest.config.js`
 - Modify: `package.json`
 - Modify: `supabase/config.toml`
@@ -127,6 +129,7 @@ No hosted Supabase project was linked at the M02 handoff (`docs/SESSION_HANDOFF.
    ```
 
    Expected green result: Auth, trigger, JWT RLS, repair, completion, isolation, signout, and cleanup all pass.
+
 9. Checkpoint commit: `test(auth): verify local JWT and profile lifecycle`.
 
 ## Task D: Define the session lifecycle before UI
@@ -298,19 +301,19 @@ No hosted Supabase project was linked at the M02 handoff (`docs/SESSION_HANDOFF.
 
 ## Acceptance mapping
 
-| Requirement | Primary proof |
-|---|---|
-| Google browser OAuth works on device | Tasks F, H, J: strict parser tests plus real physical-device completion/cancel/denial/cold-start |
-| Email/password signup, confirmation, sign-in, reset | Tasks C, E, H, J: local Auth HTTP integration, gateway/component tests, hosted mail/device checks |
-| Invalid or malicious callback is rejected | Task F hostile-input table; Task J `uri-scheme` and real-browser negative cases |
-| Valid sessions restore and refresh; revoked sessions expire safely | Tasks D, G provider/reducer tests; Task J restart/refresh/revocation matrix |
-| Profile is created or repaired exactly once | Task B pgTAP idempotency; Task C real Auth/JWT integration |
-| Incomplete users cannot bypass onboarding | Task B server RPC/grant tests; Tasks G/I route tests; existing draft-gig RLS test; Task C JWT proof |
-| Offline restoration has explicit behavior | Tasks D/G reducer/provider tests; Task J device offline test |
-| Logout removes local session and prior-user state without global signout | Tasks E/G unit tests; Tasks C/J integration/device checks |
-| One account keeps one identity across modes | Profile/user ID assertions in Tasks C/I; M04 owns full mode navigation |
-| Secrets and tokens never enter client config/logs/Git/evidence | Tasks A/C/E/H/J constraints; Task L tracked/build scan |
-| Existing authorization/performance remains intact | Task L full pgTAP, query-plan, type-drift, lint/typecheck/unit gates |
+| Requirement                                                              | Primary proof                                                                                       |
+| ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| Google browser OAuth works on device                                     | Tasks F, H, J: strict parser tests plus real physical-device completion/cancel/denial/cold-start    |
+| Email/password signup, confirmation, sign-in, reset                      | Tasks C, E, H, J: local Auth HTTP integration, gateway/component tests, hosted mail/device checks   |
+| Invalid or malicious callback is rejected                                | Task F hostile-input table; Task J `uri-scheme` and real-browser negative cases                     |
+| Valid sessions restore and refresh; revoked sessions expire safely       | Tasks D, G provider/reducer tests; Task J restart/refresh/revocation matrix                         |
+| Profile is created or repaired exactly once                              | Task B pgTAP idempotency; Task C real Auth/JWT integration                                          |
+| Incomplete users cannot bypass onboarding                                | Task B server RPC/grant tests; Tasks G/I route tests; existing draft-gig RLS test; Task C JWT proof |
+| Offline restoration has explicit behavior                                | Tasks D/G reducer/provider tests; Task J device offline test                                        |
+| Logout removes local session and prior-user state without global signout | Tasks E/G unit tests; Tasks C/J integration/device checks                                           |
+| One account keeps one identity across modes                              | Profile/user ID assertions in Tasks C/I; M04 owns full mode navigation                              |
+| Secrets and tokens never enter client config/logs/Git/evidence           | Tasks A/C/E/H/J constraints; Task L tracked/build scan                                              |
+| Existing authorization/performance remains intact                        | Task L full pgTAP, query-plan, type-drift, lint/typecheck/unit gates                                |
 
 ## Rollback paths
 
@@ -319,4 +322,3 @@ No hosted Supabase project was linked at the M02 handoff (`docs/SESSION_HANDOFF.
 - Revoke RPC execute permissions in a forward migration if a privilege flaw is found; do not rewrite applied migration history.
 - Keep users at `restoring` when offline gate state is unknown; never grant readiness optimistically.
 - Do not merge if physical-device OAuth, recovery, or secret scan is incomplete.
-
