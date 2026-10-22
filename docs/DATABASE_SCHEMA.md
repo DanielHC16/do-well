@@ -2,7 +2,7 @@
 
 ## Status and invariants
 
-M02 is implementing this Phase 3 PostgreSQL contract as ordered local Supabase migrations and generated TypeScript types. It is not deployed or linked to a hosted project. The latest verified local evidence is a clean reset, 5 functional pgTAP files / 50 passing tests, a separate 5-assertion performance suite over 10,000 gigs and 50,000 applications, clean database lint, and current generated types.
+M02 implemented this Phase 3 PostgreSQL contract as ordered local Supabase migrations and generated TypeScript types, merged in PR #19. It is not deployed or linked to a hosted project. The latest verified local evidence is a clean reset, 5 functional pgTAP files / 50 passing tests, a separate 5-assertion performance suite over 10,000 gigs and 50,000 applications, clean database lint, and current generated types.
 
 The design preserves these invariants:
 

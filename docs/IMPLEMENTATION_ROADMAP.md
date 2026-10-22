@@ -56,7 +56,7 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 | --------- | ------------------------------------------------------------------------- | --------------- | ------------------------------------------------------ |
 | M00       | Repository security, architecture documentation, private GitHub setup     | **COMPLETED**   | [#1](https://github.com/DanielHC16/do-well/issues/1)   |
 | M01       | Expo initialization, pinned tooling, CI, Android development build        | **COMPLETED**   | [#2](https://github.com/DanielHC16/do-well/issues/2)   |
-| M02       | Supabase local config, schema foundations, migrations and generated types | **IN PROGRESS** | [#3](https://github.com/DanielHC16/do-well/issues/3)   |
+| M02       | Supabase local config, schema foundations, migrations and generated types | **COMPLETED**   | [#3](https://github.com/DanielHC16/do-well/issues/3)   |
 | M03       | Authentication, session restoration, profile onboarding                   | **NOT STARTED** | [#4](https://github.com/DanielHC16/do-well/issues/4)   |
 | M04       | Shared shell and worker/employer navigation                               | **NOT STARTED** | [#5](https://github.com/DanielHC16/do-well/issues/5)   |
 | M05       | Gig creation and employer management                                      | **NOT STARTED** | [#6](https://github.com/DanielHC16/do-well/issues/6)   |
@@ -102,7 +102,7 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 
 ## M02 — Establish Supabase schema and authorization foundation
 
-**Status:** `IN PROGRESS` on `feat/database-schema`. The pinned local CLI, isolated stack, ordered schema/RLS/Storage migrations, seed data, pgTAP tests, performance-plan suite, and generated-type workflow exist. The latest verified evidence is a clean reset, 5 functional pgTAP files / 50 passing tests, a separate 5-assertion performance suite, clean database lint, and current generated types.
+**Status:** `COMPLETED` after review and merge of [PR #19](https://github.com/DanielHC16/do-well/pull/19) on 2026-10-23. The pinned local CLI, isolated stack, ordered schema/RLS/Storage migrations, seed data, pgTAP tests, performance-plan suite, and generated-type workflow are on `main`. The verified evidence is a clean reset, 5 functional pgTAP files / 50 passing tests, a separate 5-assertion performance suite, clean database lint, and current generated types.
 
 - **Goal:** represent the approved domain in repeatable migrations with deny-by-default RLS and local integration tests.
 - **Dependencies:** M01 is complete. Cancellation semantics, agreement confirmation, and evidence-retention duration remain unresolved. The eight-category list is provisional and encoded with a named `CHECK` constraint so a later allowlist change is a backward-compatible migration.
@@ -310,4 +310,4 @@ Before changing any row to `COMPLETED`:
 
 ## Current milestone and blockers
 
-M01 is complete and merged. M02 is in progress on `feat/database-schema`; reset, 50 functional assertions, 5 performance assertions, database lint, and generated-type drift are verified locally. Focused review and milestone closeout remain before merge. The product decisions for cancellation, two-party agreement confirmation, and evidence retention remain unresolved and must stay out of executable workflow policy until approved.
+M01 and M02 are complete and merged. M03 authentication, session restoration, and profile onboarding is the next milestone. The product decisions for cancellation, two-party agreement confirmation, and evidence retention remain unresolved and must stay out of executable workflow policy until approved.
