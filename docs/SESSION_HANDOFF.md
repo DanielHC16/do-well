@@ -3,15 +3,15 @@
 ## Snapshot
 
 - **Last verified:** 2026-10-22 (Asia/Manila)
-- **Active milestone:** M01 — Expo initialization and Android development proof
-- **Status:** `READY TO MERGE`; local APK compilation and emulator/physical-device launch evidence are proven
-- **Branch:** `chore/expo-initialization`
+- **Completed milestone:** M01 — Expo initialization and Android development proof
+- **Status:** `COMPLETED`; local APK compilation and emulator/physical-device launch evidence are proven
+- **Branch:** `main` after merge; use a fresh branch for M02
 - **Base/default branch:** `main`
 - **Architecture baseline:** `85122ea` (`docs(architecture): define Phase 3 system design`)
 - **Remote:** `https://github.com/DanielHC16/do-well`
 - **Visibility:** `PRIVATE`
 - **Issue:** [#2 — M01 Initialize Expo and prove Android development](https://github.com/DanielHC16/do-well/issues/2)
-- **M01 PR:** [#17](https://github.com/DanielHC16/do-well/pull/17); physical-device evidence is attached and the PR is ready for final review/merge
+- **M01 PR:** [#17](https://github.com/DanielHC16/do-well/pull/17), squash-merged as `d073c4b`
 - **M00 PR:** [#16](https://github.com/DanielHC16/do-well/pull/16), squash-merged
 
 This file records repository evidence, not chat state. Re-run the verification commands before relying on it.
@@ -98,7 +98,7 @@ After the final Expo-supported patch updates, `npm audit` reported 48 advisories
 4. Metro bundled 1,376 modules and launched `com.anghulingpullrequest.dowell/.MainActivity`.
 5. The physical-device UI hierarchy contained `Do Well` and `Development setup ready`; [`docs/evidence/m01-physical-device.png`](evidence/m01-physical-device.png) records the non-sensitive screen.
 
-M01 verification is complete. Merge PR #17 after final review, then begin M02 on a fresh branch from updated `main`.
+M01 is complete and merged. Begin M02 on a fresh branch from updated `main`.
 
 ## Known local administration item
 

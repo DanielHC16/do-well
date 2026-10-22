@@ -52,23 +52,23 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 
 ## Status summary
 
-| Milestone | Deliverable                                                               | Status             | Issue                                                  |
-| --------- | ------------------------------------------------------------------------- | ------------------ | ------------------------------------------------------ |
-| M00       | Repository security, architecture documentation, private GitHub setup     | **COMPLETED**      | [#1](https://github.com/DanielHC16/do-well/issues/1)   |
-| M01       | Expo initialization, pinned tooling, CI, Android development build        | **READY TO MERGE** | [#2](https://github.com/DanielHC16/do-well/issues/2)   |
-| M02       | Supabase local config, schema foundations, migrations and generated types | **NOT STARTED**    | [#3](https://github.com/DanielHC16/do-well/issues/3)   |
-| M03       | Authentication, session restoration, profile onboarding                   | **NOT STARTED**    | [#4](https://github.com/DanielHC16/do-well/issues/4)   |
-| M04       | Shared shell and worker/employer navigation                               | **NOT STARTED**    | [#5](https://github.com/DanielHC16/do-well/issues/5)   |
-| M05       | Gig creation and employer management                                      | **NOT STARTED**    | [#6](https://github.com/DanielHC16/do-well/issues/6)   |
-| M06       | Nearby/remote discovery and explainable filtering                         | **NOT STARTED**    | [#7](https://github.com/DanielHC16/do-well/issues/7)   |
-| M07       | Worker applications and employer selection                                | **NOT STARTED**    | [#8](https://github.com/DanielHC16/do-well/issues/8)   |
-| M08       | Agreements, milestones, activity, state transitions                       | **NOT STARTED**    | [#9](https://github.com/DanielHC16/do-well/issues/9)   |
-| M09       | Submission, evidence metadata, revision and approval                      | **NOT STARTED**    | [#10](https://github.com/DanielHC16/do-well/issues/10) |
-| M10       | Zero-cost AI Job Brief Builder feasibility and implementation             | **NOT STARTED**    | [#11](https://github.com/DanielHC16/do-well/issues/11) |
-| M11       | Android foreground location and optional map feasibility                  | **NOT STARTED**    | [#12](https://github.com/DanielHC16/do-well/issues/12) |
-| M12       | Local notifications and image evidence integration                        | **NOT STARTED**    | [#13](https://github.com/DanielHC16/do-well/issues/13) |
-| M13       | Connectivity resilience, cached reads and offline drafts                  | **NOT STARTED**    | [#14](https://github.com/DanielHC16/do-well/issues/14) |
-| M14       | Security verification, end-to-end tests and competition build             | **NOT STARTED**    | [#15](https://github.com/DanielHC16/do-well/issues/15) |
+| Milestone | Deliverable                                                               | Status          | Issue                                                  |
+| --------- | ------------------------------------------------------------------------- | --------------- | ------------------------------------------------------ |
+| M00       | Repository security, architecture documentation, private GitHub setup     | **COMPLETED**   | [#1](https://github.com/DanielHC16/do-well/issues/1)   |
+| M01       | Expo initialization, pinned tooling, CI, Android development build        | **COMPLETED**   | [#2](https://github.com/DanielHC16/do-well/issues/2)   |
+| M02       | Supabase local config, schema foundations, migrations and generated types | **NOT STARTED** | [#3](https://github.com/DanielHC16/do-well/issues/3)   |
+| M03       | Authentication, session restoration, profile onboarding                   | **NOT STARTED** | [#4](https://github.com/DanielHC16/do-well/issues/4)   |
+| M04       | Shared shell and worker/employer navigation                               | **NOT STARTED** | [#5](https://github.com/DanielHC16/do-well/issues/5)   |
+| M05       | Gig creation and employer management                                      | **NOT STARTED** | [#6](https://github.com/DanielHC16/do-well/issues/6)   |
+| M06       | Nearby/remote discovery and explainable filtering                         | **NOT STARTED** | [#7](https://github.com/DanielHC16/do-well/issues/7)   |
+| M07       | Worker applications and employer selection                                | **NOT STARTED** | [#8](https://github.com/DanielHC16/do-well/issues/8)   |
+| M08       | Agreements, milestones, activity, state transitions                       | **NOT STARTED** | [#9](https://github.com/DanielHC16/do-well/issues/9)   |
+| M09       | Submission, evidence metadata, revision and approval                      | **NOT STARTED** | [#10](https://github.com/DanielHC16/do-well/issues/10) |
+| M10       | Zero-cost AI Job Brief Builder feasibility and implementation             | **NOT STARTED** | [#11](https://github.com/DanielHC16/do-well/issues/11) |
+| M11       | Android foreground location and optional map feasibility                  | **NOT STARTED** | [#12](https://github.com/DanielHC16/do-well/issues/12) |
+| M12       | Local notifications and image evidence integration                        | **NOT STARTED** | [#13](https://github.com/DanielHC16/do-well/issues/13) |
+| M13       | Connectivity resilience, cached reads and offline drafts                  | **NOT STARTED** | [#14](https://github.com/DanielHC16/do-well/issues/14) |
+| M14       | Security verification, end-to-end tests and competition build             | **NOT STARTED** | [#15](https://github.com/DanielHC16/do-well/issues/15) |
 
 ## M00 — Secure repository and approve architecture
 
@@ -87,7 +87,7 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 
 ## M01 — Initialize Expo and prove Android development
 
-**Status:** `READY TO MERGE` — scaffold, checks, smoke screen, development-build configuration, local APK compilation, emulator launch, and physical-device installation/launch evidence are verified.
+**Status:** `COMPLETED` — scaffold, checks, smoke screen, development-build configuration, local APK compilation, emulator launch, and physical-device installation/launch evidence are verified; [PR #17](https://github.com/DanielHC16/do-well/pull/17) was approved and merged.
 
 - **Goal:** create the smallest strict TypeScript Expo Router app and run a development build on the target physical Android device.
 - **Dependencies:** M00 approved/merged; competition permits Expo/React Native; target phone model/Android version known; supported Node/JDK/Android SDK matrix verified from official docs.
@@ -310,4 +310,4 @@ Before changing any row to `COMPLETED`:
 
 ## Current blockers and exact next milestone
 
-M01 verification is complete, including installation and launch on an authorized Infinix X6840 running Android API 36. The screenshot and command evidence are attached to issue #2 and the M01 PR. M02 is the next approved milestone after the M01 PR is merged.
+M01 is complete, including installation and launch on an authorized Infinix X6840 running Android API 36. The screenshot and command evidence are attached to closed issue #2 and merged PR #17. M02 is the next approved milestone and must start on a fresh branch from `main`.

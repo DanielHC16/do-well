@@ -4,7 +4,7 @@ Do Well is an Android productivity application for the UMAK IT Skills Olympics 2
 
 ## Status
 
-Phase 3 architecture is approved and merged. M01 initialized the Expo SDK 58 application, added an accessible setup smoke screen, and proved local Android debug builds on both an Android emulator and an authorized physical phone. M01 is verified and ready to merge; no product feature is represented as implemented.
+Phase 3 architecture and M01 are approved and merged. M01 initialized the Expo SDK 58 application, added an accessible setup smoke screen, and proved local Android debug builds on both an Android emulator and an authorized physical phone. No product feature is represented as implemented.
 
 Confirmed foundations:
 
@@ -80,4 +80,4 @@ The durable product, architecture, security, setup, workflow, roadmap, and sessi
 2. [`docs/SESSION_HANDOFF.md`](docs/SESSION_HANDOFF.md) for verified current state.
 3. [`docs/IMPLEMENTATION_ROADMAP.md`](docs/IMPLEMENTATION_ROADMAP.md) for M00-M14 dependencies and acceptance criteria.
 
-M01 work is on `chore/expo-initialization`. Its physical-device evidence is recorded in the repository; do not start M02 until the M01 PR is approved and merged.
+M01 was merged in [PR #17](https://github.com/DanielHC16/do-well/pull/17), and its physical-device evidence is recorded in the repository. M02 is the next implementation milestone.
