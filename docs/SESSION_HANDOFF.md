@@ -5,7 +5,7 @@
 - **Last verified:** 2026-10-23 (Asia/Manila)
 - **Completed milestones:** M01 — Expo initialization and Android development proof; M02 — Supabase schema and authorization foundation
 - **Current milestone:** M03 — Authentication, session restoration, and profile onboarding
-- **Status:** `IN PROGRESS`; executing Tasks A-C of the approved M03 plan
+- **Status:** `IN PROGRESS`; Tasks A-F of the approved M03 plan are implemented and pushed
 - **Branch:** `feat/supabase-auth`
 - **Base/default branch:** `main`
 - **Current implementation merge:** `f7a3317` (`Merge pull request #19`)
@@ -45,6 +45,17 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 - No billing, payment method, cloud build, or paid service was enabled.
 - Local environment and OAuth credential files may be used when required, but their values must never be printed, logged, committed, or exposed through privileged `EXPO_PUBLIC_*` variables.
 
+## M03 implementation checkpoint
+
+- Public Supabase configuration is validated, the React Native client uses PKCE with URL auto-detection disabled, and provider tokens are removed at the persistence boundary.
+- Secure profile repair/completion RPCs and real local Auth/JWT integration coverage are committed.
+- The client auth reducer rejects stale operation/account results and keeps vendor messages outside renderable state.
+- Auth/profile gateways normalize input, validate provider/database output, use local-only sign-out, and convert unexpected boundary failures to stable application errors.
+- OAuth, email-confirmation, and password-recovery callbacks use exact app routes and one typed five-minute pending attempt. Attempts are consumed before code exchange and cannot be replayed.
+- Supabase authorization URLs require the configured exact origin, `/auth/v1/authorize`, Google provider, and the exact application callback.
+- Independent review findings about stale generations and raw gateway failures were fixed in `f8c9101`.
+- Latest client verification: formatting, lint, and strict typecheck pass; Jest passes 12 suites / 76 tests. Earlier Tasks A-C verification also passed 6 pgTAP files / 69 database tests, 5 performance assertions, database lint/type drift, and the local Auth HTTP integration test.
+
 ## Open product decisions
 
 - Approve or revise the provisional eight-category list before M05.
@@ -54,10 +65,10 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 
 ## Exact next steps
 
-1. Complete Tasks A-C in `docs/plans/2026-10-23-m03-authentication.md` test-first.
-2. Review the batch's public-config, RPC, and real local Auth/JWT evidence.
-3. Continue with the session model and client gateway only after the batch checkpoint.
-4. Keep hosted configuration changes and credential values out of Git and logs.
+1. Execute Tasks G-I in `docs/plans/2026-10-23-m03-authentication.md` test-first: root provider/route guards, public auth/recovery UI, and server-backed onboarding.
+2. Preserve the reducer operation generation and typed pending-attempt contracts when wiring the provider and callbacks.
+3. Keep hosted configuration changes and credential values out of Git and logs.
+4. Do not merge PR #22 until the hosted configuration and physical-device M03 acceptance matrix are verified.
 
 ## Suggested continuation commands
 
