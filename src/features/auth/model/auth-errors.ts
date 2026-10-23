@@ -72,6 +72,22 @@ export function createAuthError(code: AuthErrorCode): AuthError {
   return Object.freeze({ code, ...definitions[code] });
 }
 
+export function isAuthErrorCode(value: unknown): value is AuthErrorCode {
+  return typeof value === "string" && value in definitions;
+}
+
+export function toSafeAuthError(error: unknown): AuthError {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    isAuthErrorCode(error.code)
+  ) {
+    return createAuthError(error.code);
+  }
+  return mapAuthError(error);
+}
+
 function readProviderError(error: unknown): ProviderErrorShape {
   return typeof error === "object" && error !== null
     ? (error as ProviderErrorShape)

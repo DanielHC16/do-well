@@ -130,6 +130,81 @@ describe("authReducer", () => {
     });
   });
 
+  it("validates an established route without clearing its profile gate", () => {
+    const ready = {
+      ...initialAuthState,
+      route: "ready" as const,
+      status: "idle" as const,
+      userId: "user-a",
+      profile,
+      operationId: 3,
+    };
+
+    const validating = authReducer(ready, {
+      type: "VALIDATION_STARTED",
+      operationId: 4,
+      userId: "user-a",
+    });
+    expect(validating).toMatchObject({
+      route: "ready",
+      status: "validating",
+      profile,
+    });
+    expect(
+      authReducer(validating, {
+        type: "SESSION_VALIDATED",
+        operationId: 4,
+        userId: "user-a",
+      }),
+    ).toMatchObject({ route: "ready", status: "idle", profile, error: null });
+  });
+
+  it("blocks on an unexpected profile failure instead of routing to onboarding", () => {
+    const loading = authReducer(
+      authReducer(initialAuthState, {
+        type: "RESTORE_STARTED",
+        operationId: 4,
+      }),
+      { type: "USER_VALIDATED", operationId: 4, userId: "user-a" },
+    );
+
+    expect(
+      authReducer(loading, {
+        type: "PROFILE_LOAD_FAILED",
+        operationId: 4,
+        userId: "user-a",
+        errorCode: "AUTH_PROFILE_UNAVAILABLE",
+      }),
+    ).toMatchObject({
+      route: "restoring",
+      status: "idle",
+      userId: "user-a",
+      error: { code: "AUTH_PROFILE_UNAVAILABLE", retryable: true },
+    });
+  });
+
+  it("preserves a stable profile failure code for retry guidance", () => {
+    const loading = {
+      ...initialAuthState,
+      route: "restoring" as const,
+      status: "loadingProfile" as const,
+      userId: "user-a",
+      operationId: 5,
+    };
+
+    expect(
+      authReducer(loading, {
+        type: "PROFILE_LOAD_FAILED",
+        operationId: 5,
+        userId: "user-a",
+        errorCode: "AUTH_RATE_LIMITED",
+      }),
+    ).toMatchObject({
+      route: "restoring",
+      error: { code: "AUTH_RATE_LIMITED", retryable: true },
+    });
+  });
+
   it("clears identity when a token is revoked or sign-out completes", () => {
     const ready = {
       ...initialAuthState,

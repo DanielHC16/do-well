@@ -1,4 +1,4 @@
-import { createAuthError } from "./auth-errors";
+import { createAuthError, type AuthErrorCode } from "./auth-errors";
 import {
   initialAuthState,
   type AuthProfile,
@@ -11,11 +11,19 @@ type AsyncEvent = Readonly<{ operationId: number }>;
 
 export type AuthEvent =
   | ({ type: "RESTORE_STARTED" } & AsyncEvent)
+  | ({ type: "VALIDATION_STARTED"; userId: string } & AsyncEvent)
+  | ({ type: "SESSION_VALIDATED"; userId: string } & AsyncEvent)
+  | ({ type: "VALIDATION_FAILED"; userId: string | null } & AsyncEvent)
   | ({ type: "SESSION_FOUND"; userId: string } & AsyncEvent)
   | ({ type: "SESSION_MISSING" } & AsyncEvent)
   | ({ type: "USER_VALIDATED"; userId: string } & AsyncEvent)
   | ({ type: "PROFILE_LOADED"; profile: AuthProfile } & AsyncEvent)
   | ({ type: "PROFILE_MISSING" } & AsyncEvent)
+  | ({
+      type: "PROFILE_LOAD_FAILED";
+      userId: string;
+      errorCode: AuthErrorCode;
+    } & AsyncEvent)
   | ({ type: "SIGN_IN_STARTED" } & AsyncEvent)
   | ({ type: "SIGN_OUT_STARTED" } & AsyncEvent)
   | ({ type: "SIGNED_OUT" } & AsyncEvent)
@@ -60,6 +68,19 @@ export function authReducer(state: AuthState, event: AuthEvent): AuthState {
         status: "signingIn",
         operationId: event.operationId,
       };
+    case "VALIDATION_STARTED":
+      if (
+        !isNewerOperation(state, event.operationId) ||
+        state.userId !== event.userId
+      ) {
+        return state;
+      }
+      return {
+        ...state,
+        status: "validating",
+        error: null,
+        operationId: event.operationId,
+      };
     case "SIGN_OUT_STARTED":
       if (!isNewerOperation(state, event.operationId)) return state;
       return { ...state, status: "signingOut", operationId: event.operationId };
@@ -80,6 +101,23 @@ export function authReducer(state: AuthState, event: AuthEvent): AuthState {
         userId: event.userId,
         profile: null,
         error: null,
+      };
+    case "SESSION_VALIDATED":
+      if (!isCurrentIdentity(state, event.operationId, event.userId))
+        return state;
+      return { ...state, status: "idle", error: null };
+    case "VALIDATION_FAILED":
+      if (
+        !isCurrentOperation(state, event.operationId) ||
+        state.userId !== event.userId
+      ) {
+        return state;
+      }
+      return {
+        ...state,
+        route: "restoring",
+        status: "idle",
+        error: createAuthError("AUTH_UNAVAILABLE"),
       };
     case "PROFILE_LOADED":
       if (
@@ -105,6 +143,16 @@ export function authReducer(state: AuthState, event: AuthEvent): AuthState {
         status: "idle",
         profile: null,
         error: createAuthError("AUTH_PROFILE_UNAVAILABLE"),
+      };
+    case "PROFILE_LOAD_FAILED":
+      if (!isCurrentIdentity(state, event.operationId, event.userId))
+        return state;
+      return {
+        ...state,
+        route: "restoring",
+        status: "idle",
+        profile: null,
+        error: createAuthError(event.errorCode),
       };
     case "SESSION_MISSING":
     case "SIGNED_OUT":
