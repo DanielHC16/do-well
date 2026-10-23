@@ -40,7 +40,7 @@ export type AuthPort = Readonly<{
   }) => ProviderResult;
   exchangeCodeForSession: (
     code: string,
-    options: { flowId: string },
+    options?: { flowId: string },
   ) => ProviderResult;
   getSession: () => ProviderResult;
   getUser: () => ProviderResult;
@@ -167,8 +167,11 @@ export function createAuthGateway(auth: AuthPort) {
       const data = oauthDataSchema.parse(result.data);
       return { authorizationUrl: data.url, flowId: data.flowId };
     },
-    async exchangeCode(code: string, flowId: string) {
-      const result = await auth.exchangeCodeForSession(code, { flowId });
+    async exchangeCode(code: string, flowId?: string) {
+      const result = await auth.exchangeCodeForSession(
+        code,
+        flowId ? { flowId } : undefined,
+      );
       throwIfProviderFailed(result.error);
       return parseAuthResult(result.data);
     },
