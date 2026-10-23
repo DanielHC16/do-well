@@ -35,23 +35,53 @@ async function resolveProfile(result: Awaited<ProfileResult>) {
   return result.data === null ? null : parseProfile(result.data);
 }
 
+function isStableAuthError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    typeof error.code === "string" &&
+    error.code.startsWith("AUTH_")
+  );
+}
+
+async function withProfileBoundary<T>(operation: () => Promise<T>): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    if (isStableAuthError(error)) throw error;
+    if (error instanceof z.ZodError) {
+      throw createAuthError("AUTH_PROFILE_UNAVAILABLE");
+    }
+    throw mapAuthError(error);
+  }
+}
+
 export function createProfileGateway(port: ProfilePort) {
   return {
     async getOwnProfile(userId: string) {
-      const profile = await resolveProfile(await port.getOwnProfile(userId));
-      if (profile !== null && profile.id !== userId) {
-        throw createAuthError("AUTH_PROFILE_UNAVAILABLE");
-      }
-      return profile;
+      return withProfileBoundary(async () => {
+        const profile = await resolveProfile(await port.getOwnProfile(userId));
+        if (profile !== null && profile.id !== userId) {
+          throw createAuthError("AUTH_PROFILE_UNAVAILABLE");
+        }
+        return profile;
+      });
     },
     async ensureProfile() {
-      return resolveProfile(await port.ensureProfile());
+      return withProfileBoundary(async () =>
+        resolveProfile(await port.ensureProfile()),
+      );
     },
     async completeOnboarding(displayName: string, homeArea: string) {
-      return resolveProfile(
-        await port.completeOnboarding(
-          displayNameSchema.parse(displayName),
-          homeAreaSchema.parse(homeArea),
+      const normalizedDisplayName = displayNameSchema.parse(displayName);
+      const normalizedHomeArea = homeAreaSchema.parse(homeArea);
+      return withProfileBoundary(async () =>
+        resolveProfile(
+          await port.completeOnboarding(
+            normalizedDisplayName,
+            normalizedHomeArea,
+          ),
         ),
       );
     },

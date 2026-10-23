@@ -86,6 +86,7 @@ describe("authReducer", () => {
     expect(
       authReducer(state, {
         type: "ONBOARDING_COMPLETED",
+        operationId: 2,
         profile,
       }),
     ).toMatchObject({ route: "ready", profile });
@@ -117,7 +118,12 @@ describe("authReducer", () => {
       profile,
     };
 
-    expect(authReducer(ready, { type: "NETWORK_UNAVAILABLE" })).toMatchObject({
+    expect(
+      authReducer(
+        { ...ready, operationId: 4 },
+        { type: "NETWORK_UNAVAILABLE", operationId: 4, userId: "user-a" },
+      ),
+    ).toMatchObject({
       route: "ready",
       status: "offline",
       error: { code: "AUTH_NETWORK_UNAVAILABLE" },
@@ -131,7 +137,10 @@ describe("authReducer", () => {
       userId: "user-a",
       profile,
     };
-    const expired = authReducer(ready, { type: "SESSION_REVOKED" });
+    const expired = authReducer(
+      { ...ready, operationId: 4 },
+      { type: "SESSION_REVOKED", operationId: 4, userId: "user-a" },
+    );
     const signingOut = authReducer(ready, {
       type: "SIGN_OUT_STARTED",
       operationId: 5,
@@ -188,5 +197,55 @@ describe("authReducer", () => {
 
     expect(duplicate).toBe(restoring);
     expect(stale).toBe(restoring);
+  });
+
+  it("ignores an older start event after a newer operation begins", () => {
+    const latest = authReducer(initialAuthState, {
+      type: "RESTORE_STARTED",
+      operationId: 8,
+    });
+
+    expect(
+      authReducer(latest, { type: "SIGN_IN_STARTED", operationId: 7 }),
+    ).toBe(latest);
+    expect(
+      authReducer(latest, {
+        type: "ACCOUNT_CHANGED",
+        operationId: 7,
+        userId: "stale-user",
+      }),
+    ).toBe(latest);
+  });
+
+  it("ignores stale failure and completion events after an account switch", () => {
+    const current = {
+      ...initialAuthState,
+      route: "needsOnboarding" as const,
+      status: "idle" as const,
+      userId: "user-b",
+      operationId: 9,
+    };
+
+    expect(
+      authReducer(current, {
+        type: "NETWORK_UNAVAILABLE",
+        operationId: 8,
+        userId: "user-a",
+      }),
+    ).toBe(current);
+    expect(
+      authReducer(current, {
+        type: "SESSION_REVOKED",
+        operationId: 8,
+        userId: "user-a",
+      }),
+    ).toBe(current);
+    expect(
+      authReducer(current, {
+        type: "ONBOARDING_COMPLETED",
+        operationId: 8,
+        profile,
+      }),
+    ).toBe(current);
   });
 });

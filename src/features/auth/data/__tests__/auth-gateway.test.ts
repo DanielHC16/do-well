@@ -40,7 +40,7 @@ function createAuthPort() {
       error: null,
     })),
     getSession: jest.fn(async () => ({ data: { session: null }, error: null })),
-    getUser: jest.fn(async () => ({
+    getUser: jest.fn(async (): Promise<{ data: unknown; error: unknown }> => ({
       data: { user: { id: "user-a", email: "ada@example.com" } },
       error: null,
     })),
@@ -144,5 +144,24 @@ describe("auth gateway", () => {
         "SecurePass123",
       ),
     ).rejects.toMatchObject({ code: "AUTH_INVALID_CREDENTIALS" });
+  });
+
+  it("maps rejected and malformed provider results to stable errors", async () => {
+    const rejectedAuth = createAuthPort();
+    rejectedAuth.getUser.mockRejectedValueOnce(
+      new Error("private transport diagnostics"),
+    );
+    const malformedAuth = createAuthPort();
+    malformedAuth.getUser.mockResolvedValueOnce({
+      data: { user: { unexpected: true } },
+      error: null,
+    });
+
+    await expect(
+      createAuthGateway(rejectedAuth).getUser(),
+    ).rejects.toMatchObject({ code: "AUTH_UNAVAILABLE" });
+    await expect(
+      createAuthGateway(malformedAuth).getUser(),
+    ).rejects.toMatchObject({ code: "AUTH_UNAVAILABLE" });
   });
 });

@@ -20,12 +20,24 @@ export type AuthEvent =
   | ({ type: "SIGN_OUT_STARTED" } & AsyncEvent)
   | ({ type: "SIGNED_OUT" } & AsyncEvent)
   | ({ type: "ACCOUNT_CHANGED"; userId: string } & AsyncEvent)
-  | Readonly<{ type: "ONBOARDING_COMPLETED"; profile: AuthProfile }>
-  | Readonly<{ type: "NETWORK_UNAVAILABLE" }>
-  | Readonly<{ type: "SESSION_REVOKED" }>;
+  | ({ type: "ONBOARDING_COMPLETED"; profile: AuthProfile } & AsyncEvent)
+  | ({ type: "NETWORK_UNAVAILABLE"; userId: string | null } & AsyncEvent)
+  | ({ type: "SESSION_REVOKED"; userId: string } & AsyncEvent);
 
 function isCurrentOperation(state: AuthState, operationId: number): boolean {
   return state.operationId === operationId;
+}
+
+function isNewerOperation(state: AuthState, operationId: number): boolean {
+  return state.operationId === null || operationId > state.operationId;
+}
+
+function isCurrentIdentity(
+  state: AuthState,
+  operationId: number,
+  userId: string | null,
+): boolean {
+  return isCurrentOperation(state, operationId) && state.userId === userId;
 }
 
 function clearedState(error: AuthState["error"] = null): AuthState {
@@ -35,21 +47,21 @@ function clearedState(error: AuthState["error"] = null): AuthState {
 export function authReducer(state: AuthState, event: AuthEvent): AuthState {
   switch (event.type) {
     case "RESTORE_STARTED":
-      if (isCurrentOperation(state, event.operationId)) return state;
+      if (!isNewerOperation(state, event.operationId)) return state;
       return {
         ...initialAuthState,
         status: "restoring",
         operationId: event.operationId,
       };
     case "SIGN_IN_STARTED":
-      if (isCurrentOperation(state, event.operationId)) return state;
+      if (!isNewerOperation(state, event.operationId)) return state;
       return {
         ...clearedState(),
         status: "signingIn",
         operationId: event.operationId,
       };
     case "SIGN_OUT_STARTED":
-      if (isCurrentOperation(state, event.operationId)) return state;
+      if (!isNewerOperation(state, event.operationId)) return state;
       return { ...state, status: "signingOut", operationId: event.operationId };
     case "SESSION_FOUND":
       if (!isCurrentOperation(state, event.operationId)) return state;
@@ -99,12 +111,7 @@ export function authReducer(state: AuthState, event: AuthEvent): AuthState {
       if (!isCurrentOperation(state, event.operationId)) return state;
       return clearedState();
     case "ACCOUNT_CHANGED":
-      if (
-        state.userId === event.userId &&
-        isCurrentOperation(state, event.operationId)
-      ) {
-        return state;
-      }
+      if (!isNewerOperation(state, event.operationId)) return state;
       return {
         ...initialAuthState,
         status: "loadingProfile",
@@ -112,7 +119,12 @@ export function authReducer(state: AuthState, event: AuthEvent): AuthState {
         operationId: event.operationId,
       };
     case "ONBOARDING_COMPLETED":
-      if (state.userId !== event.profile.id) return state;
+      if (
+        !isCurrentIdentity(state, event.operationId, event.profile.id) ||
+        event.profile.onboardingCompletedAt === null
+      ) {
+        return state;
+      }
       return {
         ...state,
         route: "ready",
@@ -121,12 +133,16 @@ export function authReducer(state: AuthState, event: AuthEvent): AuthState {
         error: null,
       };
     case "NETWORK_UNAVAILABLE":
+      if (!isCurrentIdentity(state, event.operationId, event.userId))
+        return state;
       return {
         ...state,
         status: "offline",
         error: createAuthError("AUTH_NETWORK_UNAVAILABLE"),
       };
     case "SESSION_REVOKED":
+      if (!isCurrentIdentity(state, event.operationId, event.userId))
+        return state;
       return clearedState(createAuthError("AUTH_SESSION_EXPIRED"));
   }
 }

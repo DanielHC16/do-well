@@ -13,10 +13,12 @@ const databaseProfile = {
 
 function createProfilePort() {
   return {
-    getOwnProfile: jest.fn(async () => ({
-      data: databaseProfile,
-      error: null,
-    })),
+    getOwnProfile: jest.fn(
+      async (): Promise<{ data: unknown; error: unknown }> => ({
+        data: databaseProfile,
+        error: null,
+      }),
+    ),
     ensureProfile: jest.fn(async () => ({
       data: databaseProfile,
       error: null,
@@ -51,6 +53,18 @@ describe("profile gateway", () => {
 
     await expect(
       createProfileGateway(port).getOwnProfile("user-b"),
+    ).rejects.toMatchObject({ code: "AUTH_PROFILE_UNAVAILABLE" });
+  });
+
+  it("maps malformed profile data to a stable profile error", async () => {
+    const port = createProfilePort();
+    port.getOwnProfile.mockResolvedValueOnce({
+      data: { id: "user-a", display_name: null },
+      error: null,
+    });
+
+    await expect(
+      createProfileGateway(port).getOwnProfile("user-a"),
     ).rejects.toMatchObject({ code: "AUTH_PROFILE_UNAVAILABLE" });
   });
 });

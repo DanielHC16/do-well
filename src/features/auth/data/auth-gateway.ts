@@ -1,7 +1,11 @@
 import { z } from "zod";
 
 import { getSupabaseClient } from "../../../shared/api/supabase";
-import { createAuthError, mapAuthError } from "../model/auth-errors";
+import {
+  createAuthError,
+  mapAuthError,
+  type AuthError,
+} from "../model/auth-errors";
 import {
   displayNameSchema,
   emailSchema,
@@ -82,6 +86,25 @@ function throwIfProviderFailed(error: unknown): void {
   if (error) throw mapAuthError(error);
 }
 
+function isAuthError(error: unknown): error is AuthError {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    typeof error.code === "string" &&
+    error.code.startsWith("AUTH_")
+  );
+}
+
+async function withAuthBoundary<T>(operation: () => Promise<T>): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    if (isAuthError(error)) throw error;
+    throw mapAuthError(error);
+  }
+}
+
 function throwPasswordSignInFailure(error: unknown): void {
   if (!error) return;
   if (
@@ -116,83 +139,106 @@ function parseAuthResult(data: unknown): AuthResult {
 export function createAuthGateway(auth: AuthPort) {
   return {
     async signUp(email: string, password: string, displayName: string) {
-      const result = await auth.signUp({
-        email: emailSchema.parse(email),
-        password: passwordSchema.parse(password),
-        options: {
-          data: { display_name: displayNameSchema.parse(displayName) },
-          emailRedirectTo: AUTH_CALLBACK,
-        },
+      const normalizedEmail = emailSchema.parse(email);
+      const validatedPassword = passwordSchema.parse(password);
+      const normalizedDisplayName = displayNameSchema.parse(displayName);
+      return withAuthBoundary(async () => {
+        const result = await auth.signUp({
+          email: normalizedEmail,
+          password: validatedPassword,
+          options: {
+            data: { display_name: normalizedDisplayName },
+            emailRedirectTo: AUTH_CALLBACK,
+          },
+        });
+        throwIfProviderFailed(result.error);
+        return parseAuthResult(result.data);
       });
-      throwIfProviderFailed(result.error);
-      return parseAuthResult(result.data);
     },
     async signInWithPassword(email: string, password: string) {
-      const result = await auth.signInWithPassword({
-        email: emailSchema.parse(email),
-        password: passwordSchema.parse(password),
+      const normalizedEmail = emailSchema.parse(email);
+      const validatedPassword = passwordSchema.parse(password);
+      return withAuthBoundary(async () => {
+        const result = await auth.signInWithPassword({
+          email: normalizedEmail,
+          password: validatedPassword,
+        });
+        throwPasswordSignInFailure(result.error);
+        return parseAuthResult(result.data);
       });
-      throwPasswordSignInFailure(result.error);
-      return parseAuthResult(result.data);
     },
     async resendConfirmation(email: string) {
-      const result = await auth.resend({
-        type: "signup",
-        email: emailSchema.parse(email),
-        options: { emailRedirectTo: AUTH_CALLBACK },
+      const normalizedEmail = emailSchema.parse(email);
+      return withAuthBoundary(async () => {
+        const result = await auth.resend({
+          type: "signup",
+          email: normalizedEmail,
+          options: { emailRedirectTo: AUTH_CALLBACK },
+        });
+        throwIfProviderFailed(result.error);
       });
-      throwIfProviderFailed(result.error);
     },
     async requestPasswordReset(email: string) {
-      const result = await auth.resetPasswordForEmail(
-        emailSchema.parse(email),
-        {
+      const normalizedEmail = emailSchema.parse(email);
+      return withAuthBoundary(async () => {
+        const result = await auth.resetPasswordForEmail(normalizedEmail, {
           redirectTo: RESET_CALLBACK,
-        },
-      );
-      throwIfProviderFailed(result.error);
+        });
+        throwIfProviderFailed(result.error);
+      });
     },
     async updatePassword(password: string) {
-      const result = await auth.updateUser({
-        password: passwordSchema.parse(password),
+      const validatedPassword = passwordSchema.parse(password);
+      return withAuthBoundary(async () => {
+        const result = await auth.updateUser({ password: validatedPassword });
+        throwIfProviderFailed(result.error);
       });
-      throwIfProviderFailed(result.error);
     },
     async beginGoogleSignIn() {
-      const result = await auth.signInWithOAuth({
-        provider: "google",
-        options: { redirectTo: AUTH_CALLBACK, skipBrowserRedirect: true },
+      return withAuthBoundary(async () => {
+        const result = await auth.signInWithOAuth({
+          provider: "google",
+          options: { redirectTo: AUTH_CALLBACK, skipBrowserRedirect: true },
+        });
+        throwIfProviderFailed(result.error);
+        const data = oauthDataSchema.parse(result.data);
+        return { authorizationUrl: data.url, flowId: data.flowId };
       });
-      throwIfProviderFailed(result.error);
-      const data = oauthDataSchema.parse(result.data);
-      return { authorizationUrl: data.url, flowId: data.flowId };
     },
     async exchangeCode(code: string, flowId?: string) {
-      const result = await auth.exchangeCodeForSession(
-        code,
-        flowId ? { flowId } : undefined,
-      );
-      throwIfProviderFailed(result.error);
-      return parseAuthResult(result.data);
+      return withAuthBoundary(async () => {
+        const result = await auth.exchangeCodeForSession(
+          code,
+          flowId ? { flowId } : undefined,
+        );
+        throwIfProviderFailed(result.error);
+        return parseAuthResult(result.data);
+      });
     },
     async getSession(): Promise<AppSession | null> {
-      const result = await auth.getSession();
-      throwIfProviderFailed(result.error);
-      const session = sessionDataSchema.parse(result.data).session;
-      return session ? mapSession(session) : null;
+      return withAuthBoundary(async () => {
+        const result = await auth.getSession();
+        throwIfProviderFailed(result.error);
+        const session = sessionDataSchema.parse(result.data).session;
+        return session ? mapSession(session) : null;
+      });
     },
     async getUser(): Promise<AppIdentity | null> {
-      const result = await auth.getUser();
-      throwIfProviderFailed(result.error);
-      const user = userDataSchema.parse(result.data).user;
-      return user ? mapIdentity(user) : null;
+      return withAuthBoundary(async () => {
+        const result = await auth.getUser();
+        throwIfProviderFailed(result.error);
+        const user = userDataSchema.parse(result.data).user;
+        return user ? mapIdentity(user) : null;
+      });
     },
     async signOutLocal() {
-      const result = await auth.signOut({ scope: "local" });
-      throwIfProviderFailed(result.error);
+      return withAuthBoundary(async () => {
+        const result = await auth.signOut({ scope: "local" });
+        throwIfProviderFailed(result.error);
+      });
     },
-    startAutoRefresh: () => auth.startAutoRefresh(),
-    stopAutoRefresh: () => auth.stopAutoRefresh(),
+    startAutoRefresh: () => withAuthBoundary(() => auth.startAutoRefresh()),
+    stopAutoRefresh: () => withAuthBoundary(() => auth.stopAutoRefresh()),
   };
 }
 
