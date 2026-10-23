@@ -2,10 +2,10 @@
 
 ## Snapshot
 
-- **Last verified:** 2026-10-23 (Asia/Manila)
+- **Last verified:** 2026-10-24 (Asia/Manila)
 - **Completed milestones:** M01 — Expo initialization and Android development proof; M02 — Supabase schema and authorization foundation
 - **Current milestone:** M03 — Authentication, session restoration, and profile onboarding
-- **Status:** `IN PROGRESS`; Tasks A-F of the approved M03 plan are implemented and pushed
+- **Status:** `IN PROGRESS`; Tasks A-I are implemented except the owner-approved Google-only narrowing of Task H; hosted/physical-device acceptance remains open
 - **Branch:** `feat/supabase-auth`
 - **Base/default branch:** `main`
 - **Current implementation merge:** `f7a3317` (`Merge pull request #19`)
@@ -54,7 +54,11 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 - OAuth, email-confirmation, and password-recovery callbacks use exact app routes and one typed five-minute pending attempt. Attempts are consumed before code exchange and cannot be replayed.
 - Supabase authorization URLs require the configured exact origin, `/auth/v1/authorize`, Google provider, and the exact application callback.
 - Independent review findings about stale generations and raw gateway failures were fixed in `f8c9101`.
-- Latest client verification: formatting, lint, and strict typecheck pass; Jest passes 12 suites / 76 tests. Earlier Tasks A-C verification also passed 6 pgTAP files / 69 database tests, 5 performance assertions, database lint/type drift, and the local Auth HTTP integration test.
+- One root provider now restores and refreshes sessions with operation-generation guards, protects every route group, and keeps a minimal non-authoritative profile-gate snapshot partitioned by user ID.
+- Google browser sign-in has accessible pending/error states, strict authorization/callback validation, one-time attempt consumption, cold-start handling, and foreground callback coalescing. Email/password and recovery UI are intentionally deferred by the owner's Google-only instruction; the gateway contracts remain available.
+- Required onboarding validates bounded inputs, calls only the server RPC, remains retryable on failure, reloads the authoritative profile, and rejects direct protected-route bypass.
+- On the `medium_phone` Android emulator, the development APK built, installed, bundled, and opened the Google browser flow. The external flow reached Google's account re-verification screen; completing that account-owned credential step and the physical-device matrix remain acceptance blockers.
+- Latest verification: formatting, lint, strict typecheck, 21 Jest suites / 118 tests, local Auth/JWT integration, 6 pgTAP files / 69 database tests, database lint/type drift, and all 20 Expo Doctor checks pass. The Android debug build completed successfully.
 
 ## Open product decisions
 
@@ -65,10 +69,10 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 
 ## Exact next steps
 
-1. Execute Tasks G-I in `docs/plans/2026-10-23-m03-authentication.md` test-first: root provider/route guards, public auth/recovery UI, and server-backed onboarding.
-2. Preserve the reducer operation generation and typed pending-attempt contracts when wiring the provider and callbacks.
-3. Keep hosted configuration changes and credential values out of Git and logs.
-4. Do not merge PR #22 until the hosted configuration and physical-device M03 acceptance matrix are verified.
+1. Complete Google account re-verification interactively, then run Google success, cancel, denial, cold-start, restart, revocation, offline, duplicate callback, onboarding, logout, and account-switch cases on the emulator without recording PII or callback URLs.
+2. When physical-device testing resumes, execute the full M03 device matrix in `docs/AUTHENTICATION.md`; decide whether the Google-only scope permanently replaces email/password acceptance before marking M03 complete.
+3. Keep hosted configuration changes and credential values out of Git, commands, logs, screenshots, issues, and PR text.
+4. Keep PR #22 draft and unmerged until its hosted and physical-device acceptance gates are verified or the approved milestone acceptance contract is formally revised.
 
 ## Suggested continuation commands
 
