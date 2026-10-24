@@ -26,6 +26,7 @@ This is the project-wide index and status log. It helps a new session find the g
 | `C-009` | 2026-10-21 | Payments, escrow, chat, ratings, identity verification, background location, and multi-worker gigs are outside P0. | Do not add supporting services/schema/UI without approved scope change. | `docs/PRODUCT_REQUIREMENTS.md` |
 | `C-010` | 2026-10-21 | Final UI/UX comes from Phase 2 teammates. | Architecture work may use replaceable temporary UI; do not invent permanent branding/wireframes. | `docs/PRODUCT_REQUIREMENTS.md` |
 | `C-011` | 2026-10-21 | All substantial post-bootstrap work uses a short-lived branch, linked issue, reviewed PR, and user-approved merge. | M00 safe bootstrap is the sole direct-to-main exception. | `docs/DEVELOPMENT_WORKFLOW.md` |
+| `C-012` | 2026-10-25 | Prioritize an isolated offline Demo Preview before completing hosted authentication. | The demo uses synthetic local data and a visible disclosure; it does not weaken or claim completion of production authentication, authorization, or cloud workflows. | [ADR 0006](adr/0006-explicit-local-demo-runtime.md) |
 
 ## Architecture proposals awaiting approval
 

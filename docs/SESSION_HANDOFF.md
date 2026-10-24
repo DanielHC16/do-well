@@ -4,8 +4,8 @@
 
 - **Last verified:** 2026-10-25 (Asia/Manila)
 - **Completed milestones:** M01 — Expo initialization and Android development proof; M02 — Supabase schema and authorization foundation
-- **Current milestone:** M03 — Authentication, session restoration, and profile onboarding
-- **Status:** `IN PROGRESS`; Tasks A-I are implemented except the owner-approved Google-only narrowing of Task H; hosted/physical-device acceptance remains open
+- **Current milestone:** D01 — Offline Demo Preview
+- **Status:** `PLANNED`; M03A foundation is complete, while M03B hosted/physical-device acceptance is explicitly deferred by the owner's demo-first reprioritization
 - **Branch:** `feat/supabase-auth`
 - **Base/default branch:** `main`
 - **Current implementation merge:** `f7a3317` (`Merge pull request #19`)
@@ -68,12 +68,20 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 - Confirm the assignment/agreement acceptance sequence.
 - Set evidence and abandoned-upload retention periods before M09 cleanup behavior is implemented.
 
+## Demo-first pivot
+
+- The owner approved an isolated offline demo runtime on 2026-10-25 so the core product story can be demonstrated before hosted authentication is accepted.
+- ADR 0006 and `docs/plans/2026-10-25-demo-first-mvp.md` govern D01.
+- D01 uses fictional personas, synthetic local data, validated AsyncStorage persistence, deterministic reset, and a permanent demo disclosure.
+- D01 must not be described as proof of real authentication, cloud synchronization, RLS enforcement, uploads, GPS, payments, identity verification, or AI inference.
+- Production auth remains the default runtime and its deferred acceptance gates remain tracked as M03B.
+
 ## Exact next steps
 
-1. Diagnose why the fresh emulator reports Auth unavailable while the hosted health endpoint is HTTP 200, complete Google account re-verification interactively, then run Google success, cancel, denial, cold-start, restart, revocation, offline, duplicate callback, onboarding, logout, and account-switch cases without recording PII or callback URLs.
-2. When physical-device testing resumes, execute the full M03 device matrix in `docs/AUTHENTICATION.md`; decide whether the Google-only scope permanently replaces email/password acceptance before marking M03 complete.
-3. Keep hosted configuration changes and credential values out of Git, commands, logs, screenshots, issues, and PR text.
-4. Keep PR #22 draft and unmerged until its hosted and physical-device acceptance gates are verified or the approved milestone acceptance contract is formally revised.
+1. Merge PR #22 as M03A only after its revised foundation-only contract, verification, and limitations are reflected in the PR and issue.
+2. Create `feat/demo-preview` from current `main` and execute `docs/plans/2026-10-25-demo-first-mvp.md` test-first.
+3. Prove the full local lifecycle on the Android emulator, including restart persistence and deterministic reset, then document the exact demo script.
+4. Resume M03B after the demo; keep hosted configuration changes and credential values out of Git, commands, logs, screenshots, issues, and PR text.
 
 ## Suggested continuation commands
 

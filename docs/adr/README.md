@@ -26,3 +26,4 @@ ADRs capture significant decisions whose reasoning must survive team and session
 | [0003](0003-zero-cost-nearby-discovery.md) | Proposed | List-first Haversine discovery; map is optional |
 | [0004](0004-zero-cost-ai-inference.md) | Proposed | Local Ollama experiment through an authenticated LAN gateway |
 | [0005](0005-offline-capability-boundaries.md) | Proposed | Cache and drafts first; background sync deferred |
+| [0006](0006-explicit-local-demo-runtime.md) | Accepted | Explicit, isolated local runtime for the competition demo |
