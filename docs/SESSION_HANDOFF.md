@@ -2,7 +2,7 @@
 
 ## Snapshot
 
-- **Last verified:** 2026-10-24 (Asia/Manila)
+- **Last verified:** 2026-10-25 (Asia/Manila)
 - **Completed milestones:** M01 — Expo initialization and Android development proof; M02 — Supabase schema and authorization foundation
 - **Current milestone:** M03 — Authentication, session restoration, and profile onboarding
 - **Status:** `IN PROGRESS`; Tasks A-I are implemented except the owner-approved Google-only narrowing of Task H; hosted/physical-device acceptance remains open
@@ -48,6 +48,7 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 ## M03 implementation checkpoint
 
 - Public Supabase configuration is validated, the React Native client uses PKCE with URL auto-detection disabled, and provider tokens are removed at the persistence boundary.
+- Expo Crypto now supplies the React Native WebCrypto capabilities required by Supabase Auth, and a real-client regression test proves OAuth authorization URLs use `code_challenge_method=s256` rather than the insecure plain fallback.
 - Secure profile repair/completion RPCs and real local Auth/JWT integration coverage are committed.
 - The client auth reducer rejects stale operation/account results and keeps vendor messages outside renderable state.
 - Auth/profile gateways normalize input, validate provider/database output, use local-only sign-out, and convert unexpected boundary failures to stable application errors.
@@ -57,8 +58,8 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 - One root provider now restores and refreshes sessions with operation-generation guards, protects every route group, and keeps a minimal non-authoritative profile-gate snapshot partitioned by user ID.
 - Google browser sign-in has accessible pending/error states, strict authorization/callback validation, one-time attempt consumption, cold-start handling, and foreground callback coalescing. Email/password and recovery UI are intentionally deferred by the owner's Google-only instruction; the gateway contracts remain available.
 - Required onboarding validates bounded inputs, calls only the server RPC, remains retryable on failure, reloads the authoritative profile, and rejects direct protected-route bypass.
-- On the `medium_phone` Android emulator, the development APK built, installed, bundled, and opened the Google browser flow. The external flow reached Google's account re-verification screen; completing that account-owned credential step and the physical-device matrix remain acceptance blockers.
-- Latest verification: formatting, lint, strict typecheck, 21 Jest suites / 118 tests, local Auth/JWT integration, 6 pgTAP files / 69 database tests, database lint/type drift, and all 20 Expo Doctor checks pass. The Android debug build completed successfully.
+- On the `medium_phone` Android emulator, the development APK built, installed, bundled, and previously opened the Google browser flow to Google's account re-verification screen. After adding Expo Crypto, a fresh native build autolinked the module and launched the sign-in UI without the WebCrypto downgrade warning. The configured hosted Auth endpoint was unavailable during the latest retry, so fresh end-to-end OAuth proof, the account-owned credential step, and the physical-device matrix remain acceptance blockers.
+- Latest verification: formatting, lint, strict typecheck, 23 Jest suites / 122 tests, local Auth/JWT integration, 6 pgTAP files / 69 database tests, database lint/type drift, and all 20 Expo Doctor checks pass. The Android debug build completed successfully after the native dependency change.
 
 ## Open product decisions
 
@@ -69,7 +70,7 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 
 ## Exact next steps
 
-1. Complete Google account re-verification interactively, then run Google success, cancel, denial, cold-start, restart, revocation, offline, duplicate callback, onboarding, logout, and account-switch cases on the emulator without recording PII or callback URLs.
+1. Restore/verify hosted Auth availability, complete Google account re-verification interactively, then run Google success, cancel, denial, cold-start, restart, revocation, offline, duplicate callback, onboarding, logout, and account-switch cases on the emulator without recording PII or callback URLs.
 2. When physical-device testing resumes, execute the full M03 device matrix in `docs/AUTHENTICATION.md`; decide whether the Google-only scope permanently replaces email/password acceptance before marking M03 complete.
 3. Keep hosted configuration changes and credential values out of Git, commands, logs, screenshots, issues, and PR text.
 4. Keep PR #22 draft and unmerged until its hosted and physical-device acceptance gates are verified or the approved milestone acceptance contract is formally revised.

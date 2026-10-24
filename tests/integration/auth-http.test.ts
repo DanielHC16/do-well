@@ -242,12 +242,15 @@ describe("local Supabase Auth and JWT profile lifecycle", () => {
       );
       expect(refreshed.user.id).toBe(first.user.id);
 
+      const [header, payload, signature] = refreshed.access_token.split(".");
+      const tamperedSignature = `${signature[0] === "A" ? "B" : "A"}${signature.slice(1)}`;
+
       const tamperedTokenResponse = await fetch(
         `${environment.apiUrl}/rest/v1/profiles?select=id&limit=1`,
         {
           headers: publicHeaders(
             environment,
-            `${refreshed.access_token.slice(0, -1)}x`,
+            `${header}.${payload}.${tamperedSignature}`,
           ),
         },
       );

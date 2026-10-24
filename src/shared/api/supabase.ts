@@ -5,7 +5,10 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "../../types/database.generated";
 import { readPublicEnv, type PublicEnv } from "../config/public-env";
+import { installSupabaseWebCrypto } from "../crypto/supabase-web-crypto";
 import { createAuthStorage } from "../persistence/auth-storage";
+
+installSupabaseWebCrypto();
 
 export function createAppSupabaseClient(
   config: PublicEnv,
