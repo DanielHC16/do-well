@@ -51,6 +51,7 @@ ios/
 
 # Tests, tooling, and logs
 coverage/
+.codex-artifacts/
 .turbo/
 .cache/
 *.log

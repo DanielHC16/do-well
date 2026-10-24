@@ -34,7 +34,8 @@ Pure configuration/docs tasks use a failing validation or reproducible check ins
 
 ```mermaid
 flowchart LR
-    M00 --> M01 --> M02 --> M03 --> M04
+    M00 --> M01 --> M02 --> M03A --> D01
+    M03A --> M03B --> M04
     M04 --> M05 --> M06
     M05 --> M07 --> M08 --> M09
     M05 --> M10
@@ -57,7 +58,9 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 | M00       | Repository security, architecture documentation, private GitHub setup     | **COMPLETED**   | [#1](https://github.com/DanielHC16/do-well/issues/1)   |
 | M01       | Expo initialization, pinned tooling, CI, Android development build        | **COMPLETED**   | [#2](https://github.com/DanielHC16/do-well/issues/2)   |
 | M02       | Supabase local config, schema foundations, migrations and generated types | **COMPLETED**   | [#3](https://github.com/DanielHC16/do-well/issues/3)   |
-| M03       | Authentication, session restoration, profile onboarding                   | **NOT STARTED** | [#4](https://github.com/DanielHC16/do-well/issues/4)   |
+| M03A      | Authentication and profile foundation                                     | **COMPLETED**   | [#4](https://github.com/DanielHC16/do-well/issues/4)   |
+| M03B      | Hosted auth and physical-device acceptance                                | **DEFERRED**    | [#4](https://github.com/DanielHC16/do-well/issues/4)   |
+| D01       | Offline Demo Preview: complete local gig lifecycle                        | **NOT STARTED** | TBD                                                    |
 | M04       | Shared shell and worker/employer navigation                               | **NOT STARTED** | [#5](https://github.com/DanielHC16/do-well/issues/5)   |
 | M05       | Gig creation and employer management                                      | **NOT STARTED** | [#6](https://github.com/DanielHC16/do-well/issues/6)   |
 | M06       | Nearby/remote discovery and explainable filtering                         | **NOT STARTED** | [#7](https://github.com/DanielHC16/do-well/issues/7)   |
@@ -117,7 +120,7 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 
 ## M03 — Implement authentication and profile onboarding
 
-**Status:** `NOT STARTED`
+**Status:** M03A `COMPLETED` on `feat/supabase-auth`; M03B `DEFERRED` by the owner's 2026-10-25 demo-first reprioritization. M03A delivers the tested client/session/onboarding foundation and local Auth/PostgREST JWT proof. M03B retains hosted OAuth, the deferred email/password acceptance decision, emulator connectivity diagnosis, and the physical-device matrix; those production gates are not represented as complete.
 
 - **Goal:** safely authenticate, restore sessions, and ensure every user has one usable profile.
 - **Dependencies:** M02; approved Android scheme/package; Google OAuth audience/test users and Supabase redirect allowlist configured by an authorized operator.
@@ -129,6 +132,18 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 - **Branch / commits:** `feat/supabase-auth`; `test(auth): define session lifecycle behavior`, `feat(auth): add persistent Supabase sessions`, `feat(auth): implement onboarding and OAuth callback`.
 - **Issue / PR:** M03 issue owns provider setup checklist without secrets. PR includes callback test evidence and security review; screenshots omit personal data.
 - **Risks / rollback:** redirect mismatch, OAuth review/testing limits, corrupt session, secret accidentally treated as public. Email/password remains fallback; Google flag can be disabled; clear only app-owned secure keys during recovery.
+
+## D01 — Deliver the offline Demo Preview
+
+**Status:** `NOT STARTED`; prioritized immediately after M03A.
+
+- **Goal:** demonstrate create/publish -> discover/apply -> select -> submit -> approve on an Android emulator in under five minutes without an account or network.
+- **Dependencies:** M01/M02 and accepted ADR 0006. D01 does not depend on M03B and does not complete M04-M09 production acceptance.
+- **Scope/tasks:** explicit `EXPO_PUBLIC_APP_RUNTIME=demo`; isolated local provider/routes; two fictional personas; validated/versioned AsyncStorage state; deterministic reset; persistent demo disclosure; accessible temporary UI; automated lifecycle test; emulator runbook.
+- **Acceptance / DoD:** the full local lifecycle works after a clean install, persists after restart, resets deterministically, rejects duplicate/invalid transitions, and passes format/lint/typecheck/Jest/Android emulator checks. Production remains the default when the runtime variable is unset.
+- **Limitations:** no real authentication, cloud sync, RLS proof, multi-device concurrency, uploads, GPS/maps, payments, identity verification, or AI inference. All data is synthetic and every route says `DEMO MODE - LOCAL DATA`.
+- **Branch / commits:** `feat/demo-preview`; small Conventional Commits following `docs/plans/2026-10-25-demo-first-mvp.md`.
+- **Issue / PR:** one dedicated D01 issue and cohesive PR with exact demo script, verification evidence, cost/security review, limitations, and rollback.
 
 ## M04 — Add authenticated shell and dual-mode navigation
 

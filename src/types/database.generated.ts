@@ -347,7 +347,42 @@ isOneToOne: true
             [_ in never]: never
           }
           Functions: {
-            [_ in never]: never
+            "complete_onboarding":
+{ Args: { "p_display_name": string,"p_home_area": string }; Returns: {
+              "avatar_path": string | null,
+"bio": string | null,
+"created_at": string,
+"display_name": string,
+"home_area": string | null,
+"id": string,
+"onboarding_completed_at": string | null,
+"preferred_mode": string,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "profiles"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"ensure_profile":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "avatar_path": string | null,
+"bio": string | null,
+"created_at": string,
+"display_name": string,
+"home_area": string | null,
+"id": string,
+"onboarding_completed_at": string | null,
+"preferred_mode": string,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "profiles"
+        isOneToOne: true
+        isSetofReturn: false
+      } }
           }
           Enums: {
             [_ in never]: never
