@@ -4,7 +4,7 @@ Do Well is an Android productivity application for the UMAK IT Skills Olympics 2
 
 ## Status
 
-Phase 3 architecture, M01, and M02 are approved and merged. The repository now includes the verified Expo/Android foundation plus local Supabase schema, deny-by-default authorization, and private evidence Storage foundations. M03 authentication and onboarding implementation is next; no end-user product workflow is represented as complete yet.
+Phase 3 architecture, the Expo/Android foundation, database/RLS foundation, and M03A authentication foundation are merged. D01 now prioritizes a functional offline Demo Preview of the core marketplace lifecycle while hosted authentication acceptance remains deferred as M03B.
 
 Confirmed foundations:
 
@@ -44,7 +44,7 @@ npm run db:lint
 npm run db:types:check
 ```
 
-Use `npm run db:types` only when intentionally regenerating `src/types/database.generated.ts`, and stop the stack with `npm run db:stop`. M02 is local-only: do not link a hosted Supabase project, apply remote migrations, enable billing, or add a payment method.
+Use `npm run db:types` only when intentionally regenerating `src/types/database.generated.ts`, and stop the stack with `npm run db:stop`. The reviewed migration chain is also applied to the authorized hosted project. Future hosted changes still require a migration-list/dump/dry-run review; never include seed data unless explicitly approved. Do not enable billing or add a payment method.
 
 Run `npm run db:test:performance` separately when validating the 10,000-gig/50,000-application query plans; the normal database suite stays focused and fast.
 
@@ -53,6 +53,25 @@ Run `npm run db:test:performance` separately when validating the 10,000-gig/50,0
 ## Run the Android development build
 
 `npm run android` starts Metro, builds the debug development client, installs it, and launches it. If an emulator and phone are connected at the same time, first run `adb devices -l`, then pass the intended adb serial to Expo with `--device`; use that same serial with every `adb -s` command.
+
+### Offline Demo Preview
+
+The demo runtime uses fictional personas and local sample data, so it needs no account, network, Docker, or Supabase configuration. It demonstrates the UI and local state transitions only—not real authentication, cloud sync, RLS enforcement, uploads, payments, GPS, identity verification, or AI inference.
+
+```powershell
+nvm use 22.23.2
+$env:EXPO_PUBLIC_APP_RUNTIME="demo"
+npm run android -- --device emulator-5554
+```
+
+Follow the numbered progress card: create a gig as Maya (Employer), switch to Alex (Worker) to apply, switch back to select him, submit as Alex, then approve as Maya. The state persists locally across restarts; **Reset demo** restores the deterministic sample scenario.
+
+Before testing production authentication, remove the session variable and restart Metro so production remains the default:
+
+```powershell
+Remove-Item Env:EXPO_PUBLIC_APP_RUNTIME -ErrorAction SilentlyContinue
+npm run android -- --device emulator-5554
+```
 
 ### Existing emulator/AVD
 

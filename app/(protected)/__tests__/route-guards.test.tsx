@@ -1,7 +1,10 @@
 import { render, screen } from "@testing-library/react-native";
 import { useAuth } from "@/features/auth/context/useAuth";
+import { readAppRuntime } from "@/shared/config/app-runtime";
 
+import DemoLayout from "../../(demo)/_layout";
 import OnboardingLayout from "../../(onboarding)/_layout";
+import PublicLayout from "../../(public)/_layout";
 import ProtectedLayout from "../_layout";
 
 jest.mock("expo-router", () => {
@@ -19,7 +22,12 @@ jest.mock("@/features/auth/context/useAuth", () => ({
   useAuth: jest.fn(),
 }));
 
+jest.mock("@/shared/config/app-runtime", () => ({
+  readAppRuntime: jest.fn(() => "production"),
+}));
+
 const mockedUseAuth = jest.mocked(useAuth);
+const mockedReadAppRuntime = jest.mocked(readAppRuntime);
 const actions = {
   signUp: jest.fn(),
   signInWithPassword: jest.fn(),
@@ -48,6 +56,11 @@ function useRoute(route: "signedOut" | "needsOnboarding" | "ready") {
 }
 
 describe("authentication route guards", () => {
+  beforeEach(() => {
+    mockedReadAppRuntime.mockReturnValue("production");
+    jest.clearAllMocks();
+  });
+
   it("rejects direct protected access until onboarding is complete", async () => {
     useRoute("needsOnboarding");
 
@@ -71,5 +84,29 @@ describe("authentication route guards", () => {
     await render(<OnboardingLayout />);
 
     expect(screen.getByText("../(protected)")).toBeVisible();
+  });
+
+  it.each([
+    ["public", PublicLayout],
+    ["onboarding", OnboardingLayout],
+    ["protected", ProtectedLayout],
+  ])(
+    "redirects the %s group to demo before reading auth context",
+    async (_name, Layout) => {
+      mockedReadAppRuntime.mockReturnValue("demo");
+
+      await render(<Layout />);
+
+      expect(screen.getByText("/(demo)")).toBeVisible();
+      expect(mockedUseAuth).not.toHaveBeenCalled();
+    },
+  );
+
+  it("redirects demo deep links to the production root", async () => {
+    mockedReadAppRuntime.mockReturnValue("production");
+
+    await render(<DemoLayout />);
+
+    expect(screen.getByText("/")).toBeVisible();
   });
 });

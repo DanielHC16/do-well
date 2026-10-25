@@ -3,16 +3,17 @@
 ## Snapshot
 
 - **Last verified:** 2026-10-25 (Asia/Manila)
-- **Completed milestones:** M01 — Expo initialization and Android development proof; M02 — Supabase schema and authorization foundation
+- **Completed milestones:** M01 — Expo initialization and Android development proof; M02 — Supabase schema and authorization foundation; M03A — authentication foundation
 - **Current milestone:** D01 — Offline Demo Preview
-- **Status:** `PLANNED`; M03A foundation is complete, while M03B hosted/physical-device acceptance is explicitly deferred by the owner's demo-first reprioritization
-- **Branch:** `feat/supabase-auth`
+- **Status:** `IN PROGRESS`; isolated runtime, local lifecycle, persistence, and project-specific noticeboard UI are implemented and under closeout review
+- **Branch:** `feat/demo-preview`
 - **Base/default branch:** `main`
-- **Current implementation merge:** `f7a3317` (`Merge pull request #19`)
+- **Current implementation merge:** `368613a` (`Merge pull request #22`)
 - **Remote:** `https://github.com/DanielHC16/do-well` (`PRIVATE`)
-- **Next issue:** [#4 — M03 Implement authentication, session restoration and profile onboarding](https://github.com/DanielHC16/do-well/issues/4)
+- **Next issue:** [#23 — D01 Deliver offline Demo Preview lifecycle](https://github.com/DanielHC16/do-well/issues/23)
 - **M01 PR:** [#17](https://github.com/DanielHC16/do-well/pull/17), squash-merged as `d073c4b`
 - **M02 PR:** [#19](https://github.com/DanielHC16/do-well/pull/19), merge commit `f7a3317`
+- **M03A PR:** [#22](https://github.com/DanielHC16/do-well/pull/22), merged as `368613a`
 
 This file records repository evidence, not chat state. Re-run the verification commands before relying on it.
 
@@ -41,7 +42,9 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 
 - Docker Desktop is required for all database commands.
 - `.env.local` remains ignored and must contain valid dotenv assignments only; do not place PowerShell syntax in it.
-- No hosted Supabase project was linked and no remote migration was applied.
+- The authorized hosted Supabase project is linked locally through ignored CLI state. On 2026-10-25, a schema/data backup and `db push --dry-run` were captured under ignored `.codex-artifacts/`, then all four reviewed migrations were applied without seed data.
+- Remote migration history now matches `20261022000100`, `20261022000200`, `20261022000300`, and `20261023000100`. The hosted public schema was empty before the push, so no pre-existing application object was overwritten.
+- Hosted credentials remain only in ignored local configuration. Rotate the access token and database password after development because they were shared in conversation.
 - No billing, payment method, cloud build, or paid service was enabled.
 - Local environment and OAuth credential files may be used when required, but their values must never be printed, logged, committed, or exposed through privileged `EXPO_PUBLIC_*` variables.
 

@@ -2,8 +2,9 @@ import { Redirect } from "expo-router";
 
 import { AuthBoundaryScreen } from "@/features/auth/context/AuthBoundaryScreen";
 import { useAuth } from "@/features/auth/context/useAuth";
+import { readAppRuntime } from "@/shared/config/app-runtime";
 
-export default function IndexRoute() {
+function ProductionIndexRoute() {
   const { refresh, state } = useAuth();
 
   if (state.route === "restoring") {
@@ -21,4 +22,12 @@ export default function IndexRoute() {
     return <Redirect href="./(onboarding)" />;
   }
   return <Redirect href="./(protected)" />;
+}
+
+export default function IndexRoute() {
+  if (readAppRuntime() === "demo") {
+    return <Redirect href="./(demo)" />;
+  }
+
+  return <ProductionIndexRoute />;
 }
