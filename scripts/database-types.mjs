@@ -13,10 +13,22 @@ const cliPath = join(
   "supabase.js",
 );
 const checkOnly = process.argv.includes("--check");
+const localDbUrl =
+  process.env.SUPABASE_LOCAL_DB_URL ||
+  "postgresql://postgres:postgres@127.0.0.1:55322/postgres";
 
 const result = spawnSync(
   process.execPath,
-  [cliPath, "gen", "types", "typescript", "--local", "--schema", "public"],
+  [
+    cliPath,
+    "gen",
+    "types",
+    "typescript",
+    "--db-url",
+    localDbUrl,
+    "--schema",
+    "public",
+  ],
   {
     cwd: projectRoot,
     encoding: "utf8",
