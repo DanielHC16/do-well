@@ -2,6 +2,7 @@ import { Redirect, Stack } from "expo-router";
 
 import { AuthBoundaryScreen } from "@/features/auth/context/AuthBoundaryScreen";
 import { useAuth } from "@/features/auth/context/useAuth";
+import { ShellModeProvider } from "@/features/shell/context/ShellModeProvider";
 import { readAppRuntime } from "@/shared/config/app-runtime";
 
 function ProductionProtectedLayout() {
@@ -21,7 +22,11 @@ function ProductionProtectedLayout() {
   if (state.route === "needsOnboarding") {
     return <Redirect href="../(onboarding)" />;
   }
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <ShellModeProvider userId={state.userId ?? ""}>
+      <Stack screenOptions={{ headerShown: false }} />
+    </ShellModeProvider>
+  );
 }
 
 export default function ProtectedLayout() {

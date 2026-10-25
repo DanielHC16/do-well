@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react-native";
+import { render, screen, waitFor } from "@testing-library/react-native";
 import { useAuth } from "@/features/auth/context/useAuth";
 import { readAppRuntime } from "@/shared/config/app-runtime";
 
@@ -6,6 +6,12 @@ import DemoLayout from "../../(demo)/_layout";
 import OnboardingLayout from "../../(onboarding)/_layout";
 import PublicLayout from "../../(public)/_layout";
 import ProtectedLayout from "../_layout";
+
+jest.mock("@react-native-async-storage/async-storage", () => ({
+  getItem: jest.fn(async () => "worker"),
+  setItem: jest.fn(async () => undefined),
+  removeItem: jest.fn(async () => undefined),
+}));
 
 jest.mock("expo-router", () => {
   const React = jest.requireActual<typeof import("react")>("react");
@@ -76,6 +82,16 @@ describe("authentication route guards", () => {
     await render(<ProtectedLayout />);
 
     expect(screen.getByText("../(public)/sign-in")).toBeVisible();
+  });
+
+  it("renders protected shell content when authenticated and ready", async () => {
+    useRoute("ready");
+
+    await render(<ProtectedLayout />);
+
+    await waitFor(() => {
+      expect(screen.getByText("guarded route content")).toBeVisible();
+    });
   });
 
   it("leaves onboarding only after the server-backed gate is ready", async () => {
