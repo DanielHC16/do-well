@@ -72,6 +72,12 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 | M12       | Local notifications and image evidence integration                        | **COMPLETED**   | [#13](https://github.com/DanielHC16/do-well/issues/13) |
 | M13       | Connectivity resilience, cached reads and offline drafts                  | **COMPLETED**   | [#14](https://github.com/DanielHC16/do-well/issues/14) |
 | M14       | Security verification, end-to-end tests and competition build             | **COMPLETED**   | [#15](https://github.com/DanielHC16/do-well/issues/15) |
+| M15       | Repository truth, zero-secret CI workflow, and productization reset       | **COMPLETED**   | [#40](https://github.com/DanielHC16/do-well/issues/40) |
+| M16       | Hosted backend parity and Google authentication acceptance                | **IN PROGRESS** | [#41](https://github.com/DanielHC16/do-well/issues/41) |
+| M17       | Settings, workspace preference persistence, and admin capability foundation| **COMPLETED**   | [#42](https://github.com/DanielHC16/do-well/issues/42) |
+| M18       | Functional reporting and moderation console                               | **COMPLETED**   | [#43](https://github.com/DanielHC16/do-well/issues/43) |
+| M19       | Presentation refinement and honest production copy                        | **IN PROGRESS** | [#44](https://github.com/DanielHC16/do-well/issues/44) |
+| M20       | Live demo environment, dual-identity scenario, and release proof           | **IN PROGRESS** | [#45](https://github.com/DanielHC16/do-well/issues/45) |
 
 ## M00 — Secure repository and approve architecture
 
