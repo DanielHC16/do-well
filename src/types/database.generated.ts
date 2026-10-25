@@ -347,7 +347,34 @@ isOneToOne: true
             [_ in never]: never
           }
           Functions: {
-            "complete_onboarding":
+            "close_gig":
+{ Args: { "p_gig_id": string }; Returns: {
+              "application_deadline": string | null,
+"budget_amount": number,
+"category": string,
+"closed_at": string | null,
+"created_at": string,
+"currency": string,
+"description": string,
+"due_at": string | null,
+"employer_id": string,
+"id": string,
+"public_area": string | null,
+"public_latitude": number | null,
+"public_longitude": number | null,
+"published_at": string | null,
+"status": string,
+"title": string,
+"updated_at": string,
+"work_mode": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "gigs"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"complete_onboarding":
 { Args: { "p_display_name": string,"p_home_area": string }; Returns: {
               "avatar_path": string | null,
 "bio": string | null,
@@ -380,6 +407,33 @@ isOneToOne: true
                           SetofOptions: {
         from: "*"
         to: "profiles"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"publish_gig":
+{ Args: { "p_gig_id": string }; Returns: {
+              "application_deadline": string | null,
+"budget_amount": number,
+"category": string,
+"closed_at": string | null,
+"created_at": string,
+"currency": string,
+"description": string,
+"due_at": string | null,
+"employer_id": string,
+"id": string,
+"public_area": string | null,
+"public_latitude": number | null,
+"public_longitude": number | null,
+"published_at": string | null,
+"status": string,
+"title": string,
+"updated_at": string,
+"work_mode": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "gigs"
         isOneToOne: true
         isSetofReturn: false
       } }
