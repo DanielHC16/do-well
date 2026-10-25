@@ -3,14 +3,14 @@
 ## Snapshot
 
 - **Last verified:** 2026-10-25 (Asia/Manila)
-- **Completed milestones:** M01 — Expo initialization and Android development proof; M02 — Supabase schema and authorization foundation; M03A — authentication foundation; D01 — Offline Demo Preview; M04 — Authenticated marketplace shell and dual-mode navigation; M05 — Gig creation and employer management; M06 — Nearby/remote discovery and explainable ranking; M07 — Worker applications and atomic employer selection; M08 — Implement agreements, milestones and activity
-- **Current milestone:** M08 — Implement agreements, milestones and activity
-- **Status:** `COMPLETED` on branch `feat/task-agreements`; ready for PR and merge
-- **Branch:** `feat/task-agreements`
+- **Completed milestones:** M01 — Expo initialization and Android development proof; M02 — Supabase schema and authorization foundation; M03A — authentication foundation; D01 — Offline Demo Preview; M04 — Authenticated marketplace shell and dual-mode navigation; M05 — Gig creation and employer management; M06 — Nearby/remote discovery and explainable ranking; M07 — Worker applications and atomic employer selection; M08 — Implement agreements, milestones and activity; M09 — Add work submission, revision and approval
+- **Current milestone:** M09 — Add work submission, revision and approval
+- **Status:** `COMPLETED` on branch `feat/work-submission`; ready for PR and merge
+- **Branch:** `feat/work-submission`
 - **Base/default branch:** `main`
-- **Current implementation merge:** `5d0dac5` (`Merge pull request #29`)
+- **Current implementation merge:** `9e177e1` (`Merge pull request #30`)
 - **Remote:** `https://github.com/DanielHC16/do-well` (`PRIVATE`)
-- **Next issue:** [#10 — [M09] Add work submission, revision and approval](https://github.com/DanielHC16/do-well/issues/10)
+- **Next issue:** [#11 — [M10] Prove and implement zero-cost AI Job Brief Builder](https://github.com/DanielHC16/do-well/issues/11)
 - **M01 PR:** [#17](https://github.com/DanielHC16/do-well/pull/17), squash-merged as `d073c4b`
 - **M02 PR:** [#19](https://github.com/DanielHC16/do-well/pull/19), merge commit `f7a3317`
 - **M03A PR:** [#22](https://github.com/DanielHC16/do-well/pull/22), merged as `368613a`
@@ -19,6 +19,7 @@
 - **M05 PR:** [#27](https://github.com/DanielHC16/do-well/pull/27), merged as `464d06b`
 - **M06 PR:** [#28](https://github.com/DanielHC16/do-well/pull/28), merged as `a0cd300`
 - **M07 PR:** [#29](https://github.com/DanielHC16/do-well/pull/29), merged as `5d0dac5`
+- **M08 PR:** [#30](https://github.com/DanielHC16/do-well/pull/30), merged as `9e177e1`
 
 This file records repository evidence, not chat state. Re-run the verification commands before relying on it.
 
@@ -123,6 +124,26 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 
 ## M08 completed state
 
+- Merged to `main` via PR #30 (`9e177e1`), closing Issue #9.
+
+## M09 completed state
+
+- Plan document authored at `docs/plans/2026-10-25-m09-work-submission.md`.
+- Database functions and RPCs implemented in `supabase/migrations/20261025000500_submission_and_approval_rpcs.sql`:
+  - `submit_assignment_work(p_assignment_id, p_note, p_milestone_id, p_client_request_id)`: Worker-only submission (`P0031`), checks onboarding (`P0002`), validates active or revision-requested status (`P0032`), validates milestone ownership (`P0033`), checks note length 1..2000 (`P0039`), auto-increments version (v1, v2...), sets `status = 'submitted'`, updates assignment to `submitted`, records `work_submitted` activity event with dedupe key.
+  - `request_submission_revision(p_submission_id, p_review_note)`: Employer-only revision request (`P0036`), checks review note 1..2000 chars (`P0034`), verifies submitted status (`P0037`/`P0038`), updates submission to `revision_requested`, updates assignment to `revision_requested`, and emits `revision_requested` activity event for worker.
+  - `approve_assignment_completion(p_submission_id, p_review_note)`: Employer-only approval (`P0036`), verifies submitted status (`P0037`/`P0038`), updates submission to `approved`, updates assignment to `completed` with `completed_at = now()`, automatically approves unapproved assignment milestones, and emits `assignment_completed` activity event for worker.
+  - `list_assignment_submissions(p_assignment_id)`: Returns ordered submissions by `version desc, created_at desc` for assignment participants.
+  - `get_latest_assignment_submission(p_assignment_id)`: Returns latest submission record for assignment participants.
+  - Revoked all from `public`, `anon`; granted execute strictly to `authenticated`.
+- Database tests in `supabase/tests/110_submission_and_approval_rpcs.test.sql` (11 pgTAP files / 191 tests passing).
+- Domain schemas and gateway implemented in `src/features/submissions/`.
+- UI screens and routes integrated:
+  - `WorkerAssignmentDetailScreen.tsx`: Submission note form, revision instructions banner, under-review state card, completed state banner, and submission history.
+  - `EmployerAssignmentDetailScreen.tsx`: Worker submission review card, "Approve & Complete Work" action, "Request Revision" modal/form with required review note, revision pending card, and completed state banner.
+  - `AuthenticatedActivityScreen.tsx`: Event formatters for `work_submitted`, `revision_requested`, and `assignment_completed`.
+- Quality verification: 53 Jest suites / 279 tests pass, 11 pgTAP files / 191 database tests pass, clean `db:lint`, clean `db:types:check`, clean `format:check`, clean `lint`, clean `typecheck`, and 20/20 `expo-doctor` checks.
+
 - Plan document penned at `docs/plans/2026-10-25-m08-task-agreements.md`.
 - Database functions and RPCs implemented in `supabase/migrations/20261025000400_assignment_and_milestone_rpcs.sql`:
   - `confirm_assignment(p_assignment_id)`: Worker-only agreement acceptance (`P0020`), verifies `proposed` status (`P0021`), sets `status = 'active'`, `worker_confirmed_at = now()`, `started_at = now()`, and emits `assignment_confirmed` activity event.
@@ -159,12 +180,12 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 
 ## Exact next steps
 
-1. Commit M08 changes in small, logical Conventional Commits.
-2. Push branch `feat/task-agreements` to GitHub.
-3. Open Pull Request for M08 linking Issue #9 with full test evidence.
-4. Merge M08 pull request into `main`.
+1. Commit M09 changes in small, logical Conventional Commits.
+2. Push branch `feat/work-submission` to GitHub.
+3. Open Pull Request for M09 linking Issue #10 with full test evidence.
+4. Merge M09 pull request into `main`.
 5. Switch to `main` and pull latest commits.
-6. Begin M09: Add work submission, revision and approval (Issue #10).
+6. Begin M10: Prove and implement zero-cost AI Job Brief Builder (Issue #11).
 
 ## Suggested continuation commands
 
