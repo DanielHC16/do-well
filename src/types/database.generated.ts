@@ -347,7 +347,10 @@ isOneToOne: true
             [_ in never]: never
           }
           Functions: {
-            "close_gig":
+            "calculate_distance_km":
+{ Args: { "p_lat1": number,"p_lat2": number,"p_lon1": number,"p_lon2": number }; Returns: number
+                           },
+"close_gig":
 { Args: { "p_gig_id": string }; Returns: {
               "application_deadline": string | null,
 "budget_amount": number,
@@ -392,6 +395,11 @@ isOneToOne: true
         isOneToOne: true
         isSetofReturn: false
       } },
+"discover_gigs":
+{ Args: { "p_category"?: string,"p_limit"?: number,"p_max_distance_km"?: number,"p_offset"?: number,"p_search_query"?: string,"p_work_mode"?: string,"p_worker_lat"?: number,"p_worker_lng"?: number }; Returns: {
+              "budget_amount": number,"category": string,"created_at": string,"currency": string,"description": string,"distance_km": number,"employer_id": string,"id": string,"public_area": string,"public_latitude": number,"public_longitude": number,"published_at": string,"reasons": (string)[],"status": string,"title": string,"work_mode": string
+            }[]
+                           },
 "ensure_profile":
 { Args: Record<PropertyKey, never>; Returns: {
               "avatar_path": string | null,
