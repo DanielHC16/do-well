@@ -13,6 +13,7 @@ import {
   type AssignmentGateway,
 } from "@/features/assignments/data/assignment-gateway";
 import type { ActivityEventRecord } from "@/features/assignments/model/assignment-schemas";
+import { notificationService } from "@/features/notifications";
 import { setupTheme } from "@/features/setup/setupTheme";
 import { useShellMode } from "@/features/shell/context/useShellMode";
 
@@ -40,6 +41,12 @@ function formatEventTitle(event: ActivityEventRecord): string {
       return "Milestone Step Added";
     case "milestone_started":
       return "Milestone Started";
+    case "work_submitted":
+      return "Work Submitted for Review";
+    case "revision_requested":
+      return "Revision Requested";
+    case "assignment_completed":
+      return "Contract Completed & Approved";
     default:
       return event.eventType.replace(/_/g, " ").toUpperCase();
   }
@@ -80,6 +87,18 @@ function formatEventDescription(event: ActivityEventRecord): string {
       return title
         ? `Worker began work on: "${title}".`
         : "The worker started work on a milestone.";
+    case "work_submitted":
+      return title
+        ? `Worker submitted completed work for "${title}".`
+        : "Completed work was submitted for employer review.";
+    case "revision_requested":
+      return title
+        ? `Revision requested for "${title}".`
+        : "The employer requested adjustments on the work submission.";
+    case "assignment_completed":
+      return title
+        ? `Completion approved for "${title}". Agreement finalized.`
+        : "Work completion approved and contract finalized.";
     default:
       return title ?? "Activity event recorded on your account.";
   }
@@ -93,6 +112,10 @@ export function AuthenticatedActivityScreen({
   const [events, setEvents] = useState<ActivityEventRecord[]>([]);
   const [busy, setBusy] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    notificationService.configureChannels().catch(() => {});
+  }, []);
 
   useEffect(() => {
     let mounted = true;
