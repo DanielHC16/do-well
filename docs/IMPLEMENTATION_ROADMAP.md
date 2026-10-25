@@ -252,7 +252,7 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 
 ## M11 — Add foreground location and decide map experience
 
-**Status:** `NOT STARTED`
+**Status:** `COMPLETED` on branch `feat/android-location`; ready for PR and merge.
 
 - **Goal:** improve nearby discovery with permission-aware foreground location while retaining a no-map/manual fallback.
 - **Dependencies:** M06; physical Android devices; approved map/tile ADR if an interactive map is attempted.
@@ -261,7 +261,7 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 - **Credentials/config:** ideally none. Any tile token must be demonstrably free, restricted, non-privileged, and approved; never use a billing-dependent Google Maps key.
 - **Verification:** permission unit/component tests; lint/typecheck/full suite; physical-device cases for grant, denial, permanent denial, disabled services, stale fix, timeout, and manual location; if map included, verify attribution, offline/error fallback, API-key/public config, and provider policy date.
 - **Acceptance / DoD:** nearby list works with granted location and manual input; precise location is not publicly exposed; denied/unavailable location never blocks remote/list browsing; no paid API/billing dependency; optional map failure degrades to the list.
-- **Branch / commits:** `feat/android-location`; `test(location): define permission and fallback states`, `feat(location): add foreground nearby positioning`; optional `feat(map): add policy-approved MapLibre view` only after ADR.
+- **Branch / commits:** `feat/android-location`; `test(location): define permission and fallback states`, `feat(location): add foreground nearby positioning`.
 - **Issue / PR:** M11 issue owns provider feasibility and permission checklist. PR includes device matrix and map policy/attribution evidence if applicable.
 - **Risks / rollback:** inaccurate position, permission distrust, native-build complexity, tile policy violation. Disable map/location flag and keep manual/list path; remove optional map dependency in a follow-up if rejected.
 

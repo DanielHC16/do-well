@@ -27,6 +27,7 @@ This is the project-wide index and status log. It helps a new session find the g
 | `C-010` | 2026-10-21 | Final UI/UX comes from Phase 2 teammates. | Architecture work may use replaceable temporary UI; do not invent permanent branding/wireframes. | `docs/PRODUCT_REQUIREMENTS.md` |
 | `C-011` | 2026-10-21 | All substantial post-bootstrap work uses a short-lived branch, linked issue, reviewed PR, and user-approved merge. | M00 safe bootstrap is the sole direct-to-main exception. | `docs/DEVELOPMENT_WORKFLOW.md` |
 | `C-012` | 2026-10-25 | Prioritize an isolated offline Demo Preview before completing hosted authentication. | The demo uses synthetic local data and a visible disclosure; it does not weaken or claim completion of production authentication, authorization, or cloud workflows. | [ADR 0006](adr/0006-explicit-local-demo-runtime.md) |
+| `C-013` | 2026-10-25 | Foreground one-shot location with list-first nearby discovery; no interactive map or billing-dependent tile CDNs in MVP. | Verified zero-cost architecture with zero external card risk; GPS fix or curated Metro Manila localities feed SQL Haversine query. | [ADR 0007](adr/0007-foreground-location-and-list-first-discovery.md) |
 
 ## Architecture proposals awaiting approval
 
@@ -45,7 +46,7 @@ This is the project-wide index and status log. It helps a new session find the g
 | ID | Gate | Current recommendation | Pass/fail consequence | Record |
 |---|---|---|---|---|
 | `E-001` | M10 benchmark on actual laptop/network/phone | Pinned local Ollama/open-weight model behind a restricted authenticated LAN gateway; deterministic manual fallback | Adopt only if quality, schema validity, latency, reliability, license, privacy, and offline access pass. Otherwise mark AI delivery blocked and do not mislabel fallback. | [ADR 0004](adr/0004-zero-cost-ai-inference.md) — Proposed |
-| `E-002` | M11 native/provider feasibility | MapLibre only with a documented no-billing, contest-compatible source and correct attribution; otherwise list-only | Map is optional and can be disabled without harming discovery. Public OSM Standard tiles are not a production/offline CDN. | [ADR 0003](adr/0003-zero-cost-nearby-discovery.md) — Proposed |
+| `E-002` | M11 native/provider feasibility | List-first nearby discovery confirmed; MapLibre deferred as optional non-blocking overlay | Map is optional and can be disabled without harming discovery. Public OSM Standard tiles are not a production/offline CDN. | [ADR 0003](adr/0003-zero-cost-nearby-discovery.md), [ADR 0007](adr/0007-foreground-location-and-list-first-discovery.md) — Confirmed |
 | `E-003` | M01 compatibility spike | Target the current approved Expo/JDK/Android combination named in ADR 0001 | If critical native compatibility fails, document and time-box an older supported Expo exception; never silently drift versions. | [ADR 0001](adr/0001-expo-supabase-modular-architecture.md) — Proposed |
 
 ## Open decisions and owners
