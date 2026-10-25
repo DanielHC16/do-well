@@ -30,6 +30,8 @@ Confirm that this change does not enable billing, require a payment method, or i
 
 Remaining issues and intentionally deferred work.
 
+For demo-only changes, explicitly state which data and integrations are simulated and confirm that every demo screen remains visibly disclosed.
+
 ## Next Steps
 
 The next approved milestone or follow-up task.
