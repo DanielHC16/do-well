@@ -26,6 +26,15 @@ import {
   type GigCategory,
   type GigRecord,
 } from "@/features/gigs/model/gig-schemas";
+import {
+  type ActiveLocation,
+  type LocalityOption,
+  LocationBar,
+  type LocationPermissionState,
+  LocationSelectorModal,
+  locationService,
+  type LocationService,
+} from "@/features/location";
 import { setupTheme } from "@/features/setup/setupTheme";
 
 import type { ShellMode } from "../model/shell-mode";
@@ -36,6 +45,7 @@ type AuthenticatedHomeScreenProps = Readonly<{
   profile: AuthProfile;
   gateway?: GigGateway;
   discovery?: DiscoveryGateway;
+  location?: LocationService;
 }>;
 
 const homeContent = {
@@ -62,6 +72,7 @@ const homeContent = {
 export function AuthenticatedHomeScreen({
   discovery = discoveryGateway,
   gateway = gigGateway,
+  location = locationService,
   mode,
   profile,
 }: AuthenticatedHomeScreenProps) {
@@ -81,6 +92,96 @@ export function AuthenticatedHomeScreen({
     useState<DiscoveryCategoryFilter>("all");
   const [selectedMode, setSelectedMode] =
     useState<DiscoveryWorkModeFilter>("all");
+
+  // Worker location & radius state
+  const [activeLocation, setActiveLocation] = useState<ActiveLocation>({
+    source: "none",
+    label: "Not set",
+    latitude: null,
+    longitude: null,
+    accuracy: null,
+    timestamp: null,
+  });
+  const [radiusKm, setRadiusKm] = useState<number | null>(null);
+  const [locationModalVisible, setLocationModalVisible] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [permissionState, setPermissionState] =
+    useState<LocationPermissionState>("undetermined");
+
+  const handleSelectGps = async () => {
+    setIsLocating(true);
+    setLocationError(null);
+    try {
+      const perm = await location.requestPermission();
+      setPermissionState(perm);
+      if (perm !== "granted") {
+        if (perm === "services_disabled") {
+          setLocationError(
+            "Device location services are disabled. Select a locality below.",
+          );
+        } else if (perm === "blocked") {
+          setLocationError(
+            "Location permission is blocked. Select a locality below.",
+          );
+        } else {
+          setLocationError(
+            "Location permission was denied. Select a locality below.",
+          );
+        }
+        return;
+      }
+      const coords = await location.getCurrentPosition();
+      const accuracyLabel = coords.accuracy
+        ? ` (~${Math.round(coords.accuracy)}m)`
+        : "";
+      setActiveLocation({
+        source: "gps",
+        label: `Current location${accuracyLabel}`,
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+        accuracy: coords.accuracy,
+        timestamp: coords.timestamp,
+      });
+      setLocationModalVisible(false);
+    } catch (err: unknown) {
+      setLocationError(
+        err instanceof Error ? err.message : "Failed to acquire location",
+      );
+    } finally {
+      setIsLocating(false);
+    }
+  };
+
+  const handleSelectLocality = (locality: LocalityOption) => {
+    setActiveLocation({
+      source: "locality",
+      label: locality.name,
+      latitude: locality.latitude,
+      longitude: locality.longitude,
+      accuracy: null,
+      timestamp: null,
+    });
+    setLocationError(null);
+    setLocationModalVisible(false);
+  };
+
+  const handleSelectRadius = (newRadius: number | null) => {
+    setRadiusKm(newRadius);
+  };
+
+  const handleClearLocation = () => {
+    setActiveLocation({
+      source: "none",
+      label: "Not set",
+      latitude: null,
+      longitude: null,
+      accuracy: null,
+      timestamp: null,
+    });
+    setRadiusKm(null);
+    setLocationError(null);
+  };
 
   useEffect(() => {
     if (mode !== "employer" || !profile.id) return;
@@ -112,7 +213,10 @@ export function AuthenticatedHomeScreen({
         filters: {
           category: selectedCategory,
           workMode: selectedMode,
+          maxDistanceKm: radiusKm,
         },
+        workerLatitude: activeLocation.latitude,
+        workerLongitude: activeLocation.longitude,
       })
       .then((data) => {
         if (mounted) setDiscoveryGigs(data);
@@ -127,7 +231,15 @@ export function AuthenticatedHomeScreen({
     return () => {
       mounted = false;
     };
-  }, [discovery, mode, selectedCategory, selectedMode]);
+  }, [
+    activeLocation.latitude,
+    activeLocation.longitude,
+    discovery,
+    mode,
+    radiusKm,
+    selectedCategory,
+    selectedMode,
+  ]);
 
   return (
     <MarketplaceShell
@@ -230,6 +342,26 @@ export function AuthenticatedHomeScreen({
 
       {mode === "worker" ? (
         <>
+          <LocationBar
+            activeLocation={activeLocation}
+            onPress={() => setLocationModalVisible(true)}
+            radiusKm={radiusKm}
+          />
+
+          <LocationSelectorModal
+            activeLocation={activeLocation}
+            errorMessage={locationError}
+            isLocating={isLocating}
+            onClearLocation={handleClearLocation}
+            onClose={() => setLocationModalVisible(false)}
+            onSelectGps={handleSelectGps}
+            onSelectLocality={handleSelectLocality}
+            onSelectRadius={handleSelectRadius}
+            permissionState={permissionState}
+            radiusKm={radiusKm}
+            visible={locationModalVisible}
+          />
+
           <Text style={styles.sectionHeader}>NEARBY WORK NOTICEBOARD</Text>
           <View style={styles.filterSection}>
             <View style={styles.modeFilterRow}>

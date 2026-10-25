@@ -3,14 +3,14 @@
 ## Snapshot
 
 - **Last verified:** 2026-10-25 (Asia/Manila)
-- **Completed milestones:** M01 — Expo initialization and Android development proof; M02 — Supabase schema and authorization foundation; M03A — authentication foundation; D01 — Offline Demo Preview; M04 — Authenticated marketplace shell and dual-mode navigation; M05 — Gig creation and employer management; M06 — Nearby/remote discovery and explainable ranking; M07 — Worker applications and atomic employer selection; M08 — Implement agreements, milestones and activity; M09 — Add work submission, revision and approval; M10 — Prove and implement zero-cost AI Job Brief Builder
-- **Current milestone:** M10 — Prove and implement zero-cost AI Job Brief Builder
-- **Status:** `COMPLETED` on branch `feat/ai-job-builder`; ready for PR and merge
-- **Branch:** `feat/ai-job-builder`
+- **Completed milestones:** M01 — Expo initialization and Android development proof; M02 — Supabase schema and authorization foundation; M03A — authentication foundation; D01 — Offline Demo Preview; M04 — Authenticated marketplace shell and dual-mode navigation; M05 — Gig creation and employer management; M06 — Nearby/remote discovery and explainable ranking; M07 — Worker applications and atomic employer selection; M08 — Implement agreements, milestones and activity; M09 — Add work submission, revision and approval; M10 — Prove and implement zero-cost AI Job Brief Builder; M11 — Add foreground location and decide map experience
+- **Current milestone:** M11 — Add foreground location and decide map experience
+- **Status:** `COMPLETED` on branch `feat/android-location`; ready for PR and merge
+- **Branch:** `feat/android-location`
 - **Base/default branch:** `main`
-- **Current implementation merge:** `70c6032` (`Merge pull request #31`)
+- **Current implementation merge:** `29b9924` (`Merge pull request #32`)
 - **Remote:** `https://github.com/DanielHC16/do-well` (`PRIVATE`)
-- **Next issue:** [#12 — [M11] Add foreground location and decide map experience](https://github.com/DanielHC16/do-well/issues/12)
+- **Next issue:** [#13 — [M12] Integrate local notifications and image evidence](https://github.com/DanielHC16/do-well/issues/13)
 - **M01 PR:** [#17](https://github.com/DanielHC16/do-well/pull/17), squash-merged as `d073c4b`
 - **M02 PR:** [#19](https://github.com/DanielHC16/do-well/pull/19), merge commit `f7a3317`
 - **M03A PR:** [#22](https://github.com/DanielHC16/do-well/pull/22), merged as `368613a`
@@ -21,6 +21,7 @@
 - **M07 PR:** [#29](https://github.com/DanielHC16/do-well/pull/29), merged as `5d0dac5`
 - **M08 PR:** [#30](https://github.com/DanielHC16/do-well/pull/30), merged as `9e177e1`
 - **M09 PR:** [#31](https://github.com/DanielHC16/do-well/pull/31), merged as `70c6032`
+- **M10 PR:** [#32](https://github.com/DanielHC16/do-well/pull/32), merged as `29b9924`
 
 This file records repository evidence, not chat state. Re-run the verification commands before relying on it.
 
@@ -167,6 +168,18 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
   - Route tests in `app/(protected)/__tests__/routes.test.tsx`.
 - Quality verification: 51 Jest suites / 259 tests pass, 10 pgTAP files / 158 database tests pass, clean `db:lint`, clean `db:types:check`, clean `format:check`, clean `lint`, clean `typecheck`, and 20/20 `expo-doctor` checks.
 
+## M11 completed state
+
+- ADR 0007 penned at `docs/adr/0007-foreground-location-and-list-first-discovery.md` establishing one-shot foreground approximate location and list-first nearby discovery at zero external spend (PHP 0 / USD 0).
+- Plan document authored at `docs/plans/2026-10-25-m11-android-location.md`.
+- `expo-location` pinned to `~58.0.19` compatible with Expo SDK 58.
+- Android permissions `ACCESS_COARSE_LOCATION` and `ACCESS_FINE_LOCATION` configured in `app.config.ts` with explicit user-facing purpose descriptions; background location disabled.
+- Domain schemas in `src/features/location/model/location-schemas.ts`: `LocationCoordinatesSchema`, `LocationPermissionStateSchema`, `LocalityOptionSchema`, `ActiveLocationSchema`, `METRO_MANILA_LOCALITIES`, and helper functions.
+- Location service adapter in `src/features/location/data/location-service.ts` with balanced accuracy, 5000ms timeout race, and defensive permission mapping (`undetermined`, `granted`, `denied`, `blocked`, `services_disabled`).
+- UI components: `LocationBar.tsx` and `LocationSelectorModal.tsx` in `src/features/location/components/`.
+- Noticeboard integration: `AuthenticatedHomeScreen.tsx` connects `LocationBar` and `LocationSelectorModal`, passing coordinates and radius filter directly to `discoveryGateway.discoverGigs({ workerLatitude, workerLongitude, filters })`.
+- Quality verification: 63 Jest test suites / 388 tests pass, 11 pgTAP files / 191 database tests pass, clean `db:lint`, clean `db:types:check`, clean `format:check`, clean `lint`, clean `typecheck`, and 20/20 `expo-doctor` checks.
+
 ## Open product decisions
 
 - Set evidence and abandoned-upload retention periods before M09 cleanup behavior is implemented.
@@ -181,12 +194,12 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 
 ## Exact next steps
 
-1. Commit M10 changes in small, logical Conventional Commits.
-2. Push branch `feat/ai-job-builder` to GitHub.
-3. Open Pull Request for M10 linking Issue #11 with full test evidence.
-4. Merge M10 pull request into `main`.
+1. Commit M11 changes in small, logical Conventional Commits.
+2. Push branch `feat/android-location` to GitHub.
+3. Open Pull Request for M11 linking Issue #12 with full test evidence.
+4. Merge M11 pull request into `main` after review.
 5. Switch to `main` and pull latest commits.
-6. Begin M11: Add foreground location and decide map experience (Issue #12).
+6. Begin Milestone M12: Integrate local notifications and image evidence (Issue #13).
 
 ## Suggested continuation commands
 

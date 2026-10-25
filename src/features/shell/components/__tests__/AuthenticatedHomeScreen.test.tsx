@@ -5,6 +5,7 @@ import type { DiscoveryGateway } from "@/features/discovery/data/discovery-gatew
 import type { DiscoveryGigCard } from "@/features/discovery/model/discovery-schemas";
 import type { GigGateway } from "@/features/gigs/data/gig-gateway";
 import type { GigRecord } from "@/features/gigs/model/gig-schemas";
+import type { LocationService } from "@/features/location";
 
 import { AuthenticatedHomeScreen } from "../AuthenticatedHomeScreen";
 
@@ -118,6 +119,23 @@ function createMockDiscoveryGateway(
   return {
     discoverGigs: jest.fn(async () => gigs),
     getPublicGig: jest.fn(async () => null),
+  };
+}
+
+function createMockLocationService(
+  overrides: Partial<LocationService> = {},
+): LocationService {
+  return {
+    checkPermission: jest.fn().mockResolvedValue("granted"),
+    requestPermission: jest.fn().mockResolvedValue("granted"),
+    getCurrentPosition: jest.fn().mockResolvedValue({
+      latitude: 14.5547,
+      longitude: 121.0244,
+      accuracy: 15,
+      timestamp: 1729864800000,
+    }),
+    isLocationServicesEnabled: jest.fn().mockResolvedValue(true),
+    ...overrides,
   };
 }
 
@@ -260,5 +278,116 @@ describe("AuthenticatedHomeScreen", () => {
     expect(mockPush).toHaveBeenCalledWith(
       "/(protected)/employer/gigs/a0000000-0000-4000-8000-000000000001",
     );
+  });
+
+  it("allows worker to select a manual locality and queries discovery with coordinates", async () => {
+    const discovery = createMockDiscoveryGateway(sampleDiscoveryGigs);
+    const location = createMockLocationService();
+
+    const view = await render(
+      <AuthenticatedHomeScreen
+        discovery={discovery}
+        location={location}
+        mode="worker"
+        profile={profile}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(view.getByText("LOCATION & DISTANCE")).toBeVisible();
+    });
+
+    await fireEvent.press(view.getByLabelText("Location and radius filter"));
+
+    await waitFor(() => {
+      expect(view.getByText("Location & Radius")).toBeVisible();
+    });
+
+    await fireEvent.press(view.getByText("Bonifacio Global City"));
+
+    await waitFor(() => {
+      expect(discovery.discoverGigs).toHaveBeenCalledWith(
+        expect.objectContaining({
+          workerLatitude: 14.5492,
+          workerLongitude: 121.0509,
+        }),
+      );
+      expect(view.getByText("Bonifacio Global City")).toBeVisible();
+      expect(view.getByText("MANUAL LOCALITY")).toBeVisible();
+    });
+  });
+
+  it("allows worker to acquire GPS location and queries discovery with coordinates", async () => {
+    const discovery = createMockDiscoveryGateway(sampleDiscoveryGigs);
+    const location = createMockLocationService();
+
+    const view = await render(
+      <AuthenticatedHomeScreen
+        discovery={discovery}
+        location={location}
+        mode="worker"
+        profile={profile}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(view.getByText("LOCATION & DISTANCE")).toBeVisible();
+    });
+
+    await fireEvent.press(view.getByLabelText("Location and radius filter"));
+
+    await waitFor(() => {
+      expect(view.getByText("Use My Current Location")).toBeVisible();
+    });
+
+    await fireEvent.press(view.getByText("Use My Current Location"));
+
+    await waitFor(() => {
+      expect(location.requestPermission).toHaveBeenCalled();
+      expect(location.getCurrentPosition).toHaveBeenCalled();
+      expect(discovery.discoverGigs).toHaveBeenCalledWith(
+        expect.objectContaining({
+          workerLatitude: 14.5547,
+          workerLongitude: 121.0244,
+        }),
+      );
+      expect(view.getByText("GPS FIX")).toBeVisible();
+    });
+  });
+
+  it("handles location permission denial with notice without breaking discovery", async () => {
+    const discovery = createMockDiscoveryGateway(sampleDiscoveryGigs);
+    const location = createMockLocationService({
+      requestPermission: jest.fn().mockResolvedValue("denied"),
+    });
+
+    const view = await render(
+      <AuthenticatedHomeScreen
+        discovery={discovery}
+        location={location}
+        mode="worker"
+        profile={profile}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(view.getByText("LOCATION & DISTANCE")).toBeVisible();
+    });
+
+    await fireEvent.press(view.getByLabelText("Location and radius filter"));
+
+    await waitFor(() => {
+      expect(view.getByText("Use My Current Location")).toBeVisible();
+    });
+
+    await fireEvent.press(view.getByText("Use My Current Location"));
+
+    await waitFor(() => {
+      expect(
+        view.getByText(
+          "Location permission was denied. Select a locality below.",
+        ),
+      ).toBeVisible();
+    });
   });
 });
