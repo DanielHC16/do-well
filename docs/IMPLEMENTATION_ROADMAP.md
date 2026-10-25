@@ -222,7 +222,7 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 
 ## M09 — Add work submission, revision and approval
 
-**Status:** `COMPLETED` on branch `feat/work-submission`; ready for PR and merge.
+**Status:** `COMPLETED` after review and merge of [PR #31](https://github.com/DanielHC16/do-well/pull/31) (`70c6032`) on 2026-10-25.
 
 - **Goal:** complete the core workflow with secure submission records and employer review.
 - **Dependencies:** M08; evidence metadata/storage design from M02; retention decision. Image-picker device integration is finalized in M12, so text/metadata submission lands first.
@@ -237,7 +237,7 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 
 ## M10 — Prove and implement the zero-cost AI Job Brief Builder
 
-**Status:** `NOT STARTED`
+**Status:** `COMPLETED` on branch `feat/ai-job-builder`; ready for PR and merge.
 
 - **Goal:** provide genuine, human-reviewed model inference at zero external spend—or explicitly block the AI claim with evidence.
 - **Dependencies:** M05 manual gig flow; AI strategy/ADR; actual demo laptop and Android hardware/network available.

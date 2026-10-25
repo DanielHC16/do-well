@@ -3,14 +3,14 @@
 ## Snapshot
 
 - **Last verified:** 2026-10-25 (Asia/Manila)
-- **Completed milestones:** M01 — Expo initialization and Android development proof; M02 — Supabase schema and authorization foundation; M03A — authentication foundation; D01 — Offline Demo Preview; M04 — Authenticated marketplace shell and dual-mode navigation; M05 — Gig creation and employer management; M06 — Nearby/remote discovery and explainable ranking; M07 — Worker applications and atomic employer selection; M08 — Implement agreements, milestones and activity; M09 — Add work submission, revision and approval
-- **Current milestone:** M09 — Add work submission, revision and approval
-- **Status:** `COMPLETED` on branch `feat/work-submission`; ready for PR and merge
-- **Branch:** `feat/work-submission`
+- **Completed milestones:** M01 — Expo initialization and Android development proof; M02 — Supabase schema and authorization foundation; M03A — authentication foundation; D01 — Offline Demo Preview; M04 — Authenticated marketplace shell and dual-mode navigation; M05 — Gig creation and employer management; M06 — Nearby/remote discovery and explainable ranking; M07 — Worker applications and atomic employer selection; M08 — Implement agreements, milestones and activity; M09 — Add work submission, revision and approval; M10 — Prove and implement zero-cost AI Job Brief Builder
+- **Current milestone:** M10 — Prove and implement zero-cost AI Job Brief Builder
+- **Status:** `COMPLETED` on branch `feat/ai-job-builder`; ready for PR and merge
+- **Branch:** `feat/ai-job-builder`
 - **Base/default branch:** `main`
-- **Current implementation merge:** `9e177e1` (`Merge pull request #30`)
+- **Current implementation merge:** `70c6032` (`Merge pull request #31`)
 - **Remote:** `https://github.com/DanielHC16/do-well` (`PRIVATE`)
-- **Next issue:** [#11 — [M10] Prove and implement zero-cost AI Job Brief Builder](https://github.com/DanielHC16/do-well/issues/11)
+- **Next issue:** [#12 — [M11] Add foreground location and decide map experience](https://github.com/DanielHC16/do-well/issues/12)
 - **M01 PR:** [#17](https://github.com/DanielHC16/do-well/pull/17), squash-merged as `d073c4b`
 - **M02 PR:** [#19](https://github.com/DanielHC16/do-well/pull/19), merge commit `f7a3317`
 - **M03A PR:** [#22](https://github.com/DanielHC16/do-well/pull/22), merged as `368613a`
@@ -20,6 +20,7 @@
 - **M06 PR:** [#28](https://github.com/DanielHC16/do-well/pull/28), merged as `a0cd300`
 - **M07 PR:** [#29](https://github.com/DanielHC16/do-well/pull/29), merged as `5d0dac5`
 - **M08 PR:** [#30](https://github.com/DanielHC16/do-well/pull/30), merged as `9e177e1`
+- **M09 PR:** [#31](https://github.com/DanielHC16/do-well/pull/31), merged as `70c6032`
 
 This file records repository evidence, not chat state. Re-run the verification commands before relying on it.
 
@@ -180,12 +181,12 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 
 ## Exact next steps
 
-1. Commit M09 changes in small, logical Conventional Commits.
-2. Push branch `feat/work-submission` to GitHub.
-3. Open Pull Request for M09 linking Issue #10 with full test evidence.
-4. Merge M09 pull request into `main`.
+1. Commit M10 changes in small, logical Conventional Commits.
+2. Push branch `feat/ai-job-builder` to GitHub.
+3. Open Pull Request for M10 linking Issue #11 with full test evidence.
+4. Merge M10 pull request into `main`.
 5. Switch to `main` and pull latest commits.
-6. Begin M10: Prove and implement zero-cost AI Job Brief Builder (Issue #11).
+6. Begin M11: Add foreground location and decide map experience (Issue #12).
 
 ## Suggested continuation commands
 
