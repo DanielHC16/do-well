@@ -3,7 +3,7 @@
 **Last audited:** 2026-10-26 (Asia/Manila)  
 **Repository:** `DanielHC16/do-well` (private)  
 **Default branch:** `main`  
-**Audited commit:** `b8a9890` (PR #41 merge)  
+**Audited commit:** `2632a21` (PR #42 merge)  
 **Current phase:** Productization implementation: zero-secret CI workflow, server-owned admin capabilities, Settings, functional moderation console, and dual Google/email authentication implemented and verified across 91 test suites (527 tests).
 
 This is the first document a new developer or AI agent should read. It records the difference between what exists in source code, what has been locally verified, and what is actually available in the hosted environment. Do not infer live readiness from old milestone labels.
