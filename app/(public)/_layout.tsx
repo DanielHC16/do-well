@@ -2,8 +2,9 @@ import { Redirect, Stack } from "expo-router";
 
 import { AuthBoundaryScreen } from "@/features/auth/context/AuthBoundaryScreen";
 import { useAuth } from "@/features/auth/context/useAuth";
+import { readAppRuntime } from "@/shared/config/app-runtime";
 
-export default function PublicLayout() {
+function ProductionPublicLayout() {
   const { refresh, state } = useAuth();
 
   if (state.route === "restoring") {
@@ -19,4 +20,12 @@ export default function PublicLayout() {
   }
   if (state.route === "ready") return <Redirect href="../(protected)" />;
   return <Stack screenOptions={{ headerShown: false }} />;
+}
+
+export default function PublicLayout() {
+  if (readAppRuntime() === "demo") {
+    return <Redirect href="/(demo)" />;
+  }
+
+  return <ProductionPublicLayout />;
 }
