@@ -4,7 +4,7 @@ Do Well is an Android productivity application for the UMAK IT Skills Olympics 2
 
 ## Status
 
-Phase 3 architecture, the Expo/Android foundation, database/RLS foundation, and M03A authentication foundation are merged. D01 now prioritizes a functional offline Demo Preview of the core marketplace lifecycle while hosted authentication acceptance remains deferred as M03B.
+Phase 3 architecture, the Expo/Android foundation, database/RLS foundation, M03A authentication foundation, and D01 Offline Demo Preview are merged. The next product milestone is the real authenticated marketplace shell backed by the hosted Supabase project; hosted authentication device acceptance remains tracked separately as M03B.
 
 Confirmed foundations:
 
