@@ -52,7 +52,7 @@ Repository rules take precedence over this summary if they are stricter.
 | Connectivity | Offline banner, bounded caches, drafts, timeouts, and reconciliation exist | Device/network rehearsal still needed | Verify without claiming unattended background sync |
 | Notifications | Local recipient-activity alerts and deep-link handling exist | These are local notifications, not remote push | Present them accurately and test on device |
 | Brief builder | Deterministic structured brief generation works; an optional provider adapter exists | Default runtime has no genuine inference provider | Call it “Brief Builder” unless a real provider is configured and accepted |
-| Admin reports | `reports`, `admin_actions`, `submit_report`, `list_admin_reports`, `decide_admin_report`, and `AdminConsoleScreen` exist | Full moderation queue, resolution notes, and immutable audit trail implemented and tested | Ready for hosted apply |
+| Admin reports | `reports`, `admin_actions`, `submit_report`, `list_admin_reports`, `decide_admin_report`, `CreateReportScreen`, and `MyReportsScreen` exist | Full reporting flow, user report queue, moderation console, resolution notes, and immutable audit trail implemented and tested | Ready for hosted apply |
 | Automated verification | Format, lint, strict types, Jest (86 suites / 508 tests), SQL tests, Expo doctor (20/20), Android Hermes export, and GitHub Actions CI workflow exist | `.github/workflows/ci.yml` created with zero-secret PR verification | Verified by `tests/config/ci-workflow.test.js` and local execution |
 | Offline demo | Explicit, isolated synthetic runtime exists | Old runbook treats it as the primary story and contains UI/feature inaccuracies | Retain only as a labelled fallback and rewrite the runbook |
 
@@ -63,7 +63,7 @@ The following commands passed on 2026-10-26 on `feat/productization-admin-demo`:
 - `npm run format:check` — clean Prettier formatting across all files
 - `npm run lint` — 0 ESLint errors
 - `npm run typecheck` — 0 TypeScript compiler errors (`tsc --noEmit`)
-- `npm run test:run` — 86 suites, 508 tests passing
+- `npm run test:run` — 91 suites, 527 tests passing
 - `npx expo-doctor` — 20/20 checks passed
 - `npx expo export --platform android` — Hermes bytecode bundle generated without errors
 

@@ -222,6 +222,25 @@ export function WorkerGigDetailScreen({
             <Text style={styles.sectionHeader}>WORK DESCRIPTION</Text>
             <Text style={styles.descriptionText}>{gig.description}</Text>
           </View>
+
+          <Pressable
+            accessibilityRole="button"
+            onPress={() =>
+              router.push({
+                pathname: "/(protected)/reports/new" as unknown as Parameters<
+                  typeof router.push
+                >[0],
+                params: {
+                  targetType: "gig",
+                  targetId: gig.id,
+                  targetTitle: gig.title,
+                },
+              } as unknown as Parameters<typeof router.push>[0])
+            }
+            style={styles.reportNoticeButton}
+          >
+            <Text style={styles.reportNoticeText}>Report this notice</Text>
+          </Pressable>
         </View>
 
         {actionSuccess ? (
@@ -535,6 +554,16 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     gap: setupTheme.spacing.compact,
     paddingTop: setupTheme.spacing.section,
+  },
+  reportNoticeButton: {
+    alignSelf: "flex-start",
+    marginTop: setupTheme.spacing.section,
+    paddingVertical: setupTheme.spacing.tight,
+  },
+  reportNoticeText: {
+    color: setupTheme.color.muted,
+    fontSize: setupTheme.type.caption,
+    textDecorationLine: "underline",
   },
   sectionHeader: {
     color: setupTheme.color.muted,

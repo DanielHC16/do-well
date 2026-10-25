@@ -162,6 +162,23 @@ export function AccountSettingsScreen({
         </View>
       ) : null}
 
+      <View style={marketplaceStyles.card}>
+        <Text style={styles.sectionTitle}>Safety & reporting</Text>
+        <Pressable
+          accessibilityLabel="View my filed reports"
+          accessibilityRole="button"
+          onPress={() => router.push("/(protected)/reports")}
+          style={styles.option}
+        >
+          <View style={styles.optionCopy}>
+            <Text style={styles.optionTitle}>My filed reports</Text>
+            <Text style={styles.optionDescription}>
+              Track status of safety and guideline reports you submitted.
+            </Text>
+          </View>
+        </Pressable>
+      </View>
+
       <Pressable
         accessibilityLabel={signingOut ? "Signing out" : "Sign out"}
         accessibilityRole="button"

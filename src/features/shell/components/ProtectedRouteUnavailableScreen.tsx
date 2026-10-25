@@ -9,13 +9,13 @@ export function ProtectedRouteUnavailableScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.card}>
-        <Text style={styles.kicker}>WRONG TURN</Text>
+        <Text style={styles.kicker}>PAGE NOT FOUND</Text>
         <Text accessibilityRole="header" style={styles.title}>
           This notice is not posted.
         </Text>
         <Text style={styles.body}>
-          The workspace route may have moved, or the feature has not arrived
-          yet.
+          The requested route could not be found or has moved. Return to your
+          workspace to continue browsing notices.
         </Text>
         <Pressable
           accessibilityRole="button"
@@ -52,30 +52,31 @@ const styles = StyleSheet.create({
     color: setupTheme.color.accent,
     fontSize: setupTheme.type.label,
     fontWeight: "900",
-    letterSpacing: 0.8,
+    letterSpacing: 1.2,
   },
   title: {
     color: setupTheme.color.foreground,
     fontSize: setupTheme.type.title,
     fontWeight: "900",
+    letterSpacing: -0.5,
   },
   body: {
-    color: setupTheme.color.muted,
+    color: setupTheme.color.foreground,
     fontSize: setupTheme.type.body,
     lineHeight: 24,
   },
   button: {
     alignItems: "center",
-    backgroundColor: setupTheme.color.highlight,
-    borderColor: setupTheme.color.foreground,
+    backgroundColor: setupTheme.color.accent,
     borderRadius: setupTheme.radius.control,
-    borderWidth: 2,
     justifyContent: "center",
-    minHeight: 52,
+    minHeight: 48,
+    paddingHorizontal: setupTheme.spacing.section,
   },
   buttonText: {
-    color: setupTheme.color.foreground,
+    color: setupTheme.color.surface,
     fontSize: setupTheme.type.body,
-    fontWeight: "900",
+    fontWeight: "800",
+    letterSpacing: 0.2,
   },
 });
