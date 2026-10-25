@@ -347,7 +347,25 @@ isOneToOne: true
             [_ in never]: never
           }
           Functions: {
-            "calculate_distance_km":
+            "apply_to_gig":
+{ Args: { "p_client_request_id"?: string,"p_gig_id": string,"p_message"?: string }; Returns: {
+              "client_request_id": string,
+"created_at": string,
+"decided_at": string | null,
+"gig_id": string,
+"id": string,
+"message": string | null,
+"status": string,
+"updated_at": string,
+"worker_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "applications"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"calculate_distance_km":
 { Args: { "p_lat1": number,"p_lat2": number,"p_lon1": number,"p_lon2": number }; Returns: number
                            },
 "close_gig":
@@ -418,6 +436,29 @@ isOneToOne: true
         isOneToOne: true
         isSetofReturn: false
       } },
+"get_worker_application_for_gig":
+{ Args: { "p_gig_id": string }; Returns: {
+              "client_request_id": string,
+"created_at": string,
+"decided_at": string | null,
+"gig_id": string,
+"id": string,
+"message": string | null,
+"status": string,
+"updated_at": string,
+"worker_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "applications"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"list_gig_applicants":
+{ Args: { "p_gig_id": string }; Returns: {
+              "created_at": string,"decided_at": string,"gig_id": string,"id": string,"message": string,"status": string,"worker_display_name": string,"worker_home_area": string,"worker_id": string
+            }[]
+                           },
 "publish_gig":
 { Args: { "p_gig_id": string }; Returns: {
               "application_deadline": string | null,
@@ -442,6 +483,53 @@ isOneToOne: true
                           SetofOptions: {
         from: "*"
         to: "gigs"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"select_worker_atomic":
+{ Args: { "p_application_id": string,"p_client_request_id"?: string }; Returns: {
+              "agreed_amount": number,
+"agreed_description": string,
+"agreed_title": string,
+"agreement_version": number,
+"application_id": string,
+"cancelled_at": string | null,
+"client_request_id": string,
+"completed_at": string | null,
+"created_at": string,
+"currency": string,
+"due_at": string | null,
+"employer_confirmed_at": string,
+"employer_id": string,
+"gig_id": string,
+"id": string,
+"started_at": string | null,
+"status": string,
+"updated_at": string,
+"worker_confirmed_at": string | null,
+"worker_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "assignments"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"withdraw_application":
+{ Args: { "p_application_id": string }; Returns: {
+              "client_request_id": string,
+"created_at": string,
+"decided_at": string | null,
+"gig_id": string,
+"id": string,
+"message": string | null,
+"status": string,
+"updated_at": string,
+"worker_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "applications"
         isOneToOne: true
         isSetofReturn: false
       } }

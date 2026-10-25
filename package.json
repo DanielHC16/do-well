@@ -20,7 +20,7 @@
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset --local",
     "db:lint": "supabase db lint --local --schema public --level warning --fail-on warning",
-    "db:test": "supabase test db --local supabase/tests/010_schema_contract.test.sql supabase/tests/020_profile_provisioning.test.sql supabase/tests/030_rls_and_grants.test.sql supabase/tests/040_storage_policies.test.sql supabase/tests/050_relationship_constraints.test.sql supabase/tests/060_auth_profile_rpcs.test.sql supabase/tests/070_gig_management_rpcs.test.sql supabase/tests/080_gig_discovery_rpcs.test.sql",
+    "db:test": "supabase test db --local supabase/tests/010_schema_contract.test.sql supabase/tests/020_profile_provisioning.test.sql supabase/tests/030_rls_and_grants.test.sql supabase/tests/040_storage_policies.test.sql supabase/tests/050_relationship_constraints.test.sql supabase/tests/060_auth_profile_rpcs.test.sql supabase/tests/070_gig_management_rpcs.test.sql supabase/tests/080_gig_discovery_rpcs.test.sql supabase/tests/090_application_and_selection_rpcs.test.sql",
     "db:test:performance": "supabase test db --local supabase/tests/performance/010_query_plans.test.sql",
     "db:types": "node scripts/database-types.mjs",
     "db:types:check": "node scripts/database-types.mjs --check"

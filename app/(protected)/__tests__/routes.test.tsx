@@ -42,6 +42,17 @@ jest.mock("@/features/shell/context/useShellMode", () => ({
   useShellMode: jest.fn(),
 }));
 
+jest.mock("@/features/applications/data/application-gateway", () => ({
+  applicationGateway: {
+    applyToGig: jest.fn(),
+    withdrawApplication: jest.fn(),
+    selectWorkerAtomic: jest.fn(),
+    listGigApplicants: jest.fn(async () => []),
+    getWorkerApplicationForGig: jest.fn(async () => null),
+    getAssignmentForGig: jest.fn(async () => null),
+  },
+}));
+
 jest.mock("@/features/discovery/data/discovery-gateway", () => ({
   discoveryGateway: {
     discoverGigs: jest.fn(async () => []),
