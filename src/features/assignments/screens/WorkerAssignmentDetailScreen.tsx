@@ -679,6 +679,27 @@ export function WorkerAssignmentDetailScreen({
             </View>
           </View>
         ) : null}
+
+        <Pressable
+          accessibilityRole="button"
+          onPress={() =>
+            router.push({
+              pathname: "/(protected)/reports/new" as unknown as Parameters<
+                typeof router.push
+              >[0],
+              params: {
+                targetType: "assignment",
+                targetId: assignment.id,
+                targetTitle: assignment.agreedTitle,
+              },
+            } as unknown as Parameters<typeof router.push>[0])
+          }
+          style={styles.reportIssueButton}
+        >
+          <Text style={styles.reportIssueText}>
+            Report an issue with this assignment
+          </Text>
+        </Pressable>
       </ScrollView>
     </SafeAreaView>
   );
@@ -688,6 +709,16 @@ const styles = StyleSheet.create({
   safeArea: {
     backgroundColor: setupTheme.color.background,
     flex: 1,
+  },
+  reportIssueButton: {
+    alignItems: "center",
+    marginTop: setupTheme.spacing.compact,
+    paddingVertical: setupTheme.spacing.compact,
+  },
+  reportIssueText: {
+    color: setupTheme.color.muted,
+    fontSize: setupTheme.type.caption,
+    textDecorationLine: "underline",
   },
   scrollContent: {
     gap: setupTheme.spacing.section,
