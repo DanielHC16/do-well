@@ -1,6 +1,6 @@
 # ADR 0001: Expo and Supabase modular architecture
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-10-21
 - Owners: DO-WELL engineering team
 

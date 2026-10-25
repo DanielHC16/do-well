@@ -1,6 +1,6 @@
 # ADR 0003: Zero-cost nearby discovery
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-10-21
 
 ## Context
