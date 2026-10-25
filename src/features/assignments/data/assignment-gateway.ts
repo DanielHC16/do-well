@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { getSupabaseClient } from "@/shared/api/supabase";
+import { cacheStore, type CacheStore } from "@/shared/persistence/cache-store";
 import type { Database } from "@/types/database.generated";
 
 import {
@@ -73,6 +74,12 @@ function mapActivityRow(row: ActivityRow): ActivityEventRecord {
   });
 }
 
+export type AssignmentDetailResult = Readonly<{
+  detail: AssignmentDetail;
+  isFromCache: boolean;
+  cachedAt?: string | null;
+}>;
+
 export type AssignmentGateway = Readonly<{
   confirmAssignment: (assignmentId: string) => Promise<AssignmentRecord>;
   declineAssignment: (assignmentId: string) => Promise<AssignmentRecord>;
@@ -80,7 +87,14 @@ export type AssignmentGateway = Readonly<{
   createMilestone: (input: CreateMilestoneInput) => Promise<MilestoneRecord>;
   startMilestone: (milestoneId: string) => Promise<MilestoneRecord>;
   listMilestones: (assignmentId: string) => Promise<MilestoneRecord[]>;
-  getAssignmentDetail: (assignmentId: string) => Promise<AssignmentDetail>;
+  getAssignmentDetail: (
+    assignmentId: string,
+    userId?: string,
+  ) => Promise<AssignmentDetail>;
+  getAssignmentDetailWithMetadata: (
+    assignmentId: string,
+    userId?: string,
+  ) => Promise<AssignmentDetailResult>;
   listUserActivity: (
     limit?: number,
     offset?: number,
@@ -90,6 +104,7 @@ export type AssignmentGateway = Readonly<{
 
 export function createAssignmentGateway(
   client: SupabaseClient<Database>,
+  cache: CacheStore = cacheStore,
 ): AssignmentGateway {
   return {
     async confirmAssignment(assignmentId: string): Promise<AssignmentRecord> {
@@ -191,20 +206,60 @@ export function createAssignmentGateway(
       return (data ?? []).map(mapMilestoneRow);
     },
 
-    async getAssignmentDetail(assignmentId: string): Promise<AssignmentDetail> {
-      const { data, error } = await client.rpc("get_assignment_detail", {
-        p_assignment_id: assignmentId,
-      });
+    async getAssignmentDetailWithMetadata(
+      assignmentId: string,
+      userId?: string,
+    ): Promise<AssignmentDetailResult> {
+      const safeUser = userId || "anonymous";
+      const cacheKey = `assignment:detail:${assignmentId}`;
 
-      if (error) {
-        throw new Error(error.message);
+      try {
+        const { data, error } = await client.rpc("get_assignment_detail", {
+          p_assignment_id: assignmentId,
+        });
+
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        if (!data) {
+          throw new Error("Assignment details not found.");
+        }
+
+        const parsed = AssignmentDetailSchema.parse(data);
+        try {
+          await cache.set(safeUser, cacheKey, parsed);
+        } catch {
+          // Best effort
+        }
+
+        return { detail: parsed, isFromCache: false, cachedAt: null };
+      } catch (err) {
+        try {
+          const cached = await cache.get<AssignmentDetail>(safeUser, cacheKey);
+          if (cached?.data) {
+            return {
+              detail: cached.data,
+              isFromCache: true,
+              cachedAt: cached.cachedAt,
+            };
+          }
+        } catch {
+          // Best effort
+        }
+        throw err;
       }
+    },
 
-      if (!data) {
-        throw new Error("Assignment details not found.");
-      }
-
-      return AssignmentDetailSchema.parse(data);
+    async getAssignmentDetail(
+      assignmentId: string,
+      userId?: string,
+    ): Promise<AssignmentDetail> {
+      const res = await this.getAssignmentDetailWithMetadata(
+        assignmentId,
+        userId,
+      );
+      return res.detail;
     },
 
     async listUserActivity(
@@ -269,8 +324,13 @@ export const assignmentGateway: AssignmentGateway = {
     getAssignmentGateway().startMilestone(milestoneId),
   listMilestones: (assignmentId) =>
     getAssignmentGateway().listMilestones(assignmentId),
-  getAssignmentDetail: (assignmentId) =>
-    getAssignmentGateway().getAssignmentDetail(assignmentId),
+  getAssignmentDetail: (assignmentId, userId) =>
+    getAssignmentGateway().getAssignmentDetail(assignmentId, userId),
+  getAssignmentDetailWithMetadata: (assignmentId, userId) =>
+    getAssignmentGateway().getAssignmentDetailWithMetadata(
+      assignmentId,
+      userId,
+    ),
   listUserActivity: (limit, offset) =>
     getAssignmentGateway().listUserActivity(limit, offset),
   markActivityRead: (eventId) =>

@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { setupTheme } from "@/features/setup/setupTheme";
+import { OfflineBanner } from "@/features/connectivity/components/OfflineBanner";
 
 import { useShellMode } from "../context/useShellMode";
 import type { ShellMode } from "../model/shell-mode";
@@ -56,6 +57,8 @@ export function MarketplaceShell({
         </View>
         <Text style={styles.liveLabel}>LIVE WORKSPACE</Text>
       </View>
+      <OfflineBanner />
+      <View style={{ display: "none" }}></View>
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.heading}>

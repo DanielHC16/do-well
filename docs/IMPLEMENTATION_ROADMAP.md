@@ -70,7 +70,7 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 | M10       | Zero-cost AI Job Brief Builder feasibility and implementation             | **COMPLETED**   | [#11](https://github.com/DanielHC16/do-well/issues/11) |
 | M11       | Android foreground location and optional map feasibility                  | **COMPLETED**   | [#12](https://github.com/DanielHC16/do-well/issues/12) |
 | M12       | Local notifications and image evidence integration                        | **COMPLETED**   | [#13](https://github.com/DanielHC16/do-well/issues/13) |
-| M13       | Connectivity resilience, cached reads and offline drafts                  | **NOT STARTED** | [#14](https://github.com/DanielHC16/do-well/issues/14) |
+| M13       | Connectivity resilience, cached reads and offline drafts                  | **COMPLETED**   | [#14](https://github.com/DanielHC16/do-well/issues/14) |
 | M14       | Security verification, end-to-end tests and competition build             | **NOT STARTED** | [#15](https://github.com/DanielHC16/do-well/issues/15) |
 
 ## M00 — Secure repository and approve architecture
@@ -325,4 +325,4 @@ Before changing any row to `COMPLETED`:
 
 ## Current milestone and blockers
 
-M01-M12 and D01 are complete and merged (including M12 corrective hardening in PR #35). M13 is next: harden weak-connectivity behavior (Issue #14). M03B hosted OAuth/physical-device acceptance remains deferred. Evidence retention remains unresolved and cleanup policy must not be invented during M13.
+M01-M13 and D01 are complete (including M12 corrective hardening in PR #35). M13 connectivity resilience (Issue #14) is implemented on branch `feat/connectivity-resilience` with 77 Jest suites / 468 tests passing. M03B hosted OAuth/physical-device acceptance remains deferred. Evidence retention remains unresolved and cleanup policy must not be invented during M13.
