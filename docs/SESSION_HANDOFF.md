@@ -5,8 +5,8 @@
 - **Last verified:** 2026-10-25 (Asia/Manila)
 - **Completed milestones:** M01 — Expo initialization and Android development proof; M02 — Supabase schema and authorization foundation; M03A — authentication foundation; D01 — Offline Demo Preview
 - **Current milestone:** M04 — Authenticated marketplace shell and dual-mode navigation
-- **Status:** `NOT STARTED`; D01 is merged and the hosted database foundation is deployed
-- **Branch:** `main`
+- **Status:** `IN PROGRESS` on branch `feat/app-shell`; shell components, mode store, context boundaries, protected routes, and unit/guard tests implemented and verified
+- **Branch:** `feat/app-shell`
 - **Base/default branch:** `main`
 - **Current implementation merge:** `d7092c3` (`Merge pull request #24`)
 - **Remote:** `https://github.com/DanielHC16/do-well` (`PRIVATE`)
@@ -65,6 +65,13 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 - On the `medium_phone` Android emulator, the development APK built, installed, bundled, and previously opened the Google browser flow to Google's account re-verification screen. After adding Expo Crypto, a fresh native build autolinked the module and launched without the WebCrypto downgrade warning. The fresh emulator session reported Auth unavailable even though the hosted Auth health endpoint returned HTTP 200 from the workstation, so emulator connectivity/config diagnosis, fresh end-to-end OAuth proof, the account-owned credential step, and the physical-device matrix remain acceptance blockers.
 - Latest verification: formatting, lint, strict typecheck, 23 Jest suites / 122 tests, local Auth/JWT integration, 6 pgTAP files / 69 database tests, database lint/type drift, and all 20 Expo Doctor checks pass. The Android debug build completed successfully after the native dependency change.
 
+## M04 implementation state
+
+- Shell mode schema, AsyncStorage per-user mode persistence, context provider, and retry boundaries implemented in `src/features/shell/`.
+- Noticeboard marketplace shell with top bar brand strip, dual-mode switcher (`worker` vs `employer`), and bottom navigation tab list (`Home`, `Activity`, `Profile`).
+- Protected routes created under `app/(protected)/`: `_layout.tsx`, `index.tsx`, `worker.tsx`, `employer.tsx`, `activity.tsx`, `profile.tsx`, and `[...unmatched].tsx`.
+- Verification passed: 37 Jest test suites / 182 tests passing, clean TypeScript strict typecheck (`tsc --noEmit`), clean Prettier, clean ESLint, and 20/20 `expo-doctor` checks.
+
 ## Open product decisions
 
 - Approve or revise the provisional eight-category list before M05.
@@ -82,10 +89,10 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 
 ## Exact next steps
 
-1. Start M04 from current `main` and build the authenticated worker/employer shell using the noticeboard visual language established by D01.
-2. Add hosted repository adapters milestone-by-milestone for gigs, discovery, applications, selection, submissions, and approval; do not reuse local demo persistence as a security boundary.
-3. Resume M03B hosted OAuth/device acceptance before release, without blocking product UI development on physical-device testing.
-4. Keep hosted credential values out of Git, commands, logs, screenshots, issues, and PR text; rotate the exposed development credentials after the hosted setup work.
+1. Review and commit M04 changes using Conventional Commits.
+2. Open Pull Request for M04 linking Issue #5 with verification and test evidence.
+3. Merge M04 after approval.
+4. Begin M05: Gig creation and employer management with category allowlist.
 
 ## Suggested continuation commands
 

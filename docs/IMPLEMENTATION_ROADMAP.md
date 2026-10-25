@@ -61,7 +61,7 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 | M03A      | Authentication and profile foundation                                     | **COMPLETED**   | [#4](https://github.com/DanielHC16/do-well/issues/4)   |
 | M03B      | Hosted auth and physical-device acceptance                                | **DEFERRED**    | [#4](https://github.com/DanielHC16/do-well/issues/4)   |
 | D01       | Offline Demo Preview: complete local gig lifecycle                        | **COMPLETED**   | [#23](https://github.com/DanielHC16/do-well/issues/23)  |
-| M04       | Shared shell and worker/employer navigation                               | **NOT STARTED** | [#5](https://github.com/DanielHC16/do-well/issues/5)   |
+| M04       | Shared shell and worker/employer navigation                               | **IN PROGRESS** | [#5](https://github.com/DanielHC16/do-well/issues/5)   |
 | M05       | Gig creation and employer management                                      | **NOT STARTED** | [#6](https://github.com/DanielHC16/do-well/issues/6)   |
 | M06       | Nearby/remote discovery and explainable filtering                         | **NOT STARTED** | [#7](https://github.com/DanielHC16/do-well/issues/7)   |
 | M07       | Worker applications and employer selection                                | **NOT STARTED** | [#8](https://github.com/DanielHC16/do-well/issues/8)   |
@@ -147,7 +147,7 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 
 ## M04 — Add authenticated shell and dual-mode navigation
 
-**Status:** `NOT STARTED`
+**Status:** `IN PROGRESS` on `feat/app-shell`
 
 - **Goal:** provide a stable, accessible shell that switches worker/employer presentation without changing identity or authorization.
 - **Dependencies:** M03; preliminary Phase 2 navigation direction, or approval to use replaceable temporary UI.
