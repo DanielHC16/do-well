@@ -7,6 +7,7 @@ import {
   type AuthError,
 } from "../model/auth-errors";
 import {
+  accountModeSchema,
   displayNameSchema,
   emailSchema,
   passwordSchema,
@@ -22,7 +23,10 @@ export type AuthPort = Readonly<{
   signUp: (input: {
     email: string;
     password: string;
-    options: { data: { display_name: string }; emailRedirectTo: string };
+    options: {
+      data: { display_name: string; preferred_mode: "worker" | "employer" };
+      emailRedirectTo: string;
+    };
   }) => ProviderResult;
   signInWithPassword: (input: {
     email: string;
@@ -138,16 +142,25 @@ function parseAuthResult(data: unknown): AuthResult {
 
 export function createAuthGateway(auth: AuthPort) {
   return {
-    async signUp(email: string, password: string, displayName: string) {
+    async signUp(
+      email: string,
+      password: string,
+      displayName: string,
+      preferredMode: "worker" | "employer",
+    ) {
       const normalizedEmail = emailSchema.parse(email);
       const validatedPassword = passwordSchema.parse(password);
       const normalizedDisplayName = displayNameSchema.parse(displayName);
+      const validatedPreferredMode = accountModeSchema.parse(preferredMode);
       return withAuthBoundary(async () => {
         const result = await auth.signUp({
           email: normalizedEmail,
           password: validatedPassword,
           options: {
-            data: { display_name: normalizedDisplayName },
+            data: {
+              display_name: normalizedDisplayName,
+              preferred_mode: validatedPreferredMode,
+            },
             emailRedirectTo: AUTH_CALLBACK,
           },
         });

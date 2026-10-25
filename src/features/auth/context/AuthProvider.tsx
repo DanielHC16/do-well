@@ -19,6 +19,7 @@ import { createSupabaseProfileGateway } from "../data/profile-gateway";
 import { authReducer, initialAuthState } from "../model/auth-reducer";
 import { toSafeAuthError } from "../model/auth-errors";
 import type { AuthProfile } from "../model/auth-state";
+import type { AccountMode } from "../model/auth-schemas";
 import { restoreSession } from "../services/restore-session";
 import {
   profileGateStore,
@@ -38,6 +39,7 @@ type ProfileGateway = Readonly<{
   completeOnboarding: (
     displayName: string,
     homeArea: string,
+    preferredMode?: AccountMode,
   ) => Promise<AuthProfile | null>;
 }>;
 
@@ -230,10 +232,15 @@ export function AuthProvider({ children, dependencies }: AuthProviderProps) {
   const value = useMemo<AuthContextValue>(
     () => ({
       state,
-      signUp: async (email, password, displayName) => {
+      signUp: async (email, password, displayName, preferredMode) => {
         const operationId = nextOperation();
         dispatch({ type: "SIGN_IN_STARTED", operationId });
-        const result = await deps.auth.signUp(email, password, displayName);
+        const result = await deps.auth.signUp(
+          email,
+          password,
+          displayName,
+          preferredMode,
+        );
         if (
           operation.current === operationId &&
           result.user &&
@@ -266,11 +273,19 @@ export function AuthProvider({ children, dependencies }: AuthProviderProps) {
       resendConfirmation: deps.auth.resendConfirmation,
       requestPasswordReset: deps.auth.requestPasswordReset,
       updatePassword: deps.auth.updatePassword,
-      completeOnboarding: async (displayName, homeArea) => {
+      completeOnboarding: async (
+        displayName,
+        homeArea,
+        preferredMode = "worker",
+      ) => {
         const userId = state.userId;
         if (!userId) throw new Error("An authenticated user is required.");
         const startingOperation = operation.current;
-        await deps.profiles.completeOnboarding(displayName, homeArea);
+        await deps.profiles.completeOnboarding(
+          displayName,
+          homeArea,
+          preferredMode,
+        );
         if (operation.current !== startingOperation) return;
         const profile = await deps.profiles.getOwnProfile(userId);
         if (operation.current !== startingOperation) return;

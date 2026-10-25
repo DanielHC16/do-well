@@ -28,6 +28,7 @@ This is the project-wide index and status log. It helps a new session find the g
 | `C-011` | 2026-10-21 | All substantial post-bootstrap work uses a short-lived branch, linked issue, reviewed PR, and user-approved merge. | M00 safe bootstrap is the sole direct-to-main exception. | `docs/DEVELOPMENT_WORKFLOW.md` |
 | `C-012` | 2026-10-25 | Prioritize an isolated offline Demo Preview before completing hosted authentication. | The demo uses synthetic local data and a visible disclosure; it does not weaken or claim completion of production authentication, authorization, or cloud workflows. | [ADR 0006](adr/0006-explicit-local-demo-runtime.md) |
 | `C-013` | 2026-10-25 | Foreground one-shot location with list-first nearby discovery; no interactive map or billing-dependent tile CDNs in MVP. | Verified zero-cost architecture with zero external card risk; GPS fix or curated Metro Manila localities feed SQL Haversine query. | [ADR 0007](adr/0007-foreground-location-and-list-first-discovery.md) |
+| `C-014` | 2026-10-26 | Separate Supabase Auth identity, self-service workspace preference (worker/employer), and server-owned capabilities (user/admin). | Enforce admin capabilities and audit trail via PostgreSQL RPCs/RLS; self-service workspace preference persisted to profile; no client-side email role inference. | [ADR 0008](adr/0008-identity-workspace-and-admin-capabilities.md) |
 
 ## Architecture proposals awaiting approval
 

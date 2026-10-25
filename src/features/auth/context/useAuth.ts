@@ -11,6 +11,7 @@ export type AuthContextValue = Readonly<{
     email: string,
     password: string,
     displayName: string,
+    preferredMode: "worker" | "employer",
   ) => Promise<void>;
   signInWithPassword: (email: string, password: string) => Promise<void>;
   beginGoogleSignIn: ReturnTypeOfAuthGateway["beginGoogleSignIn"];
@@ -18,7 +19,11 @@ export type AuthContextValue = Readonly<{
   resendConfirmation: ReturnTypeOfAuthGateway["resendConfirmation"];
   requestPasswordReset: ReturnTypeOfAuthGateway["requestPasswordReset"];
   updatePassword: ReturnTypeOfAuthGateway["updatePassword"];
-  completeOnboarding: (displayName: string, homeArea: string) => Promise<void>;
+  completeOnboarding: (
+    displayName: string,
+    homeArea: string,
+    preferredMode?: "worker" | "employer",
+  ) => Promise<void>;
   refresh: () => Promise<void>;
   signOut: () => Promise<void>;
 }>;

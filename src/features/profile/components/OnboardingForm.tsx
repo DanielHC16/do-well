@@ -26,6 +26,9 @@ export function OnboardingForm({
 }: OnboardingFormProps) {
   const [displayName, setDisplayName] = useState(initialDisplayName);
   const [homeArea, setHomeArea] = useState("");
+  const [preferredMode, setPreferredMode] = useState<"worker" | "employer">(
+    "worker",
+  );
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [hasSubmissionError, setHasSubmissionError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,7 +37,11 @@ export function OnboardingForm({
   const submit = async () => {
     if (submissionLock.current) return;
 
-    const parsed = onboardingProfileSchema.safeParse({ displayName, homeArea });
+    const parsed = onboardingProfileSchema.safeParse({
+      displayName,
+      homeArea,
+      preferredMode,
+    });
     if (!parsed.success) {
       const errors = parsed.error.flatten().fieldErrors;
       setFieldErrors({
@@ -121,6 +128,39 @@ export function OnboardingForm({
         ) : null}
       </View>
 
+      <View style={styles.field}>
+        <Text style={styles.label}>Start in a workspace</Text>
+        <Text style={styles.hint}>
+          Choose what you want to do first. You can switch at any time.
+        </Text>
+        <View accessibilityRole="radiogroup" style={styles.modeRow}>
+          {(["worker", "employer"] as const).map((mode) => {
+            const selected = preferredMode === mode;
+            const label = mode === "worker" ? "Find work" : "Offer work";
+            return (
+              <Pressable
+                accessibilityLabel={label}
+                accessibilityRole="radio"
+                accessibilityState={{ selected }}
+                disabled={isSubmitting}
+                key={mode}
+                onPress={() => setPreferredMode(mode)}
+                style={[styles.modeButton, selected && styles.modeSelected]}
+              >
+                <Text
+                  style={[
+                    styles.modeButtonText,
+                    selected && styles.modeSelectedText,
+                  ]}
+                >
+                  {label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+
       {hasSubmissionError ? (
         <Text
           accessibilityLabel={submissionError}
@@ -203,6 +243,30 @@ const styles = StyleSheet.create({
   hint: {
     color: setupTheme.color.muted,
     fontSize: setupTheme.type.status,
+  },
+  modeRow: {
+    flexDirection: "row",
+    gap: setupTheme.spacing.compact,
+  },
+  modeButton: {
+    alignItems: "center",
+    borderColor: setupTheme.color.foreground,
+    borderRadius: setupTheme.radius.control,
+    borderWidth: 1,
+    flex: 1,
+    justifyContent: "center",
+    minHeight: 48,
+  },
+  modeSelected: {
+    backgroundColor: setupTheme.color.foreground,
+  },
+  modeButtonText: {
+    color: setupTheme.color.foreground,
+    fontSize: setupTheme.type.status,
+    fontWeight: "800",
+  },
+  modeSelectedText: {
+    color: setupTheme.color.surface,
   },
   errorText: {
     color: setupTheme.color.foreground,

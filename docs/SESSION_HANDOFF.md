@@ -2,15 +2,14 @@
 
 ## Snapshot
 
-- **Last verified:** 2026-10-25 (Asia/Manila)
-- **Completed milestones:** M01 — Expo initialization and Android development proof; M02 — Supabase schema and authorization foundation; M03A — authentication foundation; D01 — Offline Demo Preview; M04 — Authenticated marketplace shell and dual-mode navigation; M05 — Gig creation and employer management; M06 — Nearby/remote discovery and explainable ranking; M07 — Worker applications and atomic employer selection; M08 — Implement agreements, milestones and activity; M09 — Add work submission, revision and approval; M10 — Prove and implement zero-cost AI Job Brief Builder; M11 — Add foreground location and decide map experience; M12 — Integrate local notifications and image evidence; M13 — Harden weak-connectivity behavior; M14 — Security verification, end-to-end tests and competition build
-- **Current milestone:** M14 — Security verification, end-to-end tests and competition build
+- **Last verified:** 2026-10-26 (Asia/Manila)
+- **Completed milestones:** M01 — Expo initialization; M02 — Supabase schema; M03A — auth foundation; D01 — Offline Demo; M04 — Marketplace shell; M05 — Gig creation; M06 — Discovery; M07 — Applications; M08 — Agreements; M09 — Submissions; M10 — AI Brief Builder; M11 — Location; M12 — Notifications/evidence; M13 — Weak-connectivity; M14 — Security & tests; M15 — CI & Productization Reset; M17 — Settings, Workspace Persistence & Admin Capability; M18 — Functional Moderation Console
+- **Current milestone:** M15-M18 Productization & Admin Demo
 - **Status:** `COMPLETED`
-- **Branch:** `main`
+- **Branch:** `feat/productization-admin-demo`
 - **Base/default branch:** `main`
-- **Current implementation merge:** `efe12fd` (`Merge pull request #37`)
+- **Current implementation merge:** `4f8cbe0` (`Merge pull request #39`)
 - **Remote:** `https://github.com/DanielHC16/do-well` (`PRIVATE`)
-- **Next issue:** All roadmap milestones completed
 - **M01 PR:** [#17](https://github.com/DanielHC16/do-well/pull/17), squash-merged as `d073c4b`
 - **M02 PR:** [#19](https://github.com/DanielHC16/do-well/pull/19), merge commit `f7a3317`
 - **M03A PR:** [#22](https://github.com/DanielHC16/do-well/pull/22), merged as `368613a`
@@ -26,6 +25,8 @@
 - **M12 PR:** [#34](https://github.com/DanielHC16/do-well/pull/34), merged as `04cf199`; corrective hardening merged via [#35](https://github.com/DanielHC16/do-well/pull/35) as `ae953f3`
 - **M13 PR:** [#36](https://github.com/DanielHC16/do-well/pull/36), merged as `e0d3a5d`
 - **M14 PR:** [#37](https://github.com/DanielHC16/do-well/pull/37), merged as `efe12fd`
+- **Audit PR:** [#38](https://github.com/DanielHC16/do-well/pull/38), merged as `5839b68`
+- **Docs PR:** [#39](https://github.com/DanielHC16/do-well/pull/39), merged as `4f8cbe0`
 
 This file records repository evidence, not chat state. Re-run the verification commands before relying on it.
 
