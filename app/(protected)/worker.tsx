@@ -1,19 +1,13 @@
 import { useAuth } from "@/features/auth/context/useAuth";
+import { ProfileRecoveryBoundary } from "@/features/profile/components/ProfileRecoveryBoundary";
 import { AuthenticatedHomeScreen } from "@/features/shell/components/AuthenticatedHomeScreen";
-
-const fallbackProfile = {
-  id: "user",
-  displayName: "Neighbor",
-  homeArea: null,
-  onboardingCompletedAt: null,
-};
 
 export default function WorkerHomeScreen() {
   const { state } = useAuth();
-  return (
-    <AuthenticatedHomeScreen
-      mode="worker"
-      profile={state.profile ?? fallbackProfile}
-    />
-  );
+
+  if (!state.profile) {
+    return <ProfileRecoveryBoundary />;
+  }
+
+  return <AuthenticatedHomeScreen mode="worker" profile={state.profile} />;
 }

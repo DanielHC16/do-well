@@ -3,7 +3,7 @@
 ## Snapshot
 
 - **Last verified:** 2026-10-26 (Asia/Manila)
-- **Completed milestones:** M01 — Expo initialization; M02 — Supabase schema; M03A — auth foundation; D01 — Offline Demo; M04 — Marketplace shell; M05 — Gig creation; M06 — Discovery; M07 — Applications; M08 — Agreements; M09 — Submissions; M10 — AI Brief Builder; M11 — Location; M12 — Notifications/evidence; M13 — Weak-connectivity; M14 — Security & tests; M15 — CI & Productization Reset; M17 — Settings, Workspace Persistence & Admin Capability; M18 — Functional Moderation Console
+- **Completed milestones:** M01 — Expo initialization; M02 — Supabase schema; M03A — auth foundation; D01 — Offline Demo; M04 — Marketplace shell; M05 — Gig creation; M06 — Discovery; M07 — Applications; M08 — Agreements; M09 — Submissions; M10 — AI Brief Builder; M11 — Location; M12 — Notifications/evidence; M13 — Weak-connectivity; M14 — Security & tests; M15 — CI & Productization Reset; M17 — Settings, Workspace Persistence & Admin Capability; M18 — Functional Moderation & Reporting UI; M19 — Presentation Hardening & Identity Boundaries
 - **Current milestone:** M15-M18 Productization & Admin Demo
 - **Status:** `COMPLETED`
 - **Branch:** `feat/productization-admin-demo`

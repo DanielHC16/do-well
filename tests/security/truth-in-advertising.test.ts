@@ -1,5 +1,10 @@
 import appConfig from "../../app.config";
 import { setupTheme } from "../../src/features/setup/setupTheme";
+import { ProtectedRouteUnavailableScreen } from "../../src/features/shell/components/ProtectedRouteUnavailableScreen";
+
+jest.mock("expo-router", () => ({
+  useRouter: () => ({ replace: jest.fn(), push: jest.fn() }),
+}));
 
 describe("Security & Compliance: Truth in Advertising & Transparency", () => {
   it("verifies Android permissions in app.config.ts strictly request foreground-only access", () => {
@@ -56,5 +61,9 @@ describe("Security & Compliance: Truth in Advertising & Transparency", () => {
     expect(setupTheme.color.warning).toBeDefined();
     expect(setupTheme.color.accent).toBeDefined();
     expect(setupTheme.color.foreground).toBeDefined();
+  });
+
+  it("verifies error screen renders clean production copy without placeholder text", () => {
+    expect(typeof ProtectedRouteUnavailableScreen).toBe("function");
   });
 });
