@@ -3,8 +3,8 @@
 **Last audited:** 2026-10-26 (Asia/Manila)  
 **Repository:** `DanielHC16/do-well` (private)  
 **Default branch:** `main`  
-**Audited commit:** `2632a21` (PR #42 merge)  
-**Current phase:** Productization implementation: zero-secret CI workflow, server-owned admin capabilities, Settings, functional moderation console, and dual Google/email authentication implemented and verified across 91 test suites (527 tests).
+**Audited commit:** `98614ca` (docs sync after PR #42 merge)  
+**Current phase:** Productization implementation: zero-secret CI workflow, server-owned admin capabilities, Settings, functional moderation console, dual Google/email authentication, idempotent operator provisioning, and end-to-end multi-principal HTTP workflow suite implemented and verified across 92 Jest test suites (538 tests), 2 HTTP integration suites, and 13 database test suites (253 pgTAP tests).
 
 This is the first document a new developer or AI agent should read. It records the difference between what exists in source code, what has been locally verified, and what is actually available in the hosted environment. Do not infer live readiness from old milestone labels.
 
@@ -42,10 +42,10 @@ Repository rules take precedence over this summary if they are stricter.
 | Area | Repository state | Hosted/presentation state | Disposition |
 | --- | --- | --- | --- |
 | Google authentication | PKCE browser OAuth, callback validation, session restoration, refresh, sign-out, and onboarding are implemented and locally tested | The designated owner Google identity exists, is confirmed, and has a completed profile; full emulator/physical-device acceptance remains deferred | Complete M03B acceptance before relying on it in a live demo |
-| Email/password | Gateway, provider methods, and `AccountAccessScreen` with segmented Google & Email/Password tabs exist | Locally implemented and tested (86 suites passing) | Ready for hosted verification alongside Google OAuth |
+| Email/password | Gateway, provider methods, and `AccountAccessScreen` with segmented Google & Email/Password tabs exist | Locally implemented and tested (92 suites passing) | Ready for hosted verification alongside Google OAuth |
 | Worker/employer experience | Workspaces, switcher, and `AccountSettingsScreen` exist; preference persisted via `set_preferred_mode` RPC | User-selectable workspace preference stored in `profiles.preferred_mode` and local store | Preserved and enforced as self-service preference, not a security role |
 | Administrator | Server-owned `account_roles`, `is_admin()`, `get_my_capabilities()`, `admin_actions`, and `AdminConsoleScreen` exist | Admin authority verified via RPCs; client never infers capability from email | Provision owner UUID in hosted `account_roles` after database migration |
-| Marketplace backend | Eleven migrations define schema, RLS, Storage, and real workflow RPCs | Hosted migration history stops after the first four migrations; seven workflow migrations are unapplied | Back up, review, apply, and verify hosted migration parity before live workflow testing |
+| Marketplace backend | Twelve migrations define schema, RLS, Storage, and real workflow RPCs | Hosted migration history stops after the first four migrations; eight workflow migrations (`20261025000100` through `20261026000100`) are unapplied | Back up, review, apply, and verify hosted migration parity before live workflow testing |
 | Hosted data | Local seed and extensive SQL fixtures exist | One profile; zero gigs, applications, assignments, milestones, submissions, activity events, and reports | Provision a controlled live demo scenario using real identities |
 | Core mobile flows | Real gateways/screens exist for gigs through completion | Verified locally via end-to-end multi-principal HTTP integration test (`tests/integration/production-workflow-http.test.ts`) across 14 lifecycle steps | Ready for hosted device acceptance |
 | Evidence | Private Storage architecture, immutable upload recovery, server-side object verification, signed reads, and Storage API upload RLS parity verified | Verified via local HTTP integration test including binary JPEG upload and manifest finalization | Ready for hosted device rehearsal |
@@ -58,7 +58,7 @@ Repository rules take precedence over this summary if they are stricter.
 
 ## 4. Fresh verification evidence
 
-The following commands passed on 2026-10-26 on `feat/database-and-provisioning-m20`:
+The following commands passed on 2026-10-26 on `main` (`98614ca`):
 
 - `npm run format:check` — clean Prettier formatting across all files
 - `npm run lint` — 0 ESLint errors
@@ -74,7 +74,7 @@ The following commands passed on 2026-10-26 on `feat/database-and-provisioning-m
 Read-only hosted inspection also established:
 
 - migrations `20261022000100` through `20261023000100` are applied remotely;
-- migrations `20261025000100` through `20261025000700` are not applied remotely;
+- migrations `20261025000100` through `20261026000100` are not applied remotely;
 - the designated owner Google identity exists as a confirmed user with a completed profile;
 - that profile currently prefers the worker workspace;
 - no administrator role exists to grant to that account; and
