@@ -3,14 +3,14 @@
 ## Snapshot
 
 - **Last verified:** 2026-10-25 (Asia/Manila)
-- **Completed milestones:** M01 — Expo initialization and Android development proof; M02 — Supabase schema and authorization foundation; M03A — authentication foundation; D01 — Offline Demo Preview; M04 — Authenticated marketplace shell and dual-mode navigation; M05 — Gig creation and employer management; M06 — Nearby/remote discovery and explainable ranking; M07 — Worker applications and atomic employer selection
-- **Current milestone:** M07 — Worker applications and atomic employer selection
-- **Status:** `COMPLETED` on branch `feat/worker-applications`; ready for PR and merge
-- **Branch:** `feat/worker-applications`
+- **Completed milestones:** M01 — Expo initialization and Android development proof; M02 — Supabase schema and authorization foundation; M03A — authentication foundation; D01 — Offline Demo Preview; M04 — Authenticated marketplace shell and dual-mode navigation; M05 — Gig creation and employer management; M06 — Nearby/remote discovery and explainable ranking; M07 — Worker applications and atomic employer selection; M08 — Implement agreements, milestones and activity
+- **Current milestone:** M08 — Implement agreements, milestones and activity
+- **Status:** `COMPLETED` on branch `feat/task-agreements`; ready for PR and merge
+- **Branch:** `feat/task-agreements`
 - **Base/default branch:** `main`
-- **Current implementation merge:** `a0cd300` (`Merge pull request #28`)
+- **Current implementation merge:** `5d0dac5` (`Merge pull request #29`)
 - **Remote:** `https://github.com/DanielHC16/do-well` (`PRIVATE`)
-- **Next issue:** [#9 — [M08] Implement agreements, milestones and activity](https://github.com/DanielHC16/do-well/issues/9)
+- **Next issue:** [#10 — [M09] Add work submission, revision and approval](https://github.com/DanielHC16/do-well/issues/10)
 - **M01 PR:** [#17](https://github.com/DanielHC16/do-well/pull/17), squash-merged as `d073c4b`
 - **M02 PR:** [#19](https://github.com/DanielHC16/do-well/pull/19), merge commit `f7a3317`
 - **M03A PR:** [#22](https://github.com/DanielHC16/do-well/pull/22), merged as `368613a`
@@ -18,6 +18,7 @@
 - **M04 PR:** [#26](https://github.com/DanielHC16/do-well/pull/26), merged as `b75a13e`
 - **M05 PR:** [#27](https://github.com/DanielHC16/do-well/pull/27), merged as `464d06b`
 - **M06 PR:** [#28](https://github.com/DanielHC16/do-well/pull/28), merged as `a0cd300`
+- **M07 PR:** [#29](https://github.com/DanielHC16/do-well/pull/29), merged as `5d0dac5`
 
 This file records repository evidence, not chat state. Re-run the verification commands before relying on it.
 
@@ -118,11 +119,34 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
   - `WorkerGigDetailScreen.tsx`: Application submission form with character limit, submission feedback, `PENDING REVIEW` state card, note disclosure, and `Withdraw Application` flow.
   - `EmployerGigDetailScreen.tsx`: Applicants review list with applicant cards, location, applied date, message note, atomic `Select Worker` action with confirmation, and `ACTIVE ASSIGNMENT` banner displaying proposed terms.
 - Quality verification: 47 Jest suites / 236 tests pass, 9 pgTAP files / 127 database tests pass, clean `db:lint`, clean `db:types:check`, clean `format:check`, clean `lint`, clean `typecheck`, and 20/20 `expo-doctor` checks.
+- Merged to `main` via PR #29 (`5d0dac5`), closing Issue #8.
+
+## M08 completed state
+
+- Plan document penned at `docs/plans/2026-10-25-m08-task-agreements.md`.
+- Database functions and RPCs implemented in `supabase/migrations/20261025000400_assignment_and_milestone_rpcs.sql`:
+  - `confirm_assignment(p_assignment_id)`: Worker-only agreement acceptance (`P0020`), verifies `proposed` status (`P0021`), sets `status = 'active'`, `worker_confirmed_at = now()`, `started_at = now()`, and emits `assignment_confirmed` activity event.
+  - `decline_assignment(p_assignment_id)`: Worker-only decline (`P0020`), sets `status = 'declined'`, `cancelled_at = now()`, reopens gig notice to `published`, marks application `status = 'declined'`, and emits `assignment_declined` activity event.
+  - `cancel_proposed_assignment(p_assignment_id)`: Employer-only cancellation (`P0022`), sets `status = 'cancelled'`, `cancelled_at = now()`, reopens gig notice to `published`, marks application `status = 'rejected'`, and emits `assignment_cancelled` activity event.
+  - `create_assignment_milestone(p_assignment_id, p_title, p_description, p_due_at)`: Employer-only milestone builder (`P0023`), checks assignment status (`P0024`), auto-increments position 1..20 (`P0027`), title bounds 2..100 (`P0025`), description max 1000 (`P0026`), inserts with `status = 'pending'`, and emits `milestone_created` for worker.
+  - `start_assignment_milestone(p_milestone_id)`: Worker-only milestone start (`P0028`), checks active assignment (`P0029`), pending milestone status (`P0030`), sets `status = 'in_progress'`, and emits `milestone_started` for employer.
+  - `list_assignment_milestones(p_assignment_id)`: Ordered milestone query by `position asc` for assignment participants.
+  - `get_assignment_detail(p_assignment_id)`: Returns joined assignment, employer profile, worker profile, and gig summary JSON for assignment participants.
+  - `list_user_activity(p_limit, p_offset)`: Returns recipient's activity event records ordered by `created_at desc`.
+  - `mark_activity_read(p_event_id)`: Sets `read_at = clock_timestamp()` for owned event.
+  - Revoked all from `public`, `anon`; granted execute strictly to `authenticated`.
+- Database tests added in `supabase/tests/100_assignment_and_milestone_rpcs.test.sql` (10 pgTAP files / 158 tests passing).
+- Domain schemas and gateway implemented in `src/features/assignments/model/` and `src/features/assignments/data/`.
+- UI screens and routes integrated:
+  - `WorkerAssignmentDetailScreen.tsx`: Agreement review, terms, employer profile card, confirm and decline actions, and ordered milestones view with start milestone action.
+  - `EmployerAssignmentDetailScreen.tsx`: Agreement details, selected worker profile card, cancel proposal action, ordered milestone step breakdown, and milestone creation modal/card.
+  - `AuthenticatedActivityScreen.tsx`: Live activity feed with read markers, relative timestamps, and navigation links to assignment agreements.
+  - Routes: `app/(protected)/worker/assignments/[assignmentId].tsx` and `app/(protected)/employer/assignments/[assignmentId].tsx`.
+  - Route tests in `app/(protected)/__tests__/routes.test.tsx`.
+- Quality verification: 51 Jest suites / 259 tests pass, 10 pgTAP files / 158 database tests pass, clean `db:lint`, clean `db:types:check`, clean `format:check`, clean `lint`, clean `typecheck`, and 20/20 `expo-doctor` checks.
 
 ## Open product decisions
 
-- Define cancellation authority and outcomes for each active workflow state.
-- Confirm the assignment/agreement acceptance sequence.
 - Set evidence and abandoned-upload retention periods before M09 cleanup behavior is implemented.
 
 ## Demo-first pivot
@@ -135,12 +159,12 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 
 ## Exact next steps
 
-1. Commit M07 changes in small, logical Conventional Commits.
-2. Push branch `feat/worker-applications` to GitHub.
-3. Open Pull Request for M07 linking Issue #8 with full test evidence.
-4. Merge M07 pull request into `main`.
+1. Commit M08 changes in small, logical Conventional Commits.
+2. Push branch `feat/task-agreements` to GitHub.
+3. Open Pull Request for M08 linking Issue #9 with full test evidence.
+4. Merge M08 pull request into `main`.
 5. Switch to `main` and pull latest commits.
-6. Begin M08: Implement agreements, milestones and activity (Issue #9).
+6. Begin M09: Add work submission, revision and approval (Issue #10).
 
 ## Suggested continuation commands
 

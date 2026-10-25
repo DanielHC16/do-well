@@ -192,7 +192,7 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 
 ## M07 — Add applications and atomic worker selection
 
-**Status:** `COMPLETED` on branch `feat/worker-applications`; ready for PR and merge.
+**Status:** `COMPLETED` after review and merge of [PR #29](https://github.com/DanielHC16/do-well/pull/29) (`5d0dac5`) on 2026-10-25.
 
 - **Goal:** allow workers to apply once and employers to privately review applicants and select exactly one.
 - **Dependencies:** M05 and M06; M02 application/assignment constraints.
@@ -207,7 +207,7 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 
 ## M08 — Implement agreements, milestones and activity
 
-**Status:** `NOT STARTED`
+**Status:** `COMPLETED` on branch `feat/task-agreements`; ready for PR and merge.
 
 - **Goal:** give both participants a clear, auditable path from selection through in-progress milestones.
 - **Dependencies:** M07; decision on two-party agreement confirmation and post-assignment cancellation/disputes.
