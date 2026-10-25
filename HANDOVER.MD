@@ -47,25 +47,29 @@ Repository rules take precedence over this summary if they are stricter.
 | Administrator | Server-owned `account_roles`, `is_admin()`, `get_my_capabilities()`, `admin_actions`, and `AdminConsoleScreen` exist | Admin authority verified via RPCs; client never infers capability from email | Provision owner UUID in hosted `account_roles` after database migration |
 | Marketplace backend | Eleven migrations define schema, RLS, Storage, and real workflow RPCs | Hosted migration history stops after the first four migrations; seven workflow migrations are unapplied | Back up, review, apply, and verify hosted migration parity before live workflow testing |
 | Hosted data | Local seed and extensive SQL fixtures exist | One profile; zero gigs, applications, assignments, milestones, submissions, activity events, and reports | Provision a controlled live demo scenario using real identities |
-| Core mobile flows | Real gateways/screens exist for gigs through completion | Not proven end-to-end against the hosted project on Android | Add production integration and device acceptance |
-| Evidence | Private Storage architecture, immutable upload recovery, server-side object verification, and signed reads exist | Not accepted in a hosted device journey | Include Storage in the live two-user test |
+| Core mobile flows | Real gateways/screens exist for gigs through completion | Verified locally via end-to-end multi-principal HTTP integration test (`tests/integration/production-workflow-http.test.ts`) across 14 lifecycle steps | Ready for hosted device acceptance |
+| Evidence | Private Storage architecture, immutable upload recovery, server-side object verification, signed reads, and Storage API upload RLS parity verified | Verified via local HTTP integration test including binary JPEG upload and manifest finalization | Ready for hosted device rehearsal |
 | Connectivity | Offline banner, bounded caches, drafts, timeouts, and reconciliation exist | Device/network rehearsal still needed | Verify without claiming unattended background sync |
 | Notifications | Local recipient-activity alerts and deep-link handling exist | These are local notifications, not remote push | Present them accurately and test on device |
 | Brief builder | Deterministic structured brief generation works; an optional provider adapter exists | Default runtime has no genuine inference provider | Call it “Brief Builder” unless a real provider is configured and accepted |
-| Admin reports | `reports`, `admin_actions`, `submit_report`, `list_admin_reports`, `decide_admin_report`, `CreateReportScreen`, and `MyReportsScreen` exist | Full reporting flow, user report queue, moderation console, resolution notes, and immutable audit trail implemented and tested | Ready for hosted apply |
-| Automated verification | Format, lint, strict types, Jest (86 suites / 508 tests), SQL tests, Expo doctor (20/20), Android Hermes export, and GitHub Actions CI workflow exist | `.github/workflows/ci.yml` created with zero-secret PR verification | Verified by `tests/config/ci-workflow.test.js` and local execution |
+| Admin reports | `reports`, `admin_actions`, `submit_report`, `list_admin_reports`, `decide_admin_report`, `CreateReportScreen`, and `MyReportsScreen` exist | Full reporting flow, user report queue, moderation console, resolution notes, and immutable audit trail verified locally over HTTP | Ready for hosted apply |
+| Automated verification | Format, lint, strict types, Jest (92 suites / 538 tests), SQL tests (13 suites / 253 tests), HTTP integration tests (2 suites), Expo doctor (20/20), Android Hermes export, and GitHub Actions CI workflow exist | `.github/workflows/ci.yml` created with zero-secret PR verification | Verified by `tests/config/ci-workflow.test.js` and local execution |
 | Offline demo | Explicit, isolated synthetic runtime exists | Old runbook treats it as the primary story and contains UI/feature inaccuracies | Retain only as a labelled fallback and rewrite the runbook |
 
 ## 4. Fresh verification evidence
 
-The following commands passed on 2026-10-26 on `feat/productization-admin-demo`:
+The following commands passed on 2026-10-26 on `feat/database-and-provisioning-m20`:
 
 - `npm run format:check` — clean Prettier formatting across all files
 - `npm run lint` — 0 ESLint errors
 - `npm run typecheck` — 0 TypeScript compiler errors (`tsc --noEmit`)
-- `npm run test:run` — 91 suites, 527 tests passing
+- `npm run test:run` — 92 suites, 538 tests passing
+- `npm run test:auth:integration` — 2 suites, 2 integration tests passing over real HTTP
+- `npm run db:test` — 13 test suites, 253 pgTAP tests passing
+- `npm run db:lint` — 0 database schema warnings
+- `npm run db:types:check` — generated types current with zero drift
 - `npx expo-doctor` — 20/20 checks passed
-- `npx expo export --platform android` — Hermes bytecode bundle generated without errors
+- `npx expo export --platform android` — Hermes bytecode bundle generated without errors (4.9MB)
 
 Read-only hosted inspection also established:
 
@@ -291,37 +295,44 @@ Recommended defaults:
 
 ## 11. Exact next action for the next agent
 
-The M15-M18 implementation baseline is merged into `main` with 86 passing test suites (508 tests), zero typecheck/lint errors, and Android Hermes bundle export verified. The codebase now contains:
+The M15-M20 implementation baseline is merged into `main` with 92 passing Jest test suites (538 tests), 2 real HTTP integration suites, 13 pgTAP database test suites (253 tests), zero typecheck/lint errors, and Android Hermes bundle export verified. The codebase now contains:
 - Zero-secret continuous integration workflow (`.github/workflows/ci.yml`).
 - Server-owned `account_roles` and `admin_actions` audit schema (`supabase/migrations/20261026000100_admin_roles_and_reporting.sql`).
+- Storage policy parity for direct test fixtures and Supabase Storage API direct HTTP uploads.
 - Full pgTAP test contract (`supabase/tests/130_admin_roles_reporting.test.sql`).
 - Account settings with self-service workspace preference persistence (`AccountSettingsScreen.tsx`).
 - Functional noticeboard-styled moderation console (`AdminConsoleScreen.tsx`).
 - Dual-mode Google and Email/Password sign-in/sign-up screen (`AccountAccessScreen.tsx`).
 - Header Settings cog and conditional Admin Console entry in `MarketplaceShell.tsx`.
+- Idempotent operator demo provisioning script (`scripts/provision-demo-environment.cjs`, `scripts/provision-demo-environment.mjs`, unit tested in `scripts/__tests__/provision-demo-environment.test.js`).
+- Complete operator hosted setup and execution manual (`docs/HOSTED_DEMO_SETUP.md`).
+- Multi-principal HTTP integration test (`tests/integration/production-workflow-http.test.ts`) covering all 14 lifecycle steps over real HTTP endpoints.
 
 The exact technical sequence for the next agent is:
 
-1. **Hosted Migration Parity (M16)**:
+1. **Hosted Migration Parity**:
    - Ensure local Supabase credentials in `.env.local` are active.
-   - Capture a timestamped backup of hosted schema before pushing.
+   - Follow `docs/HOSTED_DEMO_SETUP.md` to capture a timestamped backup of hosted schema before pushing.
    - Apply pending migrations `20261025000100` through `20261026000100` to hosted Supabase.
    - Verify RPC availability (`get_my_capabilities`, `set_preferred_mode`, `submit_report`, `list_admin_reports`, `decide_admin_report`).
-2. **Owner Admin Capability Bootstrap**:
-   - Query `auth.users` for the designated owner's stable Auth UUID.
-   - Insert an `admin` role row into `public.account_roles` for that UUID via operator tooling/dashboard.
-   - Confirm `get_my_capabilities()` returns `isAdmin: true` for the owner account.
-3. **Dual-Principal Live Journey Rehearsal (M20)**:
-   - Provision a distinct counterpart test account via the new Email/Password UI.
-   - Execute the live two-principal marketplace flow:
-     - Principal A (Employer) creates and publishes a neighborhood gig.
-     - Principal B (Worker) discovers the gig and applies.
-     - Principal A accepts Principal B; Principal B confirms the agreement.
-     - Principal B uploads evidence and submits work; Principal A approves.
-     - Principal B submits a sample report; Principal A (Admin) inspects and decides it in the Admin Console.
+2. **Operator Demo Provisioning**:
+   - Run `node scripts/provision-demo-environment.mjs --target hosted --dry-run` to preview operations.
+   - Run with `--apply` to provision the counterpart demo worker and grant owner admin capabilities.
+   - Credentials and user IDs are output to `.codex-artifacts/demo-accounts.json` (gitignored).
+3. **Dual-Principal Live Journey Rehearsal**:
+   - Follow the dual-device live rehearsal procedure in `docs/HOSTED_DEMO_SETUP.md`:
+     - Device 1: Sign in as owner/employer; create and publish a neighborhood gig.
+     - Device 2: Sign in as demo worker; discover the gig and apply.
+     - Device 1: Select demo worker.
+     - Device 2: Confirm agreement.
+     - Device 1: Start milestone.
+     - Device 2: Upload evidence photo and finalize submission.
+     - Device 1: Approve submission and complete gig.
+     - Device 2: Submit a report.
+     - Device 1: Open Admin Console from header, view report, and record resolution note.
 4. **Physical Device Build & Release**:
    - Run `npx expo export --platform android`.
-   - Build and verify production APK on Android physical device/emulator.
+   - Build and verify production APK on Android physical device/emulator per `docs/COMPETITION_BUILD.md`.
 
 ## 12. Security and operations reminders
 

@@ -316,6 +316,16 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 - **Issue / PR:** M14 release issue is the authoritative checklist and links all milestone issues. PR includes exact evidence, known limitations, artifact location/checksum (not signing secrets), and reviewer sign-off.
 - **Risks / rollback:** late rule mismatch, signing loss, hosted outage, unrepresentative seed data, untested device. Keep previous known-good artifact/checksum, local demo seed/export and manual fallbacks; never change signing/package/model/provider after freeze without rerunning full validation.
 
+## M20 — Database Parity, Operator Provisioning & HTTP Multi-Principal Integration
+
+**Status:** `COMPLETED`
+
+- **Goal:** Resolve migration parity, storage upload checks, and function overloads; provide safe, idempotent operator provisioning CLI tooling for live demo rehearsal; prove the end-to-end multi-principal marketplace journey over real HTTP REST and RPC interfaces.
+- **Dependencies:** M14, M15–M18.
+- **Scope/tasks:** Fix migration parity and function overloading for `complete_onboarding`; harden storage policy `submission_evidence_insert_worker` to accommodate Supabase Storage API direct uploads; implement operator demo provisioning script (`scripts/provision-demo-environment.cjs`, `scripts/provision-demo-environment.mjs`) with unit tests; author hosted manual (`docs/HOSTED_DEMO_SETUP.md`); build end-to-end integration test (`tests/integration/production-workflow-http.test.ts`) covering 14 lifecycle steps over real HTTP; verify zero-cost and zero-secret invariants.
+- **Verification:** 92 Jest test suites / 538 tests passing, 2 integration test suites passing, 13 pgTAP database test suites / 253 tests passing, zero format, lint, or typecheck errors, 20/20 Expo Doctor checks, and clean Android Hermes bytecode export.
+- **Branch / commits:** `feat/database-and-provisioning-m20`.
+
 ## Milestone closeout checklist
 
 Before changing any row to `COMPLETED`:
@@ -331,4 +341,4 @@ Before changing any row to `COMPLETED`:
 
 ## Current milestone and blockers
 
-All implementation roadmap milestones (M00 through M14, plus D01) are COMPLETED and fully verified. 81 Jest suites / 482 tests pass, Expo Doctor passes 20/20 checks, static Android Hermes bundle export is verified (4.9MB), and authoritative judging, build, and disaster recovery runbooks are published. M03B hosted OAuth/physical-device acceptance remains deferred.
+All implementation roadmap milestones (M00 through M14, D01, and M20) are COMPLETED and fully verified. 92 Jest suites / 538 tests pass, 2 HTTP integration test suites pass, 13 pgTAP database test suites / 253 tests pass, Expo Doctor passes 20/20 checks, static Android Hermes bundle export is verified (4.9MB), and authoritative judging, build, disaster recovery, and operator provisioning runbooks are published. M03B hosted OAuth/physical-device acceptance remains deferred.
