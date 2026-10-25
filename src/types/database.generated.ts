@@ -5,7 +5,33 @@ export type Database = {
   
   "public": {
           Tables: {
-            "activity_events": {
+            "account_roles": {
+                  Row: {
+                    "created_at": string,"granted_at": string,"granted_by": string | null,"role": string,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"granted_at"?: string,"granted_by"?: string | null,"role"?: string,"updated_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"granted_at"?: string,"granted_by"?: string | null,"role"?: string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "account_roles_granted_by_fkey"
+      columns: ["granted_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "account_roles_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: true
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"activity_events": {
                   Row: {
                     "actor_id": string | null,"assignment_id": string | null,"created_at": string,"dedupe_key": string,"event_type": string,"gig_id": string | null,"id": string,"payload": NonNullable<Json>,"read_at": string | null,"recipient_id": string,"updated_at": string
                   }
@@ -40,6 +66,32 @@ isOneToOne: false
       columns: ["recipient_id"]
 isOneToOne: false
       referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"admin_actions": {
+                  Row: {
+                    "action_type": string,"admin_id": string,"created_at": string,"details": NonNullable<Json>,"id": string,"report_id": string | null,"target_id": string,"target_type": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "action_type": string,"admin_id": string,"created_at"?: string,"details"?: NonNullable<Json>,"id"?: string,"report_id"?: string | null,"target_id": string,"target_type": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "action_type"?: string,"admin_id"?: string,"created_at"?: string,"details"?: NonNullable<Json>,"id"?: string,"report_id"?: string | null,"target_id"?: string,"target_type"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "admin_actions_admin_id_fkey"
+      columns: ["admin_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "admin_actions_report_id_fkey"
+      columns: ["report_id"]
+isOneToOne: false
+      referencedRelation: "reports"
       referencedColumns: ["id"]
     }
                   ]
@@ -215,14 +267,14 @@ isOneToOne: false
                   ]
                 },"reports": {
                   Row: {
-                    "assignment_id": string | null,"category": string,"client_request_id": string,"created_at": string,"details": string,"gig_id": string | null,"id": string,"reporter_id": string,"resolution_note": string | null,"status": string,"subject_profile_id": string | null,"updated_at": string
+                    "assignment_id": string | null,"category": string,"client_request_id": string,"created_at": string,"details": string,"gig_id": string | null,"id": string,"reporter_id": string,"resolution_note": string | null,"reviewed_at": string | null,"reviewed_by": string | null,"status": string,"subject_profile_id": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "assignment_id"?: string | null,"category": string,"client_request_id": string,"created_at"?: string,"details": string,"gig_id"?: string | null,"id"?: string,"reporter_id": string,"resolution_note"?: string | null,"status"?: string,"subject_profile_id"?: string | null,"updated_at"?: string
+                    "assignment_id"?: string | null,"category": string,"client_request_id": string,"created_at"?: string,"details": string,"gig_id"?: string | null,"id"?: string,"reporter_id": string,"resolution_note"?: string | null,"reviewed_at"?: string | null,"reviewed_by"?: string | null,"status"?: string,"subject_profile_id"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "assignment_id"?: string | null,"category"?: string,"client_request_id"?: string,"created_at"?: string,"details"?: string,"gig_id"?: string | null,"id"?: string,"reporter_id"?: string,"resolution_note"?: string | null,"status"?: string,"subject_profile_id"?: string | null,"updated_at"?: string
+                    "assignment_id"?: string | null,"category"?: string,"client_request_id"?: string,"created_at"?: string,"details"?: string,"gig_id"?: string | null,"id"?: string,"reporter_id"?: string,"resolution_note"?: string | null,"reviewed_at"?: string | null,"reviewed_by"?: string | null,"status"?: string,"subject_profile_id"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -240,6 +292,12 @@ isOneToOne: false
     },{
       foreignKeyName: "reports_reporter_id_fkey"
       columns: ["reporter_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "reports_reviewed_by_fkey"
+      columns: ["reviewed_by"]
 isOneToOne: false
       referencedRelation: "profiles"
       referencedColumns: ["id"]
@@ -485,6 +543,23 @@ isOneToOne: true
         to: "profiles"
         isOneToOne: true
         isSetofReturn: false
+      } } |
+{ Args: { "p_display_name": string,"p_home_area": string,"p_preferred_mode": string }; Returns: {
+              "avatar_path": string | null,
+"bio": string | null,
+"created_at": string,
+"display_name": string,
+"home_area": string | null,
+"id": string,
+"onboarding_completed_at": string | null,
+"preferred_mode": string,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "profiles"
+        isOneToOne: true
+        isSetofReturn: false
       } },
 "confirm_assignment":
 { Args: { "p_assignment_id": string }; Returns: {
@@ -608,6 +683,32 @@ isOneToOne: true
         isOneToOne: true
         isSetofReturn: false
       } },
+"get_admin_overview":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
+"get_admin_report":
+{ Args: { "p_report_id": string }; Returns: {
+              "assignment_id": string | null,
+"category": string,
+"client_request_id": string,
+"created_at": string,
+"details": string,
+"gig_id": string | null,
+"id": string,
+"reporter_id": string,
+"resolution_note": string | null,
+"reviewed_at": string | null,
+"reviewed_by": string | null,
+"status": string,
+"subject_profile_id": string | null,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "reports"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "get_assignment_detail":
 { Args: { "p_assignment_id": string }; Returns: Json
                            },
@@ -633,6 +734,11 @@ isOneToOne: true
         isOneToOne: true
         isSetofReturn: false
       } },
+"get_my_capabilities":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "is_admin": boolean,"preferred_mode": string,"role": string,"user_id": string
+            }[]
+                           },
 "get_worker_application_for_gig":
 { Args: { "p_gig_id": string }; Returns: {
               "client_request_id": string,
@@ -650,6 +756,29 @@ isOneToOne: true
         to: "applications"
         isOneToOne: true
         isSetofReturn: false
+      } },
+"list_admin_reports":
+{ Args: { "p_limit"?: number,"p_offset"?: number,"p_status"?: string }; Returns: {
+              "assignment_id": string | null,
+"category": string,
+"client_request_id": string,
+"created_at": string,
+"details": string,
+"gig_id": string | null,
+"id": string,
+"reporter_id": string,
+"resolution_note": string | null,
+"reviewed_at": string | null,
+"reviewed_by": string | null,
+"status": string,
+"subject_profile_id": string | null,
+"updated_at": string
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "reports"
+        isOneToOne: false
+        isSetofReturn: true
       } },
 "list_assignment_milestones":
 { Args: { "p_assignment_id": string }; Returns: {
@@ -788,6 +917,29 @@ isOneToOne: true
         isOneToOne: true
         isSetofReturn: false
       } },
+"resolve_report":
+{ Args: { "p_decision": string,"p_report_id": string,"p_resolution_note": string }; Returns: {
+              "assignment_id": string | null,
+"category": string,
+"client_request_id": string,
+"created_at": string,
+"details": string,
+"gig_id": string | null,
+"id": string,
+"reporter_id": string,
+"resolution_note": string | null,
+"reviewed_at": string | null,
+"reviewed_by": string | null,
+"status": string,
+"subject_profile_id": string | null,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "reports"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "select_worker_atomic":
 { Args: { "p_application_id": string,"p_client_request_id"?: string }; Returns: {
               "agreed_amount": number,
@@ -814,6 +966,24 @@ isOneToOne: true
                           SetofOptions: {
         from: "*"
         to: "assignments"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"set_preferred_mode":
+{ Args: { "p_mode": string }; Returns: {
+              "avatar_path": string | null,
+"bio": string | null,
+"created_at": string,
+"display_name": string,
+"home_area": string | null,
+"id": string,
+"onboarding_completed_at": string | null,
+"preferred_mode": string,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "profiles"
         isOneToOne: true
         isSetofReturn: false
       } },
@@ -855,6 +1025,29 @@ isOneToOne: true
                           SetofOptions: {
         from: "*"
         to: "submissions"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"submit_report":
+{ Args: { "p_assignment_id"?: string,"p_category": string,"p_client_request_id"?: string,"p_details": string,"p_gig_id"?: string,"p_subject_profile_id"?: string }; Returns: {
+              "assignment_id": string | null,
+"category": string,
+"client_request_id": string,
+"created_at": string,
+"details": string,
+"gig_id": string | null,
+"id": string,
+"reporter_id": string,
+"resolution_note": string | null,
+"reviewed_at": string | null,
+"reviewed_by": string | null,
+"status": string,
+"subject_profile_id": string | null,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "reports"
         isOneToOne: true
         isSetofReturn: false
       } },

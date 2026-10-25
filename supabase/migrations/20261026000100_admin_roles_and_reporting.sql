@@ -143,12 +143,10 @@ $$;
 
 revoke all on function public.handle_new_auth_user() from public, anon, authenticated;
 
-drop function public.complete_onboarding(text, text);
-
 create function public.complete_onboarding(
   p_display_name text,
   p_home_area text,
-  p_preferred_mode text default 'worker'
+  p_preferred_mode text
 )
 returns public.profiles
 language plpgsql
@@ -193,7 +191,21 @@ begin
 end;
 $$;
 
+create or replace function public.complete_onboarding(
+  p_display_name text,
+  p_home_area text
+)
+returns public.profiles
+language sql
+security definer
+set search_path = ''
+as $$
+  select public.complete_onboarding(p_display_name, p_home_area, 'worker');
+$$;
+
+revoke all on function public.complete_onboarding(text, text) from public, anon;
 revoke all on function public.complete_onboarding(text, text, text) from public, anon;
+grant execute on function public.complete_onboarding(text, text) to authenticated;
 grant execute on function public.complete_onboarding(text, text, text) to authenticated;
 
 create function public.get_my_capabilities()
@@ -540,3 +552,19 @@ grant execute on function public.list_admin_reports(text, integer, integer) to a
 grant execute on function public.get_admin_report(uuid) to authenticated;
 grant execute on function public.get_admin_overview() to authenticated;
 grant execute on function public.resolve_report(uuid, text, text) to authenticated;
+
+
+-- Storage Policy Hardening: Support both 'size' (direct fixtures) and 'contentLength' (Supabase Storage API)
+drop policy if exists submission_evidence_insert_worker on storage.objects;
+create policy submission_evidence_insert_worker
+on storage.objects
+for insert
+to authenticated
+with check (
+  bucket_id = 'submission-evidence'
+  and private.can_upload_submission_evidence(name)
+  and lower(storage.extension(name)) in ('jpg', 'jpeg', 'png', 'webp')
+  and lower(metadata ->> 'mimetype') in ('image/jpeg', 'image/png', 'image/webp')
+  and (coalesce(metadata ->> 'size', metadata ->> 'contentLength')) ~ '^[0-9]+$'
+  and (coalesce(metadata ->> 'size', metadata ->> 'contentLength'))::bigint between 1 and 5242880
+);

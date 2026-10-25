@@ -3,10 +3,10 @@
 ## Snapshot
 
 - **Last verified:** 2026-10-26 (Asia/Manila)
-- **Completed milestones:** M01 — Expo initialization; M02 — Supabase schema; M03A — auth foundation; D01 — Offline Demo; M04 — Marketplace shell; M05 — Gig creation; M06 — Discovery; M07 — Applications; M08 — Agreements; M09 — Submissions; M10 — AI Brief Builder; M11 — Location; M12 — Notifications/evidence; M13 — Weak-connectivity; M14 — Security & tests; M15 — CI & Productization Reset; M17 — Settings, Workspace Persistence & Admin Capability; M18 — Functional Moderation & Reporting UI; M19 — Presentation Hardening & Identity Boundaries
-- **Current milestone:** M15-M18 Productization & Admin Demo
+- **Completed milestones:** M01 — Expo initialization; M02 — Supabase schema; M03A — auth foundation; D01 — Offline Demo; M04 — Marketplace shell; M05 — Gig creation; M06 — Discovery; M07 — Applications; M08 — Agreements; M09 — Submissions; M10 — AI Brief Builder; M11 — Location; M12 — Notifications/evidence; M13 — Weak-connectivity; M14 — Security & tests; M15 — CI & Productization Reset; M17 — Settings, Workspace Persistence & Admin Capability; M18 — Functional Moderation & Reporting UI; M19 — Presentation Hardening & Identity Boundaries; M20 — Database Parity, Operator Provisioning & HTTP Multi-Principal Integration
+- **Current milestone:** M20 — Database Parity, Operator Provisioning & HTTP Multi-Principal Integration
 - **Status:** `COMPLETED`
-- **Branch:** `feat/productization-admin-demo`
+- **Branch:** `feat/database-and-provisioning-m20`
 - **Base/default branch:** `main`
 - **Current implementation merge:** `b8a9890` (`Merge pull request #41`)
 - **Remote:** `https://github.com/DanielHC16/do-well` (`PRIVATE`)
@@ -249,6 +249,15 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
   - `docs/DISASTER_RECOVERY.md`: Presentation contingency matrix, network failure pivot, and local database backup/restore procedures.
   - Static Hermes Android bundle verified: `npx expo export --platform android` generated 4.9MB bundle with 0 errors.
 - Quality verification: 81 Jest test suites / 482 tests pass, clean `format:check`, clean `lint`, clean `typecheck`, and 20/20 `expo-doctor` checks.
+
+## M20 completed state
+
+- Database migration parity and function overloading resolved in `supabase/migrations/20261026000100_admin_roles_and_reporting.sql`.
+- Private Storage policy `submission_evidence_insert_worker` hardened to support both raw test fixtures and Supabase Storage API direct HTTP uploads (`metadata ->> 'size'` and `metadata ->> 'contentLength'`).
+- Operator demo provisioning CLI tool implemented at `scripts/provision-demo-environment.cjs` and `scripts/provision-demo-environment.mjs`, accompanied by 11 unit tests in `scripts/__tests__/provision-demo-environment.test.js`. Supports `--dry-run`, `--apply`, `--target local|hosted`, and custom account configurations while strictly respecting server constraints and writing sanitized summaries to `.codex-artifacts/demo-accounts.json`.
+- Operator hosted deployment manual authored at `docs/HOSTED_DEMO_SETUP.md`.
+- Comprehensive multi-principal production workflow integration test implemented at `tests/integration/production-workflow-http.test.ts`. Executes the complete 14-step journey over real HTTP REST and RPC boundaries (signup, onboarding, gig creation, discovery, application, selection, agreement, milestone, storage upload, finalization, approval, report creation, and admin resolution) with non-admin security negative checks and clean teardown.
+- Verification passed: 92 Jest test suites / 538 tests passing, 2 integration test suites passing, 13 pgTAP database test suites / 253 tests passing, zero format, lint, or typecheck errors, 20/20 Expo Doctor checks, and clean Android Hermes bytecode export.
 
 ## Open product decisions
 
