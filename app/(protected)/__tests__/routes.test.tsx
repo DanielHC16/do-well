@@ -1,10 +1,13 @@
-import { render, screen } from "@testing-library/react-native";
+import { render, screen, waitFor } from "@testing-library/react-native";
+
 import { useAuth } from "@/features/auth/context/useAuth";
 import { useShellMode } from "@/features/shell/context/useShellMode";
 
 import ProtectedUnmatchedRoute from "../[...unmatched]";
 import ActivityRoute from "../activity";
 import EmployerHomeScreen from "../employer";
+import EmployerGigDetailRoute from "../employer/gigs/[gigId]";
+import EmployerNewGigRoute from "../employer/gigs/new";
 import ProtectedIndexRoute from "../index";
 import ProfileRoute from "../profile";
 import WorkerHomeScreen from "../worker";
@@ -18,10 +21,17 @@ jest.mock("expo-router", () => {
     jest.requireActual<typeof import("react-native")>("react-native");
   return {
     useRouter: () => ({ push: mockPush, replace: mockReplace }),
+    useLocalSearchParams: () => ({ gigId: "test-gig-id" }),
     Redirect: ({ href }: { href: string }) =>
       React.createElement(Text, null, `Redirected to ${href}`),
   };
 });
+
+jest.mock("@react-native-async-storage/async-storage", () => ({
+  getItem: jest.fn(async () => null),
+  setItem: jest.fn(async () => undefined),
+  removeItem: jest.fn(async () => undefined),
+}));
 
 jest.mock("@/features/auth/context/useAuth", () => ({
   useAuth: jest.fn(),
@@ -29,6 +39,35 @@ jest.mock("@/features/auth/context/useAuth", () => ({
 
 jest.mock("@/features/shell/context/useShellMode", () => ({
   useShellMode: jest.fn(),
+}));
+
+jest.mock("@/features/gigs/data/gig-gateway", () => ({
+  gigGateway: {
+    getGigById: jest.fn(async () => ({
+      id: "test-gig-id",
+      employerId: "user-test",
+      title: "Test Route Gig",
+      description: "Route test gig description.",
+      category: "errands",
+      workMode: "onsite",
+      publicArea: "Quezon City",
+      publicLatitude: 14.65,
+      publicLongitude: 121.05,
+      budgetAmount: 600,
+      currency: "PHP",
+      status: "draft",
+      applicationDeadline: null,
+      dueAt: null,
+      publishedAt: null,
+      closedAt: null,
+      createdAt: "2026-10-25T00:00:00.000Z",
+      updatedAt: "2026-10-25T00:00:00.000Z",
+    })),
+    listEmployerGigs: jest.fn(async () => []),
+    createDraft: jest.fn(),
+    publishGig: jest.fn(),
+    closeGig: jest.fn(),
+  },
 }));
 
 const mockedUseAuth = jest.mocked(useAuth);
@@ -111,6 +150,20 @@ describe("Protected route components", () => {
     await render(<EmployerHomeScreen />);
     expect(screen.getByText("Put useful work in motion.")).toBeVisible();
     expect(screen.getByText("Jordan Lee")).toBeVisible();
+  });
+
+  it("EmployerNewGigRoute renders gig creation form", async () => {
+    await render(<EmployerNewGigRoute />);
+    expect(screen.getByText("POST A GIG")).toBeVisible();
+    expect(screen.getByText("AI JOB BRIEF BUILDER")).toBeVisible();
+  });
+
+  it("EmployerGigDetailRoute renders gig details screen", async () => {
+    await render(<EmployerGigDetailRoute />);
+    await waitFor(() => {
+      expect(screen.getByText("Test Route Gig")).toBeVisible();
+      expect(screen.getByText("STATUS: DRAFT")).toBeVisible();
+    });
   });
 
   it("ActivityRoute renders activity trail", async () => {
