@@ -3,14 +3,14 @@
 ## Snapshot
 
 - **Last verified:** 2026-10-25 (Asia/Manila)
-- **Completed milestones:** M01 — Expo initialization and Android development proof; M02 — Supabase schema and authorization foundation; M03A — authentication foundation; D01 — Offline Demo Preview; M04 — Authenticated marketplace shell and dual-mode navigation; M05 — Gig creation and employer management; M06 — Nearby/remote discovery and explainable ranking; M07 — Worker applications and atomic employer selection; M08 — Implement agreements, milestones and activity; M09 — Add work submission, revision and approval; M10 — Prove and implement zero-cost AI Job Brief Builder; M11 — Add foreground location and decide map experience; M12 — Integrate local notifications and image evidence; M13 — Harden weak-connectivity behavior
+- **Completed milestones:** M01 — Expo initialization and Android development proof; M02 — Supabase schema and authorization foundation; M03A — authentication foundation; D01 — Offline Demo Preview; M04 — Authenticated marketplace shell and dual-mode navigation; M05 — Gig creation and employer management; M06 — Nearby/remote discovery and explainable ranking; M07 — Worker applications and atomic employer selection; M08 — Implement agreements, milestones and activity; M09 — Add work submission, revision and approval; M10 — Prove and implement zero-cost AI Job Brief Builder; M11 — Add foreground location and decide map experience; M12 — Integrate local notifications and image evidence; M13 — Harden weak-connectivity behavior; M14 — Security verification, end-to-end tests and competition build
 - **Current milestone:** M14 — Security verification, end-to-end tests and competition build
-- **Status:** `NOT STARTED` (ready to branch)
-- **Branch:** `main`
+- **Status:** `COMPLETED`
+- **Branch:** `test/security-validation`
 - **Base/default branch:** `main`
-- **Current implementation merge:** `ae953f3` (`Merge pull request #35`)
+- **Current implementation merge:** `e0d3a5d` (`Merge pull request #36`)
 - **Remote:** `https://github.com/DanielHC16/do-well` (`PRIVATE`)
-- **Next issue:** [#15 — [M14] Security verification, end-to-end tests and competition build](https://github.com/DanielHC16/do-well/issues/15)
+- **Next issue:** All roadmap milestones completed
 - **M01 PR:** [#17](https://github.com/DanielHC16/do-well/pull/17), squash-merged as `d073c4b`
 - **M02 PR:** [#19](https://github.com/DanielHC16/do-well/pull/19), merge commit `f7a3317`
 - **M03A PR:** [#22](https://github.com/DanielHC16/do-well/pull/22), merged as `368613a`
@@ -24,7 +24,8 @@
 - **M10 PR:** [#32](https://github.com/DanielHC16/do-well/pull/32), merged as `29b9924`
 - **M11 PR:** [#33](https://github.com/DanielHC16/do-well/pull/33), merged as `58cf36a`
 - **M12 PR:** [#34](https://github.com/DanielHC16/do-well/pull/34), merged as `04cf199`; corrective hardening merged via [#35](https://github.com/DanielHC16/do-well/pull/35) as `ae953f3`
-- **M13 PR:** [#36](https://github.com/DanielHC16/do-well/pull/36) (ready for merge)
+- **M13 PR:** [#36](https://github.com/DanielHC16/do-well/pull/36), merged as `e0d3a5d`
+- **M14 PR:** [#37](https://github.com/DanielHC16/do-well/pull/37) (ready for merge)
 
 This file records repository evidence, not chat state. Re-run the verification commands before relying on it.
 
@@ -229,6 +230,22 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
   - `src/features/submissions/data/submission-draft-store.ts`: Persistent AsyncStorage draft store for worker submission notes and photo references.
   - `src/shared/api/network-timeout.ts`: 12-second bounded abort timeouts and mutation reconciliation helpers.
 - Quality verification: 77 Jest test suites / 468 tests pass, clean `format:check`, clean `lint`, clean `typecheck`, and 20/20 `expo-doctor` checks.
+
+## M14 completed state
+
+- Plan document penned at `docs/plans/2026-10-25-m14-security-build.md`.
+- Security verification and secret scan:
+  - `tests/security/secret-exposure.test.js`: Confirms zero tracked or bundled secrets in git or client code.
+  - `tests/security/authorization-boundaries.test.ts`: Validates schema rules, RPC transition guards, employer/worker role disjointness, storage boundary constraints (max 5 files, 5MB, JPEG/PNG/WEBP, private paths), and user-partitioned caching.
+  - `tests/security/truth-in-advertising.test.ts`: Asserts foreground-only location permissions (background tracking strictly disabled), local-only notification scheduling, deterministic heuristic AI Brief generation disclaimer, and prominent offline demo preview disclosures.
+- End-to-end competition scenario test suite:
+  - `tests/e2e/competition-workflow.test.ts`: Full 5-stage lifecycle scenario verified end-to-end (Employer gig creation -> Worker application -> Selection & atomic agreement -> Work submission with evidence -> Employer approval & completion) with multi-role security negative assertions.
+- Competition build & runbooks:
+  - `docs/COMPETITION_BUILD.md`: Android release APK compilation commands, checksum verification, apksigner instructions, and zero-cost build profiles.
+  - `docs/DEMO_RUNBOOK.md`: Authoritative 3-5 minute live judging script and feature showcase walkthrough.
+  - `docs/DISASTER_RECOVERY.md`: Presentation contingency matrix, network failure pivot, and local database backup/restore procedures.
+  - Static Hermes Android bundle verified: `npx expo export --platform android` generated 4.9MB bundle with 0 errors.
+- Quality verification: 81 Jest test suites / 482 tests pass, clean `format:check`, clean `lint`, clean `typecheck`, and 20/20 `expo-doctor` checks.
 
 ## Open product decisions
 

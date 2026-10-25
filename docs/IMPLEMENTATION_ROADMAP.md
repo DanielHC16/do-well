@@ -71,7 +71,7 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 | M11       | Android foreground location and optional map feasibility                  | **COMPLETED**   | [#12](https://github.com/DanielHC16/do-well/issues/12) |
 | M12       | Local notifications and image evidence integration                        | **COMPLETED**   | [#13](https://github.com/DanielHC16/do-well/issues/13) |
 | M13       | Connectivity resilience, cached reads and offline drafts                  | **COMPLETED**   | [#14](https://github.com/DanielHC16/do-well/issues/14) |
-| M14       | Security verification, end-to-end tests and competition build             | **NOT STARTED** | [#15](https://github.com/DanielHC16/do-well/issues/15) |
+| M14       | Security verification, end-to-end tests and competition build             | **COMPLETED**   | [#15](https://github.com/DanielHC16/do-well/issues/15) |
 
 ## M00 — Secure repository and approve architecture
 
@@ -297,7 +297,7 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 
 ## M14 — Verify security and produce competition build
 
-**Status:** `NOT STARTED`
+**Status:** `COMPLETED`
 
 - **Goal:** prove the approved MVP on target hardware and produce a reproducible competition artifact without billing or secret exposure.
 - **Dependencies:** required M01–M13 paths complete; official competition rules, deadline, APK/AAB format, judging device/API, demo duration, and network conditions confirmed; plan approval for release/signing operations.
@@ -325,4 +325,4 @@ Before changing any row to `COMPLETED`:
 
 ## Current milestone and blockers
 
-M01-M13 and D01 are complete (including M12 corrective hardening in PR #35). M13 connectivity resilience (Issue #14) is implemented on branch `feat/connectivity-resilience` with 77 Jest suites / 468 tests passing. M03B hosted OAuth/physical-device acceptance remains deferred. Evidence retention remains unresolved and cleanup policy must not be invented during M13.
+All implementation roadmap milestones (M00 through M14, plus D01) are COMPLETED and fully verified. 81 Jest suites / 482 tests pass, Expo Doctor passes 20/20 checks, static Android Hermes bundle export is verified (4.9MB), and authoritative judging, build, and disaster recovery runbooks are published. M03B hosted OAuth/physical-device acceptance remains deferred.
