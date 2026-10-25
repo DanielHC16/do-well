@@ -1,5 +1,10 @@
 import { fireEvent, render, waitFor } from "@testing-library/react-native";
 
+import type {
+  SubmissionGateway,
+  SubmissionRecord,
+} from "@/features/submissions";
+
 import type { AssignmentGateway } from "../../data/assignment-gateway";
 import type {
   AssignmentDetail,
@@ -11,6 +16,30 @@ jest.mock("@react-native-async-storage/async-storage", () => ({
   getItem: jest.fn(async () => null),
   setItem: jest.fn(async () => undefined),
   removeItem: jest.fn(async () => undefined),
+}));
+
+jest.mock("@/features/submissions/data/submission-gateway", () => ({
+  submissionGateway: {
+    submitAssignmentWork: jest.fn(async () => ({
+      id: "s0000000-0000-4000-8000-000000000001",
+      assignmentId: "90000000-0000-4000-8000-000000000001",
+      milestoneId: null,
+      submittedBy: "80000000-0000-4000-8000-000000000002",
+      version: 1,
+      note: "All tasks completed.",
+      status: "submitted" as const,
+      reviewNote: null,
+      submittedAt: "2026-10-25T03:00:00.000Z",
+      reviewedAt: null,
+      clientRequestId: "c0000000-0000-4000-8000-000000000001",
+      createdAt: "2026-10-25T03:00:00.000Z",
+      updatedAt: "2026-10-25T03:00:00.000Z",
+    })),
+    requestSubmissionRevision: jest.fn(),
+    approveAssignmentCompletion: jest.fn(),
+    listAssignmentSubmissions: jest.fn(async () => []),
+    getLatestAssignmentSubmission: jest.fn(async () => null),
+  },
 }));
 
 const mockRouter = {
@@ -70,12 +99,28 @@ const mockMilestone: MilestoneRecord = {
   assignmentId: "90000000-0000-4000-8000-000000000001",
   position: 1,
   title: "Desk Setup",
-  description: "Assemble 4 desks.",
+  description: "Assemble first 2 desks",
   dueAt: null,
   status: "pending",
   approvedAt: null,
   createdAt: "2026-10-25T01:00:00.000Z",
   updatedAt: "2026-10-25T01:00:00.000Z",
+};
+
+const mockSubmission: SubmissionRecord = {
+  id: "s0000000-0000-4000-8000-000000000001",
+  assignmentId: "90000000-0000-4000-8000-000000000001",
+  milestoneId: null,
+  submittedBy: "80000000-0000-4000-8000-000000000002",
+  version: 1,
+  note: "All desks assembled and arranged in conference room.",
+  status: "submitted",
+  reviewNote: null,
+  submittedAt: "2026-10-25T03:00:00.000Z",
+  reviewedAt: null,
+  clientRequestId: "c0000000-0000-4000-8000-000000000001",
+  createdAt: "2026-10-25T03:00:00.000Z",
+  updatedAt: "2026-10-25T03:00:00.000Z",
 };
 
 function createMockGateway(
@@ -107,6 +152,33 @@ function createMockGateway(
   };
 }
 
+function createMockSubmissionsGateway(
+  submissions: SubmissionRecord[] = [],
+): SubmissionGateway {
+  return {
+    submitAssignmentWork: jest.fn(async (input) => ({
+      id: "s0000000-0000-4000-8000-000000000099",
+      assignmentId: input.assignmentId,
+      milestoneId: input.milestoneId ?? null,
+      submittedBy: "80000000-0000-4000-8000-000000000002",
+      version: submissions.length + 1,
+      note: input.note ?? null,
+      status: "submitted" as const,
+      reviewNote: null,
+      submittedAt: "2026-10-25T03:00:00.000Z",
+      reviewedAt: null,
+      clientRequestId:
+        input.clientRequestId ?? "c0000000-0000-4000-8000-000000000099",
+      createdAt: "2026-10-25T03:00:00.000Z",
+      updatedAt: "2026-10-25T03:00:00.000Z",
+    })),
+    requestSubmissionRevision: jest.fn(),
+    approveAssignmentCompletion: jest.fn(),
+    listAssignmentSubmissions: jest.fn(async () => submissions),
+    getLatestAssignmentSubmission: jest.fn(async () => submissions[0] ?? null),
+  };
+}
+
 describe("WorkerAssignmentDetailScreen", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -114,10 +186,12 @@ describe("WorkerAssignmentDetailScreen", () => {
 
   it("renders proposed agreement terms and confirmation actions", async () => {
     const gateway = createMockGateway(mockAssignmentDetail, [mockMilestone]);
+    const submissionsGw = createMockSubmissionsGateway();
     const view = await render(
       <WorkerAssignmentDetailScreen
         assignmentId="90000000-0000-4000-8000-000000000001"
         gateway={gateway}
+        submissionsGateway={submissionsGw}
       />,
     );
 
@@ -133,10 +207,12 @@ describe("WorkerAssignmentDetailScreen", () => {
 
   it("allows worker to accept agreement", async () => {
     const gateway = createMockGateway(mockAssignmentDetail);
+    const submissionsGw = createMockSubmissionsGateway();
     const view = await render(
       <WorkerAssignmentDetailScreen
         assignmentId="90000000-0000-4000-8000-000000000001"
         gateway={gateway}
+        submissionsGateway={submissionsGw}
       />,
     );
 
@@ -158,10 +234,12 @@ describe("WorkerAssignmentDetailScreen", () => {
 
   it("allows worker to decline agreement", async () => {
     const gateway = createMockGateway(mockAssignmentDetail);
+    const submissionsGw = createMockSubmissionsGateway();
     const view = await render(
       <WorkerAssignmentDetailScreen
         assignmentId="90000000-0000-4000-8000-000000000001"
         gateway={gateway}
+        submissionsGateway={submissionsGw}
       />,
     );
 
@@ -188,22 +266,160 @@ describe("WorkerAssignmentDetailScreen", () => {
       },
     };
     const gateway = createMockGateway(activeDetail, [mockMilestone]);
+    const submissionsGw = createMockSubmissionsGateway();
     const view = await render(
       <WorkerAssignmentDetailScreen
         assignmentId="90000000-0000-4000-8000-000000000001"
         gateway={gateway}
+        submissionsGateway={submissionsGw}
       />,
     );
 
     await waitFor(() => {
-      expect(view.getByText("Start Milestone")).toBeVisible();
+      expect(view.getByText("Begin This Step →")).toBeVisible();
     });
 
-    await fireEvent.press(view.getByText("Start Milestone"));
+    await fireEvent.press(view.getByText("Begin This Step →"));
 
     expect(gateway.startMilestone).toHaveBeenCalledWith(mockMilestone.id);
     await waitFor(() => {
-      expect(view.getByText("Started milestone: Desk Setup")).toBeVisible();
+      expect(
+        view.getByText("Milestone started! Keep up the progress."),
+      ).toBeVisible();
+    });
+  });
+
+  it("allows worker to submit completed work on active assignment", async () => {
+    const activeDetail: AssignmentDetail = {
+      ...mockAssignmentDetail,
+      assignment: {
+        ...mockAssignmentDetail.assignment,
+        status: "active",
+      },
+    };
+    const gateway = createMockGateway(activeDetail);
+    const submissionsGw = createMockSubmissionsGateway();
+
+    const view = await render(
+      <WorkerAssignmentDetailScreen
+        assignmentId="90000000-0000-4000-8000-000000000001"
+        gateway={gateway}
+        submissionsGateway={submissionsGw}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(view.getByText("SUBMIT COMPLETED WORK")).toBeVisible();
+      expect(view.getByText("Submit Work for Review")).toBeVisible();
+    });
+
+    await fireEvent.changeText(
+      view.getByLabelText("Completion notes"),
+      "Finished assembling 4 desks.",
+    );
+    await fireEvent.press(view.getByText("Submit Work for Review"));
+
+    expect(submissionsGw.submitAssignmentWork).toHaveBeenCalledWith({
+      assignmentId: "90000000-0000-4000-8000-000000000001",
+      note: "Finished assembling 4 desks.",
+    });
+
+    await waitFor(() => {
+      expect(
+        view.getByText("Work successfully submitted for employer review."),
+      ).toBeVisible();
+    });
+  });
+
+  it("renders revision requested banner with employer feedback", async () => {
+    const revisionDetail: AssignmentDetail = {
+      ...mockAssignmentDetail,
+      assignment: {
+        ...mockAssignmentDetail.assignment,
+        status: "revision_requested",
+      },
+    };
+    const revisionSubmission: SubmissionRecord = {
+      ...mockSubmission,
+      status: "revision_requested",
+      reviewNote: "Desk 3 has loose screws. Please tighten.",
+    };
+    const gateway = createMockGateway(revisionDetail);
+    const submissionsGw = createMockSubmissionsGateway([revisionSubmission]);
+
+    const view = await render(
+      <WorkerAssignmentDetailScreen
+        assignmentId="90000000-0000-4000-8000-000000000001"
+        gateway={gateway}
+        submissionsGateway={submissionsGw}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(view.getAllByText("REVISION REQUESTED")[0]).toBeVisible();
+      expect(
+        view.getByText('"Desk 3 has loose screws. Please tighten."'),
+      ).toBeVisible();
+      expect(view.getByText("Submit Revised Work")).toBeVisible();
+    });
+  });
+
+  it("renders submitted status banner when under review", async () => {
+    const submittedDetail: AssignmentDetail = {
+      ...mockAssignmentDetail,
+      assignment: {
+        ...mockAssignmentDetail.assignment,
+        status: "submitted",
+      },
+    };
+    const gateway = createMockGateway(submittedDetail);
+    const submissionsGw = createMockSubmissionsGateway([mockSubmission]);
+
+    const view = await render(
+      <WorkerAssignmentDetailScreen
+        assignmentId="90000000-0000-4000-8000-000000000001"
+        gateway={gateway}
+        submissionsGateway={submissionsGw}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(view.getByText("WORK SUBMITTED · UNDER REVIEW")).toBeVisible();
+      expect(
+        view.getByText(
+          '"All desks assembled and arranged in conference room."',
+        ),
+      ).toBeVisible();
+    });
+  });
+
+  it("renders contract completed banner when completed", async () => {
+    const completedDetail: AssignmentDetail = {
+      ...mockAssignmentDetail,
+      assignment: {
+        ...mockAssignmentDetail.assignment,
+        status: "completed",
+      },
+    };
+    const approvedSubmission: SubmissionRecord = {
+      ...mockSubmission,
+      status: "approved",
+      reviewNote: "Verified and accepted.",
+    };
+    const gateway = createMockGateway(completedDetail);
+    const submissionsGw = createMockSubmissionsGateway([approvedSubmission]);
+
+    const view = await render(
+      <WorkerAssignmentDetailScreen
+        assignmentId="90000000-0000-4000-8000-000000000001"
+        gateway={gateway}
+        submissionsGateway={submissionsGw}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(view.getByText("CONTRACT COMPLETED")).toBeVisible();
+      expect(view.getByText('"Verified and accepted."')).toBeVisible();
     });
   });
 });

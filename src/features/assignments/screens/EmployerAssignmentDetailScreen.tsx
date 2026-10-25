@@ -12,6 +12,11 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { setupTheme } from "@/features/setup/setupTheme";
+import {
+  submissionGateway,
+  type SubmissionGateway,
+} from "@/features/submissions/data/submission-gateway";
+import type { SubmissionRecord } from "@/features/submissions/model/submission-schemas";
 
 import {
   assignmentGateway,
@@ -25,15 +30,18 @@ import type {
 type EmployerAssignmentDetailScreenProps = Readonly<{
   assignmentId: string;
   gateway?: AssignmentGateway;
+  submissionsGateway?: SubmissionGateway;
 }>;
 
 export function EmployerAssignmentDetailScreen({
   assignmentId,
   gateway = assignmentGateway,
+  submissionsGateway = submissionGateway,
 }: EmployerAssignmentDetailScreenProps) {
   const router = useRouter();
   const [detail, setDetail] = useState<AssignmentDetail | null>(null);
   const [milestones, setMilestones] = useState<MilestoneRecord[]>([]);
+  const [submissions, setSubmissions] = useState<SubmissionRecord[]>([]);
   const [busy, setBusy] = useState(true);
   const [actionBusy, setActionBusy] = useState(false);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
@@ -45,17 +53,25 @@ export function EmployerAssignmentDetailScreen({
   const [milestoneDescription, setMilestoneDescription] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
 
+  // Revision request form state
+  const [isRequestingRevision, setIsRequestingRevision] = useState(false);
+  const [revisionNote, setRevisionNote] = useState("");
+
   useEffect(() => {
     let mounted = true;
 
     Promise.all([
       gateway.getAssignmentDetail(assignmentId),
       gateway.listMilestones(assignmentId).catch(() => []),
+      submissionsGateway
+        .listAssignmentSubmissions(assignmentId)
+        .catch(() => []),
     ])
-      .then(([detailData, milestonesData]) => {
+      .then(([detailData, milestonesData, submissionsData]) => {
         if (!mounted) return;
         setDetail(detailData);
         setMilestones(milestonesData);
+        setSubmissions(submissionsData);
         setErrorMessage(null);
       })
       .catch((err: unknown) => {
@@ -74,7 +90,7 @@ export function EmployerAssignmentDetailScreen({
     return () => {
       mounted = false;
     };
-  }, [assignmentId, gateway]);
+  }, [assignmentId, gateway, submissionsGateway]);
 
   async function handleCancelProposal() {
     setActionBusy(true);
@@ -99,12 +115,7 @@ export function EmployerAssignmentDetailScreen({
       setFormError("Milestone title must be between 2 and 100 characters.");
       return;
     }
-
-    const cleanDesc = milestoneDescription.trim();
-    if (cleanDesc.length > 1000) {
-      setFormError("Description cannot exceed 1000 characters.");
-      return;
-    }
+    const cleanDesc = milestoneDescription.trim() || undefined;
 
     setActionBusy(true);
     setFormError(null);
@@ -114,13 +125,13 @@ export function EmployerAssignmentDetailScreen({
       const created = await gateway.createMilestone({
         assignmentId,
         title: cleanTitle,
-        description: cleanDesc.length > 0 ? cleanDesc : null,
+        description: cleanDesc,
       });
       setMilestones((prev) => [...prev, created]);
       setMilestoneTitle("");
       setMilestoneDescription("");
       setShowMilestoneForm(false);
-      setActionSuccess(`Added Milestone ${created.position}: ${created.title}`);
+      setActionSuccess("Milestone step added successfully.");
     } catch (err: unknown) {
       setFormError(
         err instanceof Error ? err.message : "Failed to create milestone.",
@@ -130,68 +141,162 @@ export function EmployerAssignmentDetailScreen({
     }
   }
 
-  if (busy) {
-    return (
-      <SafeAreaView style={styles.centerContainer}>
-        <ActivityIndicator color={setupTheme.color.foreground} />
-        <Text style={styles.loadingText}>Loading assignment...</Text>
-      </SafeAreaView>
-    );
+  async function handleApproveCompletion() {
+    const latest = submissions[0];
+    if (!latest) return;
+
+    setActionBusy(true);
+    setErrorMessage(null);
+    setActionSuccess(null);
+    try {
+      const updatedSub = await submissionsGateway.approveAssignmentCompletion({
+        submissionId: latest.id,
+      });
+      setSubmissions((prev) => [
+        updatedSub,
+        ...prev.filter((s) => s.id !== updatedSub.id),
+      ]);
+      setDetail((prev) =>
+        prev
+          ? {
+              ...prev,
+              assignment: {
+                ...prev.assignment,
+                status: "completed",
+                completedAt: new Date().toISOString(),
+              },
+            }
+          : prev,
+      );
+      setMilestones((prev) =>
+        prev.map((m) => ({
+          ...m,
+          status: "approved",
+          approvedAt: m.approvedAt ?? new Date().toISOString(),
+        })),
+      );
+      setActionSuccess("Work approved and task agreement completed!");
+    } catch (err: unknown) {
+      setErrorMessage(
+        err instanceof Error ? err.message : "Failed to approve completion.",
+      );
+    } finally {
+      setActionBusy(false);
+    }
   }
 
-  if (errorMessage && !detail) {
+  async function handleSendRevision() {
+    const latest = submissions[0];
+    const cleanNote = revisionNote.trim();
+    if (!latest || !cleanNote) return;
+
+    setActionBusy(true);
+    setErrorMessage(null);
+    setActionSuccess(null);
+    try {
+      const updatedSub = await submissionsGateway.requestSubmissionRevision({
+        submissionId: latest.id,
+        reviewNote: cleanNote,
+      });
+      setSubmissions((prev) => [
+        updatedSub,
+        ...prev.filter((s) => s.id !== updatedSub.id),
+      ]);
+      setDetail((prev) =>
+        prev
+          ? {
+              ...prev,
+              assignment: {
+                ...prev.assignment,
+                status: "revision_requested",
+              },
+            }
+          : prev,
+      );
+      setIsRequestingRevision(false);
+      setRevisionNote("");
+      setActionSuccess(
+        "Revision requested. The worker has been notified to make adjustments.",
+      );
+    } catch (err: unknown) {
+      setErrorMessage(
+        err instanceof Error ? err.message : "Failed to request revision.",
+      );
+    } finally {
+      setActionBusy(false);
+    }
+  }
+
+  if (busy) {
     return (
-      <SafeAreaView style={styles.centerContainer}>
-        <View style={styles.errorCard}>
-          <Text style={styles.errorTitle}>ASSIGNMENT UNAVAILABLE</Text>
-          <Text style={styles.errorText}>{errorMessage}</Text>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => router.replace("/(protected)/employer")}
-            style={styles.backButton}
-          >
-            <Text style={styles.backButtonText}>Return to workspace</Text>
-          </Pressable>
+      <SafeAreaView edges={["top", "bottom"]} style={styles.safeArea}>
+        <View style={styles.centerContainer}>
+          <ActivityIndicator color={setupTheme.color.accent} size="large" />
+          <Text style={styles.loadingText}>Loading contract details...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   if (!detail) {
-    return null;
+    return (
+      <SafeAreaView edges={["top", "bottom"]} style={styles.safeArea}>
+        <View style={styles.centerContainer}>
+          <View style={styles.errorCard}>
+            <Text style={styles.errorTitle}>CONTRACT NOT FOUND</Text>
+            <Text style={styles.errorText}>
+              {errorMessage ??
+                "This agreement record does not exist or you do not have permission to view it."}
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Back to workspace"
+              onPress={() => router.back()}
+              style={styles.backButton}
+            >
+              <Text style={styles.backButtonText}>Return to workspace</Text>
+            </Pressable>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
   }
 
   const { assignment, worker, gig } = detail;
   const isProposed = assignment.status === "proposed";
-  const canAddMilestones =
-    (assignment.status === "proposed" || assignment.status === "active") &&
-    milestones.length < 20;
+  const isActive = assignment.status === "active";
+  const isSubmitted = assignment.status === "submitted";
+  const isRevision = assignment.status === "revision_requested";
+  const isCompleted = assignment.status === "completed";
+  const latestSubmission = submissions[0] ?? null;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.container}>
-        {/* Top bar */}
-        <View style={styles.headerRow}>
+    <SafeAreaView edges={["top", "bottom"]} style={styles.safeArea}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* Navigation Bar */}
+        <View style={styles.navBar}>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Back to workspace"
             onPress={() => router.back()}
-            style={styles.backIconButton}
+            style={styles.navBack}
           >
-            <Text style={styles.backIconText}>&larr; Back</Text>
+            <Text style={styles.navBackText}>&larr; Back</Text>
           </Pressable>
           <Text
             style={[
               styles.statusBadge,
-              assignment.status === "active" && styles.statusActive,
-              assignment.status === "proposed" && styles.statusProposed,
-              assignment.status === "completed" && styles.statusCompleted,
+              isProposed && styles.statusProposed,
+              isActive && styles.statusActive,
+              isSubmitted && styles.statusSubmitted,
+              isRevision && styles.statusRevision,
+              isCompleted && styles.statusCompleted,
               (assignment.status === "declined" ||
                 assignment.status === "cancelled") &&
                 styles.statusTerminated,
             ]}
           >
-            {assignment.status.toUpperCase()}
+            {assignment.status.replace(/_/g, " ").toUpperCase()}
           </Text>
         </View>
 
@@ -208,7 +313,7 @@ export function EmployerAssignmentDetailScreen({
           </View>
         ) : null}
 
-        {/* Hero Card */}
+        {/* Title and Worker card */}
         <View style={styles.heroCard}>
           <Text style={styles.heroKicker}>ASSIGNED CONTRACT</Text>
           <Text style={styles.heroTitle}>{assignment.agreedTitle}</Text>
@@ -250,32 +355,165 @@ export function EmployerAssignmentDetailScreen({
                 actionBusy && styles.disabledAction,
               ]}
             >
-              {actionBusy ? (
-                <ActivityIndicator color={setupTheme.color.danger} />
-              ) : (
-                <Text style={styles.cancelProposalText}>
-                  Cancel Proposal and Reopen Gig
-                </Text>
-              )}
+              <Text style={styles.cancelProposalButtonText}>
+                Cancel Selection & Reopen Gig
+              </Text>
             </Pressable>
+          </View>
+        ) : null}
+
+        {/* Work review card when submitted */}
+        {isSubmitted ? (
+          <View style={styles.reviewCard}>
+            <Text style={styles.reviewCardTitle}>
+              WORK SUBMITTED · AWAITING YOUR REVIEW
+            </Text>
+            <Text style={styles.reviewCardSubtitle}>
+              {worker.displayName} has submitted completed work (version{" "}
+              {latestSubmission?.version ?? 1}) for your approval:
+            </Text>
+            {latestSubmission?.note ? (
+              <View style={styles.workerNoteBox}>
+                <Text style={styles.workerNoteLabel}>WORKER NOTE:</Text>
+                <Text style={styles.workerNoteText}>
+                  {`"${latestSubmission.note}"`}
+                </Text>
+              </View>
+            ) : null}
+
+            {isRequestingRevision ? (
+              <View style={styles.revisionFormBox}>
+                <Text style={styles.revisionFormTitle}>
+                  SPECIFY REVISION INSTRUCTIONS
+                </Text>
+                <TextInput
+                  accessibilityLabel="Revision feedback note"
+                  multiline
+                  numberOfLines={3}
+                  style={styles.revisionInput}
+                  placeholder="Detail exactly what needs correction or completion before you can approve..."
+                  placeholderTextColor={setupTheme.color.muted}
+                  value={revisionNote}
+                  onChangeText={setRevisionNote}
+                  maxLength={2000}
+                />
+                <View style={styles.revisionActionRow}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Send revision request"
+                    disabled={actionBusy || !revisionNote.trim()}
+                    onPress={handleSendRevision}
+                    style={[
+                      styles.sendRevisionButton,
+                      (actionBusy || !revisionNote.trim()) &&
+                        styles.disabledAction,
+                    ]}
+                  >
+                    {actionBusy ? (
+                      <ActivityIndicator color={setupTheme.color.surface} />
+                    ) : (
+                      <Text style={styles.sendRevisionButtonText}>
+                        Send Revision Request
+                      </Text>
+                    )}
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Cancel revision form"
+                    disabled={actionBusy}
+                    onPress={() => setIsRequestingRevision(false)}
+                    style={styles.cancelRevisionFormButton}
+                  >
+                    <Text style={styles.cancelRevisionFormText}>Cancel</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ) : (
+              <View style={styles.reviewActionsRow}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Approve and complete work"
+                  disabled={actionBusy}
+                  onPress={handleApproveCompletion}
+                  style={[
+                    styles.approveButton,
+                    actionBusy && styles.disabledAction,
+                  ]}
+                >
+                  {actionBusy ? (
+                    <ActivityIndicator color={setupTheme.color.surface} />
+                  ) : (
+                    <Text style={styles.approveButtonText}>
+                      Approve & Complete Work
+                    </Text>
+                  )}
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Request revision"
+                  disabled={actionBusy}
+                  onPress={() => setIsRequestingRevision(true)}
+                  style={[
+                    styles.requestRevisionButton,
+                    actionBusy && styles.disabledAction,
+                  ]}
+                >
+                  <Text style={styles.requestRevisionButtonText}>
+                    Request Revision
+                  </Text>
+                </Pressable>
+              </View>
+            )}
+          </View>
+        ) : null}
+
+        {/* Revision Requested banner */}
+        {isRevision ? (
+          <View style={styles.revisionPendingCard}>
+            <Text style={styles.revisionPendingTitle}>REVISION REQUESTED</Text>
+            <Text style={styles.revisionPendingText}>
+              You requested revisions from {worker.displayName}. Work is paused
+              pending their updated submission.
+            </Text>
+            {latestSubmission?.reviewNote ? (
+              <View style={styles.reviewNoteBox}>
+                <Text style={styles.reviewNoteLabel}>YOUR FEEDBACK:</Text>
+                <Text style={styles.reviewNoteContent}>
+                  {`"${latestSubmission.reviewNote}"`}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+        ) : null}
+
+        {/* Contract Completed banner */}
+        {isCompleted ? (
+          <View style={styles.completedCard}>
+            <Text style={styles.completedCardTitle}>CONTRACT COMPLETED</Text>
+            <Text style={styles.completedCardText}>
+              Work has been reviewed, approved, and finalized. Total paid: ₱
+              {assignment.agreedAmount.toLocaleString()}.
+            </Text>
           </View>
         ) : null}
 
         {/* Scope of Work */}
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>SCOPE OF WORK</Text>
-          <Text style={styles.bodyText}>{assignment.agreedDescription}</Text>
-          <View style={styles.metaRow}>
-            <View style={styles.metaCol}>
+          <Text style={styles.sectionHeader}>SCOPE OF WORK</Text>
+          <Text style={styles.scopeDescription}>
+            {assignment.agreedDescription}
+          </Text>
+          <View style={styles.metaGrid}>
+            <View style={styles.metaItem}>
               <Text style={styles.metaLabel}>WORK MODE</Text>
               <Text style={styles.metaValue}>{gig.workMode.toUpperCase()}</Text>
             </View>
-            <View style={styles.metaCol}>
+            <View style={styles.metaItem}>
               <Text style={styles.metaLabel}>CATEGORY</Text>
               <Text style={styles.metaValue}>{gig.category.toUpperCase()}</Text>
             </View>
             {gig.publicArea ? (
-              <View style={styles.metaCol}>
+              <View style={styles.metaItem}>
                 <Text style={styles.metaLabel}>AREA</Text>
                 <Text style={styles.metaValue}>{gig.publicArea}</Text>
               </View>
@@ -283,60 +521,52 @@ export function EmployerAssignmentDetailScreen({
           </View>
         </View>
 
-        {/* Milestones Management */}
+        {/* Ordered Milestones Management */}
         <View style={styles.sectionCard}>
-          <View style={styles.milestonesHeaderRow}>
-            <Text style={styles.sectionTitle}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionHeader}>
               ORDERED MILESTONES ({milestones.length})
             </Text>
-            {canAddMilestones && !showMilestoneForm ? (
+            {isActive && !showMilestoneForm ? (
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Add milestone"
                 onPress={() => setShowMilestoneForm(true)}
-                style={styles.addMilestoneSmallButton}
+                style={styles.addStepButton}
               >
-                <Text style={styles.addMilestoneSmallText}>+ Add Step</Text>
+                <Text style={styles.addStepText}>+ Add Step</Text>
               </Pressable>
             ) : null}
           </View>
 
-          {/* Inline Milestone Creation Form */}
+          {/* Form to add a milestone step */}
           {showMilestoneForm ? (
-            <View style={styles.milestoneForm}>
-              <Text style={styles.formTitle}>
-                NEW MILESTONE (STEP {milestones.length + 1})
-              </Text>
+            <View style={styles.formCard}>
+              <Text style={styles.formTitle}>NEW MILESTONE STEP</Text>
               {formError ? (
                 <Text style={styles.formErrorText}>{formError}</Text>
               ) : null}
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>MILESTONE TITLE *</Text>
-                <TextInput
-                  accessibilityLabel="Milestone title input"
-                  maxLength={100}
-                  onChangeText={setMilestoneTitle}
-                  placeholder="e.g. Rough framing and measurement"
-                  placeholderTextColor={setupTheme.color.muted}
-                  style={styles.textInput}
-                  value={milestoneTitle}
-                />
-              </View>
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>DESCRIPTION (OPTIONAL)</Text>
-                <TextInput
-                  accessibilityLabel="Milestone description input"
-                  maxLength={1000}
-                  multiline
-                  numberOfLines={3}
-                  onChangeText={setMilestoneDescription}
-                  placeholder="Specific tasks or deliverables expected..."
-                  placeholderTextColor={setupTheme.color.muted}
-                  style={[styles.textInput, styles.textArea]}
-                  value={milestoneDescription}
-                />
-              </View>
-              <View style={styles.formButtonRow}>
+              <TextInput
+                accessibilityLabel="Milestone title"
+                style={styles.input}
+                placeholder="Step title (e.g., Mount rack fixtures)"
+                placeholderTextColor={setupTheme.color.muted}
+                value={milestoneTitle}
+                onChangeText={setMilestoneTitle}
+                maxLength={100}
+              />
+              <TextInput
+                accessibilityLabel="Milestone description"
+                multiline
+                numberOfLines={3}
+                style={[styles.input, styles.textArea]}
+                placeholder="Optional description of tasks for this step..."
+                placeholderTextColor={setupTheme.color.muted}
+                value={milestoneDescription}
+                onChangeText={setMilestoneDescription}
+                maxLength={1000}
+              />
+              <View style={styles.formActionRow}>
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel="Save milestone"
@@ -350,56 +580,52 @@ export function EmployerAssignmentDetailScreen({
                   {actionBusy ? (
                     <ActivityIndicator color={setupTheme.color.surface} />
                   ) : (
-                    <Text style={styles.saveMilestoneButtonText}>
-                      Save Step
-                    </Text>
+                    <Text style={styles.saveMilestoneText}>Save Step</Text>
                   )}
                 </Pressable>
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel="Cancel adding milestone"
                   disabled={actionBusy}
-                  onPress={() => {
-                    setShowMilestoneForm(false);
-                    setFormError(null);
-                  }}
-                  style={styles.cancelFormButton}
+                  onPress={() => setShowMilestoneForm(false)}
+                  style={styles.cancelMilestoneButton}
                 >
-                  <Text style={styles.cancelFormButtonText}>Cancel</Text>
+                  <Text style={styles.cancelMilestoneText}>Cancel</Text>
                 </Pressable>
               </View>
             </View>
           ) : null}
 
-          {milestones.length === 0 && !showMilestoneForm ? (
-            <Text style={styles.emptyText}>
+          {milestones.length === 0 ? (
+            <Text style={styles.emptyNote}>
               No milestones defined yet. You can break down this project into
               ordered steps for structured tracking.
             </Text>
           ) : (
-            <View style={styles.milestoneList}>
-              {milestones.map((milestone) => (
-                <View key={milestone.id} style={styles.milestoneItem}>
+            <View style={styles.milestonesList}>
+              {milestones.map((m) => (
+                <View key={m.id} style={styles.milestoneItem}>
                   <View style={styles.milestoneTopRow}>
-                    <Text style={styles.milestonePosition}>
-                      STEP {milestone.position}
-                    </Text>
+                    <View style={styles.positionBadge}>
+                      <Text style={styles.positionText}>#{m.position}</Text>
+                    </View>
+                    <Text style={styles.milestoneTitle}>{m.title}</Text>
                     <Text
                       style={[
                         styles.milestoneStatus,
-                        milestone.status === "in_progress" &&
-                          styles.milestoneInProgress,
-                        milestone.status === "approved" &&
-                          styles.milestoneApproved,
+                        m.status === "pending" && styles.milestoneStatusPending,
+                        m.status === "in_progress" &&
+                          styles.milestoneStatusProgress,
+                        m.status === "approved" &&
+                          styles.milestoneStatusApproved,
                       ]}
                     >
-                      {milestone.status.toUpperCase()}
+                      {m.status.replace(/_/g, " ").toUpperCase()}
                     </Text>
                   </View>
-                  <Text style={styles.milestoneTitle}>{milestone.title}</Text>
-                  {milestone.description ? (
+                  {m.description ? (
                     <Text style={styles.milestoneDescription}>
-                      {milestone.description}
+                      {m.description}
                     </Text>
                   ) : null}
                 </View>
@@ -407,6 +633,52 @@ export function EmployerAssignmentDetailScreen({
             </View>
           )}
         </View>
+
+        {/* Submission history */}
+        {submissions.length > 0 ? (
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionHeader}>
+              SUBMISSION HISTORY ({submissions.length})
+            </Text>
+            <View style={styles.milestonesList}>
+              {submissions.map((sub) => (
+                <View key={sub.id} style={styles.historyItem}>
+                  <View style={styles.historyTopRow}>
+                    <Text style={styles.historyVersion}>
+                      VERSION {sub.version}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.milestoneStatus,
+                        sub.status === "submitted" &&
+                          styles.milestoneStatusProgress,
+                        sub.status === "revision_requested" &&
+                          styles.milestoneStatusPending,
+                        sub.status === "approved" &&
+                          styles.milestoneStatusApproved,
+                      ]}
+                    >
+                      {sub.status.replace(/_/g, " ").toUpperCase()}
+                    </Text>
+                  </View>
+                  {sub.note ? (
+                    <Text style={styles.historyNote}>{sub.note}</Text>
+                  ) : null}
+                  {sub.reviewNote ? (
+                    <View style={styles.historyReviewBox}>
+                      <Text style={styles.historyReviewLabel}>
+                        YOUR REVIEW NOTE:
+                      </Text>
+                      <Text style={styles.historyReviewText}>
+                        {sub.reviewNote}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+              ))}
+            </View>
+          </View>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
@@ -417,7 +689,7 @@ const styles = StyleSheet.create({
     backgroundColor: setupTheme.color.background,
     flex: 1,
   },
-  container: {
+  scrollContent: {
     gap: setupTheme.spacing.section,
     padding: setupTheme.spacing.section,
   },
@@ -431,7 +703,7 @@ const styles = StyleSheet.create({
   loadingText: {
     color: setupTheme.color.muted,
     fontSize: setupTheme.type.body,
-    marginTop: setupTheme.spacing.compact,
+    marginTop: setupTheme.spacing.section,
   },
   errorCard: {
     ...setupTheme.shadow.card,
@@ -457,44 +729,56 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: setupTheme.color.foreground,
     borderRadius: setupTheme.radius.control,
+    justifyContent: "center",
     marginTop: setupTheme.spacing.compact,
     paddingVertical: setupTheme.spacing.compact,
   },
   backButtonText: {
     color: setupTheme.color.surface,
-    fontSize: setupTheme.type.caption,
-    fontWeight: "800",
+    fontSize: setupTheme.type.body,
+    fontWeight: "700",
   },
-  headerRow: {
+  navBar: {
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
   },
-  backIconButton: {
-    paddingVertical: 4,
+  navBack: {
+    paddingVertical: setupTheme.spacing.tight,
   },
-  backIconText: {
-    color: setupTheme.color.foreground,
+  navBackText: {
+    color: setupTheme.color.accent,
     fontSize: setupTheme.type.body,
-    fontWeight: "800",
+    fontWeight: "700",
   },
   statusBadge: {
     borderRadius: setupTheme.radius.status,
     borderWidth: 1,
-    fontSize: 11,
+    fontSize: setupTheme.type.caption,
     fontWeight: "900",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    overflow: "hidden",
+    paddingHorizontal: setupTheme.spacing.compact,
+    paddingVertical: 2,
   },
   statusProposed: {
     backgroundColor: setupTheme.color.highlightSurface,
-    borderColor: setupTheme.color.foreground,
-    color: setupTheme.color.foreground,
+    borderColor: setupTheme.color.warning,
+    color: setupTheme.color.warning,
   },
   statusActive: {
     backgroundColor: setupTheme.color.readySurface,
     borderColor: setupTheme.color.ready,
     color: setupTheme.color.ready,
+  },
+  statusSubmitted: {
+    backgroundColor: setupTheme.color.highlightSurface,
+    borderColor: setupTheme.color.foreground,
+    color: setupTheme.color.foreground,
+  },
+  statusRevision: {
+    backgroundColor: setupTheme.color.accentSurface,
+    borderColor: setupTheme.color.accent,
+    color: setupTheme.color.accent,
   },
   statusCompleted: {
     backgroundColor: setupTheme.color.readySurface,
@@ -509,26 +793,25 @@ const styles = StyleSheet.create({
   successBanner: {
     backgroundColor: setupTheme.color.readySurface,
     borderColor: setupTheme.color.ready,
-    borderRadius: setupTheme.radius.control,
+    borderRadius: setupTheme.radius.small,
     borderWidth: 1,
     padding: setupTheme.spacing.compact,
   },
   successBannerText: {
     color: setupTheme.color.ready,
-    fontSize: setupTheme.type.caption,
+    fontSize: setupTheme.type.body,
     fontWeight: "700",
   },
   errorBanner: {
-    backgroundColor: setupTheme.color.surfaceMuted,
+    backgroundColor: setupTheme.color.dangerSurface,
     borderColor: setupTheme.color.danger,
-    borderRadius: setupTheme.radius.control,
+    borderRadius: setupTheme.radius.small,
     borderWidth: 1,
     padding: setupTheme.spacing.compact,
   },
   errorBannerText: {
     color: setupTheme.color.danger,
-    fontSize: setupTheme.type.caption,
-    fontWeight: "700",
+    fontSize: setupTheme.type.body,
   },
   heroCard: {
     ...setupTheme.shadow.card,
@@ -540,13 +823,14 @@ const styles = StyleSheet.create({
     padding: setupTheme.spacing.section,
   },
   heroKicker: {
-    color: setupTheme.color.muted,
+    color: setupTheme.color.accent,
     fontSize: setupTheme.type.label,
     fontWeight: "900",
+    letterSpacing: 1,
   },
   heroTitle: {
     color: setupTheme.color.foreground,
-    fontSize: setupTheme.type.title,
+    fontSize: setupTheme.type.heading,
     fontWeight: "900",
     lineHeight: 28,
   },
@@ -555,13 +839,13 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 4,
+    marginTop: setupTheme.spacing.tight,
     paddingTop: setupTheme.spacing.compact,
   },
   participantLabel: {
     color: setupTheme.color.muted,
     fontSize: setupTheme.type.label,
-    fontWeight: "800",
+    fontWeight: "700",
   },
   participantName: {
     color: setupTheme.color.foreground,
@@ -578,25 +862,27 @@ const styles = StyleSheet.create({
   amountLabel: {
     color: setupTheme.color.muted,
     fontSize: setupTheme.type.label,
-    fontWeight: "800",
+    fontWeight: "700",
   },
   amountValue: {
-    color: setupTheme.color.foreground,
+    color: setupTheme.color.ready,
     fontSize: setupTheme.type.heading,
     fontWeight: "900",
   },
   proposedCard: {
+    ...setupTheme.shadow.card,
     backgroundColor: setupTheme.color.highlightSurface,
-    borderColor: setupTheme.color.foreground,
+    borderColor: setupTheme.color.warning,
     borderRadius: setupTheme.radius.card,
     borderWidth: 2,
     gap: setupTheme.spacing.compact,
     padding: setupTheme.spacing.section,
   },
   proposedCardTitle: {
-    color: setupTheme.color.foreground,
+    color: setupTheme.color.warning,
     fontSize: setupTheme.type.label,
     fontWeight: "900",
+    letterSpacing: 1,
   },
   proposedCardText: {
     color: setupTheme.color.foreground,
@@ -605,18 +891,202 @@ const styles = StyleSheet.create({
   },
   cancelProposalButton: {
     alignItems: "center",
+    backgroundColor: setupTheme.color.surface,
     borderColor: setupTheme.color.danger,
     borderRadius: setupTheme.radius.control,
-    borderWidth: 1.5,
+    borderWidth: 1,
     justifyContent: "center",
-    marginTop: 4,
-    minHeight: 44,
+    marginTop: setupTheme.spacing.tight,
     paddingVertical: setupTheme.spacing.compact,
   },
-  cancelProposalText: {
+  cancelProposalButtonText: {
     color: setupTheme.color.danger,
-    fontSize: setupTheme.type.caption,
-    fontWeight: "800",
+    fontSize: setupTheme.type.body,
+    fontWeight: "700",
+  },
+  reviewCard: {
+    ...setupTheme.shadow.card,
+    backgroundColor: setupTheme.color.highlightSurface,
+    borderColor: setupTheme.color.foreground,
+    borderRadius: setupTheme.radius.card,
+    borderWidth: 2,
+    gap: setupTheme.spacing.compact,
+    padding: setupTheme.spacing.section,
+  },
+  reviewCardTitle: {
+    color: setupTheme.color.foreground,
+    fontSize: setupTheme.type.label,
+    fontWeight: "900",
+    letterSpacing: 1,
+  },
+  reviewCardSubtitle: {
+    color: setupTheme.color.foreground,
+    fontSize: setupTheme.type.body,
+    lineHeight: 20,
+  },
+  workerNoteBox: {
+    backgroundColor: setupTheme.color.surface,
+    borderColor: setupTheme.color.borderSoft,
+    borderRadius: setupTheme.radius.small,
+    borderWidth: 1,
+    padding: setupTheme.spacing.compact,
+  },
+  workerNoteLabel: {
+    color: setupTheme.color.muted,
+    fontSize: setupTheme.type.label,
+    fontWeight: "700",
+  },
+  workerNoteText: {
+    color: setupTheme.color.foreground,
+    fontSize: setupTheme.type.body,
+    fontStyle: "italic",
+    marginTop: 2,
+  },
+  reviewActionsRow: {
+    flexDirection: "row",
+    gap: setupTheme.spacing.compact,
+    marginTop: setupTheme.spacing.tight,
+  },
+  approveButton: {
+    alignItems: "center",
+    backgroundColor: setupTheme.color.foreground,
+    borderRadius: setupTheme.radius.control,
+    flex: 2,
+    justifyContent: "center",
+    paddingVertical: setupTheme.spacing.compact,
+  },
+  approveButtonText: {
+    color: setupTheme.color.surface,
+    fontSize: setupTheme.type.body,
+    fontWeight: "900",
+  },
+  requestRevisionButton: {
+    alignItems: "center",
+    backgroundColor: setupTheme.color.surface,
+    borderColor: setupTheme.color.borderSoft,
+    borderRadius: setupTheme.radius.control,
+    borderWidth: 1,
+    flex: 1,
+    justifyContent: "center",
+    paddingVertical: setupTheme.spacing.compact,
+  },
+  requestRevisionButtonText: {
+    color: setupTheme.color.accent,
+    fontSize: setupTheme.type.body,
+    fontWeight: "700",
+  },
+  revisionFormBox: {
+    backgroundColor: setupTheme.color.surface,
+    borderColor: setupTheme.color.borderSoft,
+    borderRadius: setupTheme.radius.small,
+    borderWidth: 1,
+    gap: setupTheme.spacing.compact,
+    marginTop: setupTheme.spacing.tight,
+    padding: setupTheme.spacing.compact,
+  },
+  revisionFormTitle: {
+    color: setupTheme.color.foreground,
+    fontSize: setupTheme.type.label,
+    fontWeight: "900",
+  },
+  revisionInput: {
+    backgroundColor: setupTheme.color.surfaceMuted,
+    borderColor: setupTheme.color.borderSoft,
+    borderRadius: setupTheme.radius.small,
+    borderWidth: 1,
+    color: setupTheme.color.foreground,
+    fontSize: setupTheme.type.body,
+    minHeight: 70,
+    padding: setupTheme.spacing.compact,
+    textAlignVertical: "top",
+  },
+  revisionActionRow: {
+    flexDirection: "row",
+    gap: setupTheme.spacing.compact,
+  },
+  sendRevisionButton: {
+    alignItems: "center",
+    backgroundColor: setupTheme.color.accent,
+    borderRadius: setupTheme.radius.control,
+    flex: 2,
+    justifyContent: "center",
+    paddingVertical: setupTheme.spacing.compact,
+  },
+  sendRevisionButtonText: {
+    color: setupTheme.color.surface,
+    fontSize: setupTheme.type.body,
+    fontWeight: "900",
+  },
+  cancelRevisionFormButton: {
+    alignItems: "center",
+    backgroundColor: setupTheme.color.surfaceMuted,
+    borderRadius: setupTheme.radius.control,
+    flex: 1,
+    justifyContent: "center",
+    paddingVertical: setupTheme.spacing.compact,
+  },
+  cancelRevisionFormText: {
+    color: setupTheme.color.foreground,
+    fontSize: setupTheme.type.body,
+    fontWeight: "700",
+  },
+  revisionPendingCard: {
+    ...setupTheme.shadow.card,
+    backgroundColor: setupTheme.color.accentSurface,
+    borderColor: setupTheme.color.accent,
+    borderRadius: setupTheme.radius.card,
+    borderWidth: 2,
+    gap: setupTheme.spacing.compact,
+    padding: setupTheme.spacing.section,
+  },
+  revisionPendingTitle: {
+    color: setupTheme.color.accent,
+    fontSize: setupTheme.type.label,
+    fontWeight: "900",
+    letterSpacing: 1,
+  },
+  revisionPendingText: {
+    color: setupTheme.color.foreground,
+    fontSize: setupTheme.type.body,
+    lineHeight: 20,
+  },
+  reviewNoteBox: {
+    backgroundColor: setupTheme.color.surface,
+    borderColor: setupTheme.color.borderSoft,
+    borderRadius: setupTheme.radius.small,
+    borderWidth: 1,
+    padding: setupTheme.spacing.compact,
+  },
+  reviewNoteLabel: {
+    color: setupTheme.color.muted,
+    fontSize: setupTheme.type.label,
+    fontWeight: "700",
+  },
+  reviewNoteContent: {
+    color: setupTheme.color.foreground,
+    fontSize: setupTheme.type.body,
+    fontStyle: "italic",
+    marginTop: 2,
+  },
+  completedCard: {
+    ...setupTheme.shadow.card,
+    backgroundColor: setupTheme.color.readySurface,
+    borderColor: setupTheme.color.ready,
+    borderRadius: setupTheme.radius.card,
+    borderWidth: 2,
+    gap: setupTheme.spacing.compact,
+    padding: setupTheme.spacing.section,
+  },
+  completedCardTitle: {
+    color: setupTheme.color.ready,
+    fontSize: setupTheme.type.label,
+    fontWeight: "900",
+    letterSpacing: 1,
+  },
+  completedCardText: {
+    color: setupTheme.color.foreground,
+    fontSize: setupTheme.type.body,
+    lineHeight: 22,
   },
   sectionCard: {
     ...setupTheme.shadow.card,
@@ -627,181 +1097,223 @@ const styles = StyleSheet.create({
     gap: setupTheme.spacing.compact,
     padding: setupTheme.spacing.section,
   },
-  milestonesHeaderRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  sectionTitle: {
-    color: setupTheme.color.foreground,
+  sectionHeader: {
+    color: setupTheme.color.muted,
     fontSize: setupTheme.type.label,
     fontWeight: "900",
+    letterSpacing: 1,
   },
-  addMilestoneSmallButton: {
-    backgroundColor: setupTheme.color.foreground,
-    borderRadius: setupTheme.radius.small,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  addMilestoneSmallText: {
-    color: setupTheme.color.surface,
-    fontSize: setupTheme.type.label,
-    fontWeight: "900",
-  },
-  bodyText: {
+  scopeDescription: {
     color: setupTheme.color.foreground,
     fontSize: setupTheme.type.body,
-    lineHeight: 24,
+    lineHeight: 22,
   },
-  metaRow: {
+  metaGrid: {
     borderTopColor: setupTheme.color.borderSoft,
     borderTopWidth: 1,
     flexDirection: "row",
     gap: setupTheme.spacing.section,
-    marginTop: 8,
+    marginTop: setupTheme.spacing.tight,
     paddingTop: setupTheme.spacing.compact,
   },
-  metaCol: {
+  metaItem: {
     gap: 2,
   },
   metaLabel: {
     color: setupTheme.color.muted,
     fontSize: setupTheme.type.label,
-    fontWeight: "800",
+    fontWeight: "700",
   },
   metaValue: {
     color: setupTheme.color.foreground,
     fontSize: setupTheme.type.caption,
-    fontWeight: "700",
+    fontWeight: "900",
   },
-  emptyText: {
-    color: setupTheme.color.muted,
-    fontSize: setupTheme.type.body,
-    lineHeight: 22,
+  sectionHeaderRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
-  milestoneForm: {
+  addStepButton: {
+    paddingHorizontal: setupTheme.spacing.compact,
+    paddingVertical: 2,
+  },
+  addStepText: {
+    color: setupTheme.color.accent,
+    fontSize: setupTheme.type.caption,
+    fontWeight: "900",
+  },
+  formCard: {
     backgroundColor: setupTheme.color.surfaceMuted,
-    borderColor: setupTheme.color.border,
-    borderRadius: setupTheme.radius.control,
-    borderWidth: 1.5,
+    borderColor: setupTheme.color.borderSoft,
+    borderRadius: setupTheme.radius.small,
+    borderWidth: 1,
     gap: setupTheme.spacing.compact,
-    marginBottom: setupTheme.spacing.compact,
     padding: setupTheme.spacing.compact,
   },
   formTitle: {
     color: setupTheme.color.foreground,
     fontSize: setupTheme.type.label,
     fontWeight: "900",
+    letterSpacing: 1,
   },
   formErrorText: {
     color: setupTheme.color.danger,
     fontSize: setupTheme.type.caption,
-    fontWeight: "700",
   },
-  inputGroup: {
-    gap: 4,
-  },
-  inputLabel: {
-    color: setupTheme.color.muted,
-    fontSize: setupTheme.type.label,
-    fontWeight: "800",
-  },
-  textInput: {
+  input: {
     backgroundColor: setupTheme.color.surface,
-    borderColor: setupTheme.color.border,
+    borderColor: setupTheme.color.borderSoft,
     borderRadius: setupTheme.radius.small,
-    borderWidth: 1.5,
+    borderWidth: 1,
     color: setupTheme.color.foreground,
     fontSize: setupTheme.type.body,
-    paddingHorizontal: setupTheme.spacing.compact,
-    paddingVertical: 8,
+    padding: setupTheme.spacing.compact,
   },
   textArea: {
-    minHeight: 64,
+    minHeight: 60,
     textAlignVertical: "top",
   },
-  formButtonRow: {
+  formActionRow: {
     flexDirection: "row",
     gap: setupTheme.spacing.compact,
-    marginTop: 4,
   },
   saveMilestoneButton: {
     alignItems: "center",
     backgroundColor: setupTheme.color.foreground,
-    borderRadius: setupTheme.radius.small,
+    borderRadius: setupTheme.radius.control,
     flex: 2,
     justifyContent: "center",
-    minHeight: 40,
-    paddingVertical: 8,
+    paddingVertical: setupTheme.spacing.compact,
   },
-  saveMilestoneButtonText: {
+  saveMilestoneText: {
     color: setupTheme.color.surface,
     fontSize: setupTheme.type.caption,
     fontWeight: "900",
   },
-  cancelFormButton: {
+  cancelMilestoneButton: {
     alignItems: "center",
+    backgroundColor: setupTheme.color.surface,
     borderColor: setupTheme.color.borderSoft,
-    borderRadius: setupTheme.radius.small,
+    borderRadius: setupTheme.radius.control,
     borderWidth: 1,
     flex: 1,
     justifyContent: "center",
-    minHeight: 40,
-    paddingVertical: 8,
+    paddingVertical: setupTheme.spacing.compact,
   },
-  cancelFormButtonText: {
+  cancelMilestoneText: {
     color: setupTheme.color.muted,
     fontSize: setupTheme.type.caption,
-    fontWeight: "800",
+    fontWeight: "700",
   },
-  milestoneList: {
+  emptyNote: {
+    color: setupTheme.color.muted,
+    fontSize: setupTheme.type.caption,
+    lineHeight: 18,
+  },
+  milestonesList: {
     gap: setupTheme.spacing.compact,
+    marginTop: setupTheme.spacing.tight,
   },
   milestoneItem: {
     backgroundColor: setupTheme.color.surfaceMuted,
     borderColor: setupTheme.color.borderSoft,
-    borderRadius: setupTheme.radius.control,
+    borderRadius: setupTheme.radius.small,
     borderWidth: 1,
-    gap: 4,
+    gap: setupTheme.spacing.tight,
     padding: setupTheme.spacing.compact,
   },
   milestoneTopRow: {
+    alignItems: "center",
     flexDirection: "row",
-    justifyContent: "space-between",
+    gap: setupTheme.spacing.compact,
   },
-  milestonePosition: {
-    color: setupTheme.color.muted,
-    fontSize: 10,
+  positionBadge: {
+    backgroundColor: setupTheme.color.foreground,
+    borderRadius: setupTheme.radius.small,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  positionText: {
+    color: setupTheme.color.surface,
+    fontSize: setupTheme.type.label,
     fontWeight: "900",
+  },
+  milestoneTitle: {
+    color: setupTheme.color.foreground,
+    flex: 1,
+    fontSize: setupTheme.type.body,
+    fontWeight: "700",
   },
   milestoneStatus: {
     borderRadius: setupTheme.radius.status,
     borderWidth: 1,
-    color: setupTheme.color.muted,
-    fontSize: 10,
-    fontWeight: "800",
-    paddingHorizontal: 4,
-    paddingVertical: 1,
+    fontSize: setupTheme.type.label,
+    fontWeight: "900",
+    overflow: "hidden",
+    paddingHorizontal: setupTheme.spacing.compact,
+    paddingVertical: 2,
   },
-  milestoneInProgress: {
+  milestoneStatusPending: {
     backgroundColor: setupTheme.color.highlightSurface,
-    borderColor: setupTheme.color.foreground,
-    color: setupTheme.color.foreground,
+    borderColor: setupTheme.color.warning,
+    color: setupTheme.color.warning,
   },
-  milestoneApproved: {
+  milestoneStatusProgress: {
     backgroundColor: setupTheme.color.readySurface,
     borderColor: setupTheme.color.ready,
     color: setupTheme.color.ready,
   },
-  milestoneTitle: {
-    color: setupTheme.color.foreground,
-    fontSize: setupTheme.type.body,
-    fontWeight: "800",
+  milestoneStatusApproved: {
+    backgroundColor: setupTheme.color.readySurface,
+    borderColor: setupTheme.color.ready,
+    color: setupTheme.color.ready,
   },
   milestoneDescription: {
-    color: setupTheme.color.foreground,
+    color: setupTheme.color.muted,
     fontSize: setupTheme.type.caption,
     lineHeight: 18,
+  },
+  historyItem: {
+    backgroundColor: setupTheme.color.surfaceMuted,
+    borderColor: setupTheme.color.borderSoft,
+    borderRadius: setupTheme.radius.small,
+    borderWidth: 1,
+    gap: setupTheme.spacing.tight,
+    padding: setupTheme.spacing.compact,
+  },
+  historyTopRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  historyVersion: {
+    color: setupTheme.color.foreground,
+    fontSize: setupTheme.type.label,
+    fontWeight: "900",
+  },
+  historyNote: {
+    color: setupTheme.color.foreground,
+    fontSize: setupTheme.type.body,
+  },
+  historyReviewBox: {
+    backgroundColor: setupTheme.color.surface,
+    borderColor: setupTheme.color.borderSoft,
+    borderRadius: setupTheme.radius.small,
+    borderWidth: 1,
+    marginTop: 4,
+    padding: setupTheme.spacing.compact,
+  },
+  historyReviewLabel: {
+    color: setupTheme.color.muted,
+    fontSize: setupTheme.type.label,
+    fontWeight: "700",
+  },
+  historyReviewText: {
+    color: setupTheme.color.foreground,
+    fontSize: setupTheme.type.caption,
+    fontStyle: "italic",
+    marginTop: 2,
   },
   disabledAction: {
     opacity: 0.6,
