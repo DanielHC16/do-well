@@ -2,6 +2,7 @@ import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,12 +12,19 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import {
+  notificationService,
+  type NotificationService,
+} from "@/features/notifications";
 import { setupTheme } from "@/features/setup/setupTheme";
 import {
   submissionGateway,
   type SubmissionGateway,
 } from "@/features/submissions/data/submission-gateway";
-import type { SubmissionRecord } from "@/features/submissions/model/submission-schemas";
+import type {
+  SubmissionFileRecord,
+  SubmissionRecord,
+} from "@/features/submissions/model/submission-schemas";
 
 import {
   assignmentGateway,
@@ -31,17 +39,28 @@ type EmployerAssignmentDetailScreenProps = Readonly<{
   assignmentId: string;
   gateway?: AssignmentGateway;
   submissionsGateway?: SubmissionGateway;
+  notifications?: NotificationService;
 }>;
 
 export function EmployerAssignmentDetailScreen({
   assignmentId,
   gateway = assignmentGateway,
   submissionsGateway = submissionGateway,
+  notifications = notificationService,
 }: EmployerAssignmentDetailScreenProps) {
   const router = useRouter();
   const [detail, setDetail] = useState<AssignmentDetail | null>(null);
   const [milestones, setMilestones] = useState<MilestoneRecord[]>([]);
   const [submissions, setSubmissions] = useState<SubmissionRecord[]>([]);
+  const [evidenceFiles, setEvidenceFiles] = useState<SubmissionFileRecord[]>(
+    [],
+  );
+  const [evidenceSignedUrls, setEvidenceSignedUrls] = useState<
+    Record<string, string>
+  >({});
+  const [loadedSubmissionId, setLoadedSubmissionId] = useState<string | null>(
+    null,
+  );
   const [busy, setBusy] = useState(true);
   const [actionBusy, setActionBusy] = useState(false);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
@@ -91,6 +110,48 @@ export function EmployerAssignmentDetailScreen({
       mounted = false;
     };
   }, [assignmentId, gateway, submissionsGateway]);
+
+  useEffect(() => {
+    let mounted = true;
+    const latestId = submissions[0]?.id;
+    if (!latestId) {
+      return;
+    }
+
+    submissionsGateway
+      .listSubmissionFiles(latestId)
+      .then(async (files) => {
+        if (!mounted) return;
+        setEvidenceFiles(files);
+        const urlMap: Record<string, string> = {};
+        await Promise.all(
+          files.map(async (file) => {
+            try {
+              const url = await submissionsGateway.createEvidenceSignedUrl(
+                file.objectPath,
+              );
+              urlMap[file.id] = url;
+            } catch {
+              // Signed URL creation error non-blocking
+            }
+          }),
+        );
+        if (!mounted) return;
+        setEvidenceSignedUrls(urlMap);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setEvidenceFiles([]);
+      })
+      .finally(() => {
+        if (!mounted) return;
+        setLoadedSubmissionId(latestId);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [submissions, submissionsGateway]);
 
   async function handleCancelProposal() {
     setActionBusy(true);
@@ -176,6 +237,19 @@ export function EmployerAssignmentDetailScreen({
         })),
       );
       setActionSuccess("Work approved and task agreement completed!");
+
+      await notifications
+        .scheduleNotification({
+          id: `assignment_completed_${assignmentId}`,
+          title: "Assignment Completed",
+          body: `You approved ${detail?.worker?.displayName ?? "the worker"}'s completion. Agreement finalized.`,
+          channelId: "assignment_updates",
+          data: {
+            route: `/(protected)/employer/assignments/${assignmentId}`,
+            assignmentId,
+          },
+        })
+        .catch(() => {});
     } catch (err: unknown) {
       setErrorMessage(
         err instanceof Error ? err.message : "Failed to approve completion.",
@@ -218,6 +292,19 @@ export function EmployerAssignmentDetailScreen({
       setActionSuccess(
         "Revision requested. The worker has been notified to make adjustments.",
       );
+
+      await notifications
+        .scheduleNotification({
+          id: `revision_requested_${assignmentId}`,
+          title: "Revision Requested",
+          body: `Revision requested from ${detail?.worker?.displayName ?? "worker"}.`,
+          channelId: "assignment_updates",
+          data: {
+            route: `/(protected)/employer/assignments/${assignmentId}`,
+            assignmentId,
+          },
+        })
+        .catch(() => {});
     } catch (err: unknown) {
       setErrorMessage(
         err instanceof Error ? err.message : "Failed to request revision.",
@@ -269,6 +356,9 @@ export function EmployerAssignmentDetailScreen({
   const isRevision = assignment.status === "revision_requested";
   const isCompleted = assignment.status === "completed";
   const latestSubmission = submissions[0] ?? null;
+  const loadingEvidence = Boolean(
+    latestSubmission && loadedSubmissionId !== latestSubmission.id,
+  );
 
   return (
     <SafeAreaView edges={["top", "bottom"]} style={styles.safeArea}>
@@ -378,6 +468,52 @@ export function EmployerAssignmentDetailScreen({
                 <Text style={styles.workerNoteText}>
                   {`"${latestSubmission.note}"`}
                 </Text>
+              </View>
+            ) : null}
+
+            {loadingEvidence ? (
+              <View style={styles.evidenceLoadingBox}>
+                <ActivityIndicator
+                  color={setupTheme.color.accent}
+                  size="small"
+                />
+                <Text style={styles.evidenceLoadingText}>
+                  Loading attached photo evidence...
+                </Text>
+              </View>
+            ) : evidenceFiles.length > 0 ? (
+              <View style={styles.evidenceSection}>
+                <Text style={styles.evidenceSectionTitle}>
+                  PHOTO EVIDENCE ({evidenceFiles.length})
+                </Text>
+                <View style={styles.evidenceGrid}>
+                  {evidenceFiles.map((file) => {
+                    const signedUrl = evidenceSignedUrls[file.id];
+                    return (
+                      <View key={file.id} style={styles.evidenceCard}>
+                        {signedUrl ? (
+                          <Image
+                            source={{ uri: signedUrl }}
+                            style={styles.evidenceImage}
+                            resizeMode="cover"
+                            accessibilityLabel="Attached photo evidence"
+                          />
+                        ) : (
+                          <View style={styles.evidencePlaceholder}>
+                            <ActivityIndicator
+                              color={setupTheme.color.muted}
+                              size="small"
+                            />
+                          </View>
+                        )}
+                        <Text style={styles.evidenceFileMeta}>
+                          {(file.sizeBytes / 1024).toFixed(0)} KB ·{" "}
+                          {file.mediaType.split("/")[1]?.toUpperCase() ?? "IMG"}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
               </View>
             ) : null}
 
@@ -1317,5 +1453,60 @@ const styles = StyleSheet.create({
   },
   disabledAction: {
     opacity: 0.6,
+  },
+  evidenceLoadingBox: {
+    alignItems: "center",
+    backgroundColor: setupTheme.color.surfaceMuted,
+    borderRadius: setupTheme.radius.small,
+    flexDirection: "row",
+    gap: setupTheme.spacing.tight,
+    marginTop: setupTheme.spacing.compact,
+    padding: setupTheme.spacing.compact,
+  },
+  evidenceLoadingText: {
+    color: setupTheme.color.muted,
+    fontSize: setupTheme.type.caption,
+  },
+  evidenceSection: {
+    marginTop: setupTheme.spacing.compact,
+  },
+  evidenceSectionTitle: {
+    color: setupTheme.color.foreground,
+    fontSize: setupTheme.type.label,
+    fontWeight: "900",
+    letterSpacing: 0.5,
+    marginBottom: setupTheme.spacing.tight,
+  },
+  evidenceGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: setupTheme.spacing.compact,
+  },
+  evidenceCard: {
+    backgroundColor: setupTheme.color.surfaceMuted,
+    borderColor: setupTheme.color.borderSoft,
+    borderRadius: setupTheme.radius.small,
+    borderWidth: 1,
+    overflow: "hidden",
+    width: 100,
+  },
+  evidenceImage: {
+    backgroundColor: setupTheme.color.borderSoft,
+    height: 100,
+    width: 100,
+  },
+  evidencePlaceholder: {
+    alignItems: "center",
+    backgroundColor: setupTheme.color.surfaceMuted,
+    height: 100,
+    justifyContent: "center",
+    width: 100,
+  },
+  evidenceFileMeta: {
+    color: setupTheme.color.muted,
+    fontSize: 10,
+    fontWeight: "600",
+    padding: 4,
+    textAlign: "center",
   },
 });

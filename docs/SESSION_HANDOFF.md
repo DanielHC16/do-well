@@ -3,14 +3,14 @@
 ## Snapshot
 
 - **Last verified:** 2026-10-25 (Asia/Manila)
-- **Completed milestones:** M01 — Expo initialization and Android development proof; M02 — Supabase schema and authorization foundation; M03A — authentication foundation; D01 — Offline Demo Preview; M04 — Authenticated marketplace shell and dual-mode navigation; M05 — Gig creation and employer management; M06 — Nearby/remote discovery and explainable ranking; M07 — Worker applications and atomic employer selection; M08 — Implement agreements, milestones and activity; M09 — Add work submission, revision and approval; M10 — Prove and implement zero-cost AI Job Brief Builder; M11 — Add foreground location and decide map experience
-- **Current milestone:** M11 — Add foreground location and decide map experience
-- **Status:** `COMPLETED` on branch `feat/android-location`; ready for PR and merge
-- **Branch:** `feat/android-location`
+- **Completed milestones:** M01 — Expo initialization and Android development proof; M02 — Supabase schema and authorization foundation; M03A — authentication foundation; D01 — Offline Demo Preview; M04 — Authenticated marketplace shell and dual-mode navigation; M05 — Gig creation and employer management; M06 — Nearby/remote discovery and explainable ranking; M07 — Worker applications and atomic employer selection; M08 — Implement agreements, milestones and activity; M09 — Add work submission, revision and approval; M10 — Prove and implement zero-cost AI Job Brief Builder; M11 — Add foreground location and decide map experience; M12 — Integrate local notifications and image evidence
+- **Current milestone:** M12 — Integrate local notifications and image evidence
+- **Status:** `COMPLETED` on branch `feat/android-evidence-notifications`; ready for PR and merge
+- **Branch:** `feat/android-evidence-notifications`
 - **Base/default branch:** `main`
-- **Current implementation merge:** `29b9924` (`Merge pull request #32`)
+- **Current implementation merge:** `58cf36a` (`Merge pull request #33`)
 - **Remote:** `https://github.com/DanielHC16/do-well` (`PRIVATE`)
-- **Next issue:** [#13 — [M12] Integrate local notifications and image evidence](https://github.com/DanielHC16/do-well/issues/13)
+- **Next issue:** [#14 — [M13] Harden weak-connectivity behavior](https://github.com/DanielHC16/do-well/issues/14)
 - **M01 PR:** [#17](https://github.com/DanielHC16/do-well/pull/17), squash-merged as `d073c4b`
 - **M02 PR:** [#19](https://github.com/DanielHC16/do-well/pull/19), merge commit `f7a3317`
 - **M03A PR:** [#22](https://github.com/DanielHC16/do-well/pull/22), merged as `368613a`
@@ -22,6 +22,7 @@
 - **M08 PR:** [#30](https://github.com/DanielHC16/do-well/pull/30), merged as `9e177e1`
 - **M09 PR:** [#31](https://github.com/DanielHC16/do-well/pull/31), merged as `70c6032`
 - **M10 PR:** [#32](https://github.com/DanielHC16/do-well/pull/32), merged as `29b9924`
+- **M11 PR:** [#33](https://github.com/DanielHC16/do-well/pull/33), merged as `58cf36a`
 
 This file records repository evidence, not chat state. Re-run the verification commands before relying on it.
 
@@ -179,6 +180,32 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 - UI components: `LocationBar.tsx` and `LocationSelectorModal.tsx` in `src/features/location/components/`.
 - Noticeboard integration: `AuthenticatedHomeScreen.tsx` connects `LocationBar` and `LocationSelectorModal`, passing coordinates and radius filter directly to `discoveryGateway.discoverGigs({ workerLatitude, workerLongitude, filters })`.
 - Quality verification: 63 Jest test suites / 388 tests pass, 11 pgTAP files / 191 database tests pass, clean `db:lint`, clean `db:types:check`, clean `format:check`, clean `lint`, clean `typecheck`, and 20/20 `expo-doctor` checks.
+- Merged into `main` via PR #33 (`58cf36a`), closing Issue #12.
+
+## M12 completed state
+
+- Plan document authored at `docs/plans/2026-10-25-m12-evidence-and-notifications.md`.
+- `expo-image-picker` (`~58.0.10`) and `expo-notifications` (`~58.1.6`) pinned for Expo SDK 58 New Architecture.
+- Android permissions and plugins configured in `app.config.ts`: `POST_NOTIFICATIONS` permission and `expo-image-picker` with `microphonePermission: false`.
+- Database functions and RPCs implemented in `supabase/migrations/20261025000600_evidence_submission_rpcs.sql`:
+  - `begin_submission(p_assignment_id, p_milestone_id, p_note, p_client_request_id)`: Reserves `pending_upload` submission record with version bump, worker validation (`P0031`), active/revision status check (`P0032`), and client request deduplication.
+  - `finalize_submission(p_submission_id, p_files)`: Validates private object paths `{submitted_by}/{assignment_id}/{submission_id}/{file_id}.ext`, inserts file records into `submission_files`, sets submission to `submitted`, sets assignment to `submitted`, and emits `work_submitted` into `activity_events`.
+  - `list_submission_files(p_submission_id)`: Securely lists attached evidence records for assignment participants.
+  - Permissions revoked from `public, anon`; granted strictly to `authenticated`.
+- pgTAP database test suite `supabase/tests/120_evidence_submission_rpcs.test.sql` (12 pgTAP files / 212 tests pass).
+- Evidence domain, service, and picker:
+  - `src/features/submissions/model/submission-schemas.ts`: Added `SelectedEvidenceImageSchema`, `SubmissionFileRecordSchema`, `BeginSubmissionInputSchema`, `FinalizeSubmissionInputSchema`.
+  - `src/features/submissions/data/submission-gateway.ts`: Added `beginSubmission`, `finalizeSubmission`, `listSubmissionFiles`, `createEvidenceSignedUrl`, `uploadEvidenceBlob`.
+  - `src/features/submissions/evidence/services/evidence-image-service.ts`: Media library and camera selection with 5MB cap, JPEG/PNG/WEBP validation, `exif: false`, and `readImageBlob`.
+  - `src/features/submissions/evidence/components/EvidenceAttachmentPicker.tsx`: Accessible thumbnail preview cards, file size badges, and deletion controls.
+- Local notifications system:
+  - `src/features/notifications/model/notification-schemas.ts`: Configured Android channels `assignment_updates`, `milestone_alerts`, `general_alerts`.
+  - `src/features/notifications/services/notification-service.ts`: Channel setup, permission checking, and immediate local notification dispatch with deep-link routes.
+- UI Screens integrated:
+  - `WorkerAssignmentDetailScreen.tsx`: Evidence attachment picker, staged `begin -> upload -> finalize` pipeline with progress display, and local notification dispatch upon agreement confirmation and work submission.
+  - `EmployerAssignmentDetailScreen.tsx`: Evidence photo thumbnails with private short-lived signed URLs in work review card, and local notification dispatch upon completion approval and revision request.
+  - `AuthenticatedActivityScreen.tsx`: Channel registration on mount and event formatting for `work_submitted`, `revision_requested`, `assignment_completed`.
+- Quality verification: 67 Jest test suites / 420 tests pass, 12 pgTAP files / 212 database tests pass, clean `db:lint`, clean `db:types:check`, clean `format:check`, clean `lint`, clean `typecheck`, and 20/20 `expo-doctor` checks.
 
 ## Open product decisions
 
@@ -194,12 +221,12 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 
 ## Exact next steps
 
-1. Commit M11 changes in small, logical Conventional Commits.
-2. Push branch `feat/android-location` to GitHub.
-3. Open Pull Request for M11 linking Issue #12 with full test evidence.
-4. Merge M11 pull request into `main` after review.
+1. Commit M12 changes in small, logical Conventional Commits.
+2. Push branch `feat/android-evidence-notifications` to GitHub.
+3. Open Pull Request for M12 linking Issue #13 with full test evidence.
+4. Merge M12 pull request into `main`.
 5. Switch to `main` and pull latest commits.
-6. Begin Milestone M12: Integrate local notifications and image evidence (Issue #13).
+6. Begin Milestone M13: Harden weak-connectivity behavior (Issue #14).
 
 ## Suggested continuation commands
 

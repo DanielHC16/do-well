@@ -267,7 +267,7 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 
 ## M12 — Integrate local notifications and image evidence
 
-**Status:** `NOT STARTED`
+**Status:** `COMPLETED` on branch `feat/android-evidence-notifications`; ready for PR and merge.
 
 - **Goal:** provide reliable on-device reminders/activity cues and private image evidence without making remote push a P0 dependency.
 - **Dependencies:** M09; M01 development build; private Storage policies from M02; retention/size/type rules approved.

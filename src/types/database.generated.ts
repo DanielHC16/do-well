@@ -387,6 +387,28 @@ isOneToOne: true
         isOneToOne: true
         isSetofReturn: false
       } },
+"begin_submission":
+{ Args: { "p_assignment_id": string,"p_client_request_id"?: string,"p_milestone_id"?: string,"p_note"?: string }; Returns: {
+              "assignment_id": string,
+"client_request_id": string,
+"created_at": string,
+"id": string,
+"milestone_id": string | null,
+"note": string | null,
+"review_note": string | null,
+"reviewed_at": string | null,
+"status": string,
+"submitted_at": string | null,
+"submitted_by": string,
+"updated_at": string,
+"version": number
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "submissions"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "calculate_distance_km":
 { Args: { "p_lat1": number,"p_lat2": number,"p_lon1": number,"p_lon2": number }; Returns: number
                            },
@@ -564,6 +586,28 @@ isOneToOne: true
         isOneToOne: true
         isSetofReturn: false
       } },
+"finalize_submission":
+{ Args: { "p_files"?: Json,"p_submission_id": string }; Returns: {
+              "assignment_id": string,
+"client_request_id": string,
+"created_at": string,
+"id": string,
+"milestone_id": string | null,
+"note": string | null,
+"review_note": string | null,
+"reviewed_at": string | null,
+"status": string,
+"submitted_at": string | null,
+"submitted_by": string,
+"updated_at": string,
+"version": number
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "submissions"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "get_assignment_detail":
 { Args: { "p_assignment_id": string }; Returns: Json
                            },
@@ -653,6 +697,23 @@ isOneToOne: true
               "created_at": string,"decided_at": string,"gig_id": string,"id": string,"message": string,"status": string,"worker_display_name": string,"worker_home_area": string,"worker_id": string
             }[]
                            },
+"list_submission_files":
+{ Args: { "p_submission_id": string }; Returns: {
+              "created_at": string,
+"id": string,
+"media_type": string,
+"object_path": string,
+"size_bytes": number,
+"submission_id": string,
+"updated_at": string,
+"uploader_id": string
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "submission_files"
+        isOneToOne: false
+        isSetofReturn: true
+      } },
 "list_user_activity":
 { Args: { "p_limit"?: number,"p_offset"?: number }; Returns: {
               "assignment_id": string,"created_at": string,"dedupe_key": string,"event_type": string,"gig_id": string,"id": string,"payload": Json,"read_at": string

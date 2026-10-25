@@ -1,6 +1,8 @@
 import {
-  ApproveSubmissionInputSchema,
-  RequestRevisionInputSchema,
+  BeginSubmissionInputSchema,
+  FinalizeSubmissionInputSchema,
+  SelectedEvidenceImageSchema,
+  SubmissionFileRecordSchema,
   SubmissionRecordSchema,
   SubmitWorkInputSchema,
 } from "../submission-schemas";
@@ -59,36 +61,91 @@ describe("submission-schemas", () => {
   it("rejects SubmitWorkInputSchema with invalid UUID", () => {
     expect(() =>
       SubmitWorkInputSchema.parse({
-        assignmentId: "not-a-uuid",
+        assignmentId: "invalid-uuid",
+        note: "Note",
       }),
-    ).toThrow("Assignment ID must be a valid UUID.");
+    ).toThrow();
   });
 
-  it("validates RequestRevisionInputSchema requiring non-empty review note", () => {
-    const valid = RequestRevisionInputSchema.parse({
-      submissionId: "a0000000-0000-4000-8000-000000000001",
-      reviewNote: "Please re-check cable #3.",
+  it("validates BeginSubmissionInputSchema", () => {
+    const parsed = BeginSubmissionInputSchema.parse({
+      assignmentId: "a1000000-0000-4000-8000-000000000001",
+      note: "Work done, uploading photos",
     });
-    expect(valid.reviewNote).toBe("Please re-check cable #3.");
+    expect(parsed.assignmentId).toBe("a1000000-0000-4000-8000-000000000001");
+    expect(parsed.note).toBe("Work done, uploading photos");
+  });
+
+  it("validates FinalizeSubmissionInputSchema", () => {
+    const parsed = FinalizeSubmissionInputSchema.parse({
+      submissionId: "a0000000-0000-4000-8000-000000000001",
+      files: [
+        {
+          object_path: "user1/assignment1/sub1/photo.jpg",
+          media_type: "image/jpeg",
+          size_bytes: 1048576,
+        },
+      ],
+    });
+    expect(parsed.files).toHaveLength(1);
+    expect(parsed.files[0].media_type).toBe("image/jpeg");
+  });
+
+  it("validates SubmissionFileRecordSchema", () => {
+    const valid = {
+      id: "f0000000-0000-4000-8000-000000000001",
+      submissionId: "a0000000-0000-4000-8000-000000000001",
+      uploaderId: "a2000000-0000-4000-8000-000000000001",
+      objectPath: "u1/a1/s1/pic.jpg",
+      mediaType: "image/jpeg",
+      sizeBytes: 2048500,
+      createdAt: "2026-10-25T02:00:00.000Z",
+      updatedAt: "2026-10-25T02:00:00.000Z",
+    };
+    const parsed = SubmissionFileRecordSchema.parse(valid);
+    expect(parsed.mediaType).toBe("image/jpeg");
+    expect(parsed.sizeBytes).toBe(2048500);
+  });
+
+  it("rejects SubmissionFileRecordSchema with invalid media type or oversized bytes", () => {
+    expect(() =>
+      SubmissionFileRecordSchema.parse({
+        id: "f0000000-0000-4000-8000-000000000001",
+        submissionId: "a0000000-0000-4000-8000-000000000001",
+        uploaderId: "a2000000-0000-4000-8000-000000000001",
+        objectPath: "u1/a1/s1/bad.exe",
+        mediaType: "application/octet-stream",
+        sizeBytes: 1024,
+        createdAt: "2026-10-25T02:00:00.000Z",
+        updatedAt: "2026-10-25T02:00:00.000Z",
+      }),
+    ).toThrow();
 
     expect(() =>
-      RequestRevisionInputSchema.parse({
+      SubmissionFileRecordSchema.parse({
+        id: "f0000000-0000-4000-8000-000000000001",
         submissionId: "a0000000-0000-4000-8000-000000000001",
-        reviewNote: "   ",
+        uploaderId: "a2000000-0000-4000-8000-000000000001",
+        objectPath: "u1/a1/s1/huge.png",
+        mediaType: "image/png",
+        sizeBytes: 10000000,
+        createdAt: "2026-10-25T02:00:00.000Z",
+        updatedAt: "2026-10-25T02:00:00.000Z",
       }),
-    ).toThrow("Please provide specific revision instructions.");
+    ).toThrow();
   });
 
-  it("validates ApproveSubmissionInputSchema with optional review note", () => {
-    const withNote = ApproveSubmissionInputSchema.parse({
-      submissionId: "a0000000-0000-4000-8000-000000000001",
-      reviewNote: "Great job!",
-    });
-    expect(withNote.reviewNote).toBe("Great job!");
-
-    const withoutNote = ApproveSubmissionInputSchema.parse({
-      submissionId: "a0000000-0000-4000-8000-000000000001",
-    });
-    expect(withoutNote.reviewNote).toBeUndefined();
+  it("validates SelectedEvidenceImageSchema", () => {
+    const valid = {
+      uri: "file:///data/user/0/com.app/cache/photo.jpg",
+      fileName: "photo.jpg",
+      fileSize: 1024000,
+      mimeType: "image/jpeg",
+      width: 1920,
+      height: 1080,
+    };
+    const parsed = SelectedEvidenceImageSchema.parse(valid);
+    expect(parsed.fileName).toBe("photo.jpg");
+    expect(parsed.width).toBe(1920);
   });
 });

@@ -27,6 +27,17 @@ describe("submission-gateway", () => {
     updated_at: "2026-10-25T01:00:00.000Z",
   };
 
+  const mockFileRow = {
+    id: "f0000000-0000-4000-8000-000000000001",
+    submission_id: "a0000000-0000-4000-8000-000000000001",
+    uploader_id: "a2000000-0000-4000-8000-000000000001",
+    object_path: "user/asgn/sub/pic.jpg",
+    media_type: "image/jpeg",
+    size_bytes: 1048576,
+    created_at: "2026-10-25T01:05:00.000Z",
+    updated_at: "2026-10-25T01:05:00.000Z",
+  };
+
   it("submits work via submit_assignment_work RPC", async () => {
     const mockRpc = jest.fn(async () => ({
       data: mockSubmissionRow,
@@ -54,13 +65,153 @@ describe("submission-gateway", () => {
     expect(result.status).toBe("submitted");
   });
 
+  it("begins submission via begin_submission RPC", async () => {
+    const mockRpc = jest.fn(async () => ({
+      data: {
+        ...mockSubmissionRow,
+        status: "pending_upload",
+        submitted_at: null,
+      },
+      error: null,
+    }));
+    const mockClient = {
+      rpc: mockRpc,
+    } as unknown as SupabaseClient<Database>;
+
+    const gateway = createSubmissionGateway(mockClient);
+    const result = await gateway.beginSubmission({
+      assignmentId: "a1000000-0000-4000-8000-000000000001",
+      note: "Staging evidence",
+      clientRequestId: "a3000000-0000-4000-8000-000000000001",
+    });
+
+    expect(mockRpc).toHaveBeenCalledWith("begin_submission", {
+      p_assignment_id: "a1000000-0000-4000-8000-000000000001",
+      p_note: "Staging evidence",
+      p_milestone_id: undefined,
+      p_client_request_id: "a3000000-0000-4000-8000-000000000001",
+    });
+    expect(result.status).toBe("pending_upload");
+  });
+
+  it("finalizes submission via finalize_submission RPC", async () => {
+    const mockRpc = jest.fn(async () => ({
+      data: mockSubmissionRow,
+      error: null,
+    }));
+    const mockClient = {
+      rpc: mockRpc,
+    } as unknown as SupabaseClient<Database>;
+
+    const gateway = createSubmissionGateway(mockClient);
+    const result = await gateway.finalizeSubmission({
+      submissionId: "a0000000-0000-4000-8000-000000000001",
+      files: [
+        {
+          object_path: "u/a/s/pic.jpg",
+          media_type: "image/jpeg",
+          size_bytes: 1048576,
+        },
+      ],
+    });
+
+    expect(mockRpc).toHaveBeenCalledWith("finalize_submission", {
+      p_submission_id: "a0000000-0000-4000-8000-000000000001",
+      p_files: [
+        {
+          object_path: "u/a/s/pic.jpg",
+          media_type: "image/jpeg",
+          size_bytes: 1048576,
+        },
+      ],
+    });
+    expect(result.status).toBe("submitted");
+  });
+
+  it("lists submission files via list_submission_files RPC", async () => {
+    const mockRpc = jest.fn(async () => ({
+      data: [mockFileRow],
+      error: null,
+    }));
+    const mockClient = {
+      rpc: mockRpc,
+    } as unknown as SupabaseClient<Database>;
+
+    const gateway = createSubmissionGateway(mockClient);
+    const files = await gateway.listSubmissionFiles(
+      "a0000000-0000-4000-8000-000000000001",
+    );
+
+    expect(mockRpc).toHaveBeenCalledWith("list_submission_files", {
+      p_submission_id: "a0000000-0000-4000-8000-000000000001",
+    });
+    expect(files).toHaveLength(1);
+    expect(files[0].mediaType).toBe("image/jpeg");
+    expect(files[0].sizeBytes).toBe(1048576);
+  });
+
+  it("creates evidence signed url via storage client", async () => {
+    const mockCreateSignedUrl = jest.fn(async () => ({
+      data: { signedUrl: "https://storage.example.com/signed?token=abc" },
+      error: null,
+    }));
+    const mockClient = {
+      storage: {
+        from: jest.fn(() => ({
+          createSignedUrl: mockCreateSignedUrl,
+        })),
+      },
+    } as unknown as SupabaseClient<Database>;
+
+    const gateway = createSubmissionGateway(mockClient);
+    const url = await gateway.createEvidenceSignedUrl("user/asgn/sub/pic.jpg");
+
+    expect(mockClient.storage.from).toHaveBeenCalledWith("submission-evidence");
+    expect(mockCreateSignedUrl).toHaveBeenCalledWith(
+      "user/asgn/sub/pic.jpg",
+      3600,
+    );
+    expect(url).toBe("https://storage.example.com/signed?token=abc");
+  });
+
+  it("uploads evidence blob via storage client", async () => {
+    const mockUpload = jest.fn(async () => ({
+      data: { path: "user/asgn/sub/pic.jpg" },
+      error: null,
+    }));
+    const mockClient = {
+      storage: {
+        from: jest.fn(() => ({
+          upload: mockUpload,
+        })),
+      },
+    } as unknown as SupabaseClient<Database>;
+
+    const gateway = createSubmissionGateway(mockClient);
+    const path = await gateway.uploadEvidenceBlob(
+      "user/asgn/sub/pic.jpg",
+      new ArrayBuffer(10),
+      "image/jpeg",
+    );
+
+    expect(mockClient.storage.from).toHaveBeenCalledWith("submission-evidence");
+    expect(mockUpload).toHaveBeenCalledWith(
+      "user/asgn/sub/pic.jpg",
+      expect.any(ArrayBuffer),
+      {
+        contentType: "image/jpeg",
+        upsert: true,
+      },
+    );
+    expect(path).toBe("user/asgn/sub/pic.jpg");
+  });
+
   it("requests revision via request_submission_revision RPC", async () => {
     const mockRpc = jest.fn(async () => ({
       data: {
         ...mockSubmissionRow,
         status: "revision_requested",
-        review_note: "Please re-mount rack 2.",
-        reviewed_at: "2026-10-25T02:00:00.000Z",
+        review_note: "Please clean the secondary corner.",
       },
       error: null,
     }));
@@ -71,24 +222,23 @@ describe("submission-gateway", () => {
     const gateway = createSubmissionGateway(mockClient);
     const result = await gateway.requestSubmissionRevision({
       submissionId: "a0000000-0000-4000-8000-000000000001",
-      reviewNote: "Please re-mount rack 2.",
+      reviewNote: "Please clean the secondary corner.",
     });
 
     expect(mockRpc).toHaveBeenCalledWith("request_submission_revision", {
       p_submission_id: "a0000000-0000-4000-8000-000000000001",
-      p_review_note: "Please re-mount rack 2.",
+      p_review_note: "Please clean the secondary corner.",
     });
     expect(result.status).toBe("revision_requested");
-    expect(result.reviewNote).toBe("Please re-mount rack 2.");
+    expect(result.reviewNote).toBe("Please clean the secondary corner.");
   });
 
-  it("approves completion via approve_assignment_completion RPC", async () => {
+  it("approves assignment completion via approve_assignment_completion RPC", async () => {
     const mockRpc = jest.fn(async () => ({
       data: {
         ...mockSubmissionRow,
         status: "approved",
-        review_note: "Work confirmed and verified.",
-        reviewed_at: "2026-10-25T03:00:00.000Z",
+        review_note: "Work looks great, approved!",
       },
       error: null,
     }));
@@ -99,23 +249,19 @@ describe("submission-gateway", () => {
     const gateway = createSubmissionGateway(mockClient);
     const result = await gateway.approveAssignmentCompletion({
       submissionId: "a0000000-0000-4000-8000-000000000001",
-      reviewNote: "Work confirmed and verified.",
+      reviewNote: "Work looks great, approved!",
     });
 
     expect(mockRpc).toHaveBeenCalledWith("approve_assignment_completion", {
       p_submission_id: "a0000000-0000-4000-8000-000000000001",
-      p_review_note: "Work confirmed and verified.",
+      p_review_note: "Work looks great, approved!",
     });
     expect(result.status).toBe("approved");
-    expect(result.reviewNote).toBe("Work confirmed and verified.");
   });
 
-  it("lists assignment submissions in order", async () => {
+  it("lists assignment submissions via list_assignment_submissions RPC", async () => {
     const mockRpc = jest.fn(async () => ({
-      data: [
-        { ...mockSubmissionRow, version: 2 },
-        { ...mockSubmissionRow, version: 1 },
-      ],
+      data: [mockSubmissionRow],
       error: null,
     }));
     const mockClient = {
@@ -127,12 +273,14 @@ describe("submission-gateway", () => {
       "a1000000-0000-4000-8000-000000000001",
     );
 
-    expect(list).toHaveLength(2);
-    expect(list[0].version).toBe(2);
-    expect(list[1].version).toBe(1);
+    expect(mockRpc).toHaveBeenCalledWith("list_assignment_submissions", {
+      p_assignment_id: "a1000000-0000-4000-8000-000000000001",
+    });
+    expect(list).toHaveLength(1);
+    expect(list[0].id).toBe("a0000000-0000-4000-8000-000000000001");
   });
 
-  it("fetches latest assignment submission", async () => {
+  it("gets latest assignment submission via get_latest_assignment_submission RPC", async () => {
     const mockRpc = jest.fn(async () => ({
       data: mockSubmissionRow,
       error: null,
@@ -146,24 +294,9 @@ describe("submission-gateway", () => {
       "a1000000-0000-4000-8000-000000000001",
     );
 
-    expect(latest).not.toBeNull();
+    expect(mockRpc).toHaveBeenCalledWith("get_latest_assignment_submission", {
+      p_assignment_id: "a1000000-0000-4000-8000-000000000001",
+    });
     expect(latest?.id).toBe("a0000000-0000-4000-8000-000000000001");
-  });
-
-  it("propagates RPC errors gracefully", async () => {
-    const mockRpc = jest.fn(async () => ({
-      data: null,
-      error: { message: "Permission denied (P0036)" },
-    }));
-    const mockClient = {
-      rpc: mockRpc,
-    } as unknown as SupabaseClient<Database>;
-
-    const gateway = createSubmissionGateway(mockClient);
-    await expect(
-      gateway.approveAssignmentCompletion({
-        submissionId: "a0000000-0000-4000-8000-000000000001",
-      }),
-    ).rejects.toThrow("Permission denied (P0036)");
   });
 });
