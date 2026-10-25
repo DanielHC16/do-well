@@ -172,6 +172,23 @@ jest.mock("@/features/gigs/data/gig-gateway", () => ({
   },
 }));
 
+jest.mock("@/features/submissions/data/submission-gateway", () => ({
+  submissionGateway: {
+    submitAssignmentWork: jest.fn(),
+    requestSubmissionRevision: jest.fn(),
+    approveAssignmentCompletion: jest.fn(),
+    listAssignmentSubmissions: jest.fn(async () => []),
+    getLatestAssignmentSubmission: jest.fn(async () => null),
+  },
+  getSubmissionGateway: () => ({
+    submitAssignmentWork: jest.fn(),
+    requestSubmissionRevision: jest.fn(),
+    approveAssignmentCompletion: jest.fn(),
+    listAssignmentSubmissions: jest.fn(async () => []),
+    getLatestAssignmentSubmission: jest.fn(async () => null),
+  }),
+}));
+
 const mockedUseAuth = jest.mocked(useAuth);
 const mockedUseShellMode = jest.mocked(useShellMode);
 

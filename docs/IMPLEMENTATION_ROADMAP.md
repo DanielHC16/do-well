@@ -207,7 +207,7 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 
 ## M08 — Implement agreements, milestones and activity
 
-**Status:** `COMPLETED` on branch `feat/task-agreements`; ready for PR and merge.
+**Status:** `COMPLETED` after review and merge of [PR #30](https://github.com/DanielHC16/do-well/pull/30) (`9e177e1`) on 2026-10-25.
 
 - **Goal:** give both participants a clear, auditable path from selection through in-progress milestones.
 - **Dependencies:** M07; decision on two-party agreement confirmation and post-assignment cancellation/disputes.
@@ -222,7 +222,7 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 
 ## M09 — Add work submission, revision and approval
 
-**Status:** `NOT STARTED`
+**Status:** `COMPLETED` on branch `feat/work-submission`; ready for PR and merge.
 
 - **Goal:** complete the core workflow with secure submission records and employer review.
 - **Dependencies:** M08; evidence metadata/storage design from M02; retention decision. Image-picker device integration is finalized in M12, so text/metadata submission lands first.
