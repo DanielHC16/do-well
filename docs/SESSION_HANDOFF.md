@@ -3,20 +3,21 @@
 ## Snapshot
 
 - **Last verified:** 2026-10-25 (Asia/Manila)
-- **Completed milestones:** M01 — Expo initialization and Android development proof; M02 — Supabase schema and authorization foundation; M03A — authentication foundation; D01 — Offline Demo Preview; M04 — Authenticated marketplace shell and dual-mode navigation; M05 — Gig creation and employer management; M06 — Nearby/remote discovery and explainable ranking
-- **Current milestone:** M06 — Nearby/remote discovery and explainable ranking
-- **Status:** `COMPLETED` on branch `feat/gig-discovery`; ready for PR and merge
-- **Branch:** `feat/gig-discovery`
+- **Completed milestones:** M01 — Expo initialization and Android development proof; M02 — Supabase schema and authorization foundation; M03A — authentication foundation; D01 — Offline Demo Preview; M04 — Authenticated marketplace shell and dual-mode navigation; M05 — Gig creation and employer management; M06 — Nearby/remote discovery and explainable ranking; M07 — Worker applications and atomic employer selection
+- **Current milestone:** M07 — Worker applications and atomic employer selection
+- **Status:** `COMPLETED` on branch `feat/worker-applications`; ready for PR and merge
+- **Branch:** `feat/worker-applications`
 - **Base/default branch:** `main`
-- **Current implementation merge:** `464d06b` (`Merge pull request #27`)
+- **Current implementation merge:** `a0cd300` (`Merge pull request #28`)
 - **Remote:** `https://github.com/DanielHC16/do-well` (`PRIVATE`)
-- **Next issue:** [#8 — [M07] Add applications and atomic worker selection](https://github.com/DanielHC16/do-well/issues/8)
+- **Next issue:** [#9 — [M08] Implement agreements, milestones and activity](https://github.com/DanielHC16/do-well/issues/9)
 - **M01 PR:** [#17](https://github.com/DanielHC16/do-well/pull/17), squash-merged as `d073c4b`
 - **M02 PR:** [#19](https://github.com/DanielHC16/do-well/pull/19), merge commit `f7a3317`
 - **M03A PR:** [#22](https://github.com/DanielHC16/do-well/pull/22), merged as `368613a`
 - **D01 PR:** [#24](https://github.com/DanielHC16/do-well/pull/24), merged as `d7092c3`
 - **M04 PR:** [#26](https://github.com/DanielHC16/do-well/pull/26), merged as `b75a13e`
 - **M05 PR:** [#27](https://github.com/DanielHC16/do-well/pull/27), merged as `464d06b`
+- **M06 PR:** [#28](https://github.com/DanielHC16/do-well/pull/28), merged as `a0cd300`
 
 This file records repository evidence, not chat state. Re-run the verification commands before relying on it.
 
@@ -103,6 +104,21 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
   - Noticeboard feed on `AuthenticatedHomeScreen.tsx` with mode toggles (All / Nearby / Remote), category pills horizontal scroll, cards with budget, distance, area, and explainable chips.
 - Quality verification: 45 Jest suites / 224 tests pass, clean `db:lint`, clean `db:types:check`, clean `format:check`, clean `lint`, clean `typecheck`, and 20/20 `expo-doctor` checks.
 
+## M07 completed state
+
+- Plan document penned at `docs/plans/2026-10-25-m07-worker-applications.md`.
+- Database functions and RPCs implemented in `supabase/migrations/20261025000300_application_and_selection_rpcs.sql`:
+  - `apply_to_gig(p_gig_id, p_message, p_client_request_id)`: Enforces caller authentication (`42501`), profile onboarding completion (`P0002`), published status (`P0004`), self-dealing prohibition (`P0005`), deadline validation, partial unique index idempotency, single live application enforcement (`P0008`), message length checks, and audit logging into `activity_events` (`gig_application_received`).
+  - `withdraw_application(p_application_id)`: Enforces ownership (`P0010`), pending status (`P0011`), transitions application to `withdrawn`, and records `gig_application_withdrawn` event.
+  - `select_worker_atomic(p_application_id, p_client_request_id)`: Atomically locks gig and winning application (`SELECT ... FOR UPDATE`), validates employer ownership (`P0013`), gig published state (`P0014`), application pending state (`P0012`), accepts winner, mass-rejects competing applications for the gig, closes gig (`status = 'closed'`), instantiates assignment with proposed terms, records `gig_applicant_selected` activity event, and returns assignment with idempotency.
+  - Query helper RPCs `list_gig_applicants(p_gig_id)` and `get_worker_application_for_gig(p_gig_id)` with explicit permission revocation from public/anon and execute grant strictly to `authenticated`.
+- Database tests added in `supabase/tests/090_application_and_selection_rpcs.test.sql` (9 pgTAP files / 127 tests passing).
+- Application schemas and gateway implemented in `src/features/applications/model/` and `src/features/applications/data/`.
+- UI screens and routes integrated:
+  - `WorkerGigDetailScreen.tsx`: Application submission form with character limit, submission feedback, `PENDING REVIEW` state card, note disclosure, and `Withdraw Application` flow.
+  - `EmployerGigDetailScreen.tsx`: Applicants review list with applicant cards, location, applied date, message note, atomic `Select Worker` action with confirmation, and `ACTIVE ASSIGNMENT` banner displaying proposed terms.
+- Quality verification: 47 Jest suites / 236 tests pass, 9 pgTAP files / 127 database tests pass, clean `db:lint`, clean `db:types:check`, clean `format:check`, clean `lint`, clean `typecheck`, and 20/20 `expo-doctor` checks.
+
 ## Open product decisions
 
 - Define cancellation authority and outcomes for each active workflow state.
@@ -119,12 +135,12 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 
 ## Exact next steps
 
-1. Commit M06 changes in small, logical Conventional Commits.
-2. Push branch `feat/gig-discovery` to GitHub.
-3. Open Pull Request for M06 linking Issue #7 with full test evidence.
-4. Merge M06 pull request into `main`.
+1. Commit M07 changes in small, logical Conventional Commits.
+2. Push branch `feat/worker-applications` to GitHub.
+3. Open Pull Request for M07 linking Issue #8 with full test evidence.
+4. Merge M07 pull request into `main`.
 5. Switch to `main` and pull latest commits.
-6. Begin M07: Worker applications and atomic employer selection (Issue #8).
+6. Begin M08: Implement agreements, milestones and activity (Issue #9).
 
 ## Suggested continuation commands
 

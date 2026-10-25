@@ -177,7 +177,7 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 
 ## M06 — Deliver nearby/remote discovery and explainable ranking
 
-**Status:** `COMPLETED` on `feat/gig-discovery`; ready for PR and merge.
+**Status:** `COMPLETED` (merged via PR #28).
 
 - **Goal:** help workers find published gigs with transparent list filtering that does not require a map.
 - **Dependencies:** M05; worker preference foundation from M02; pilot radius decision before final acceptance. Location permission itself is implemented in M11, so M06 uses stored/manual locality/coordinates.
@@ -192,7 +192,7 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 
 ## M07 — Add applications and atomic worker selection
 
-**Status:** `NOT STARTED`
+**Status:** `COMPLETED` on branch `feat/worker-applications`; ready for PR and merge.
 
 - **Goal:** allow workers to apply once and employers to privately review applicants and select exactly one.
 - **Dependencies:** M05 and M06; M02 application/assignment constraints.
