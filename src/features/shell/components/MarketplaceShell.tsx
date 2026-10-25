@@ -16,7 +16,7 @@ import { OfflineBanner } from "@/features/connectivity/components/OfflineBanner"
 import { useShellMode } from "../context/useShellMode";
 import type { ShellMode } from "../model/shell-mode";
 
-type ShellSection = "home" | "activity" | "profile";
+type ShellSection = "home" | "activity" | "profile" | "account";
 
 type MarketplaceShellProps = PropsWithChildren<
   Readonly<{
@@ -55,15 +55,14 @@ export function MarketplaceShell({
           <View style={styles.brandRule} />
           <Text style={styles.brandNote}>NEIGHBORHOOD WORK</Text>
         </View>
-        <Text style={styles.liveLabel}>LIVE WORKSPACE</Text>
+        <Text style={styles.liveLabel}>MARKETPLACE</Text>
       </View>
       <OfflineBanner />
-      <View style={{ display: "none" }}></View>
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.heading}>
           <Text style={styles.eyebrow}>
-            {mode === "worker" ? "WORKER VIEW" : "EMPLOYER VIEW"}
+            {mode === "worker" ? "FIND WORK" : "OFFER WORK"}
           </Text>
           <Text accessibilityRole="header" style={styles.title}>
             {title}
@@ -136,9 +135,9 @@ export function MarketplaceShell({
           onPress={() => router.push("/(protected)/activity")}
         />
         <ShellTab
-          active={activeSection === "profile"}
-          label="Profile"
-          onPress={() => router.push("/(protected)/profile")}
+          active={activeSection === "profile" || activeSection === "account"}
+          label="Account"
+          onPress={() => router.push("/(protected)/settings")}
         />
       </View>
     </SafeAreaView>
