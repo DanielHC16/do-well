@@ -270,8 +270,24 @@ export function EmployerGigDetailScreen({
               {assignment.agreedAmount.toLocaleString()}
             </Text>
             <Text style={styles.assignmentNote}>
-              Awaiting worker confirmation to begin work (Coming in M08).
+              View and manage the agreed milestones below.
             </Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="View task agreement and milestones"
+              onPress={() =>
+                router.push(
+                  `/(protected)/employer/assignments/${assignment.id}` as unknown as Parameters<
+                    typeof router.push
+                  >[0],
+                )
+              }
+              style={styles.viewAssignmentButton}
+            >
+              <Text style={styles.viewAssignmentText}>
+                View Agreement & Milestones &rarr;
+              </Text>
+            </Pressable>
           </View>
         ) : null}
 
@@ -729,6 +745,19 @@ const styles = StyleSheet.create({
     color: setupTheme.color.surface,
     fontSize: setupTheme.type.caption,
     fontWeight: "900",
+  },
+  viewAssignmentButton: {
+    alignItems: "center",
+    backgroundColor: setupTheme.color.foreground,
+    borderRadius: setupTheme.radius.control,
+    justifyContent: "center",
+    marginTop: setupTheme.spacing.compact,
+    paddingVertical: setupTheme.spacing.compact,
+  },
+  viewAssignmentText: {
+    color: setupTheme.color.surface,
+    fontSize: setupTheme.type.body,
+    fontWeight: "700",
   },
   actionCard: {
     ...setupTheme.shadow.card,

@@ -6,11 +6,13 @@ import { useShellMode } from "@/features/shell/context/useShellMode";
 import ProtectedUnmatchedRoute from "../[...unmatched]";
 import ActivityRoute from "../activity";
 import EmployerHomeScreen from "../employer";
+import EmployerAssignmentDetailRoute from "../employer/assignments/[assignmentId]";
 import EmployerGigDetailRoute from "../employer/gigs/[gigId]";
 import EmployerNewGigRoute from "../employer/gigs/new";
 import ProtectedIndexRoute from "../index";
 import ProfileRoute from "../profile";
 import WorkerHomeScreen from "../worker";
+import WorkerAssignmentDetailRoute from "../worker/assignments/[assignmentId]";
 import WorkerGigDetailRoute from "../worker/gigs/[gigId]";
 
 const mockReplace = jest.fn();
@@ -22,7 +24,10 @@ jest.mock("expo-router", () => {
     jest.requireActual<typeof import("react-native")>("react-native");
   return {
     useRouter: () => ({ push: mockPush, replace: mockReplace }),
-    useLocalSearchParams: () => ({ gigId: "test-gig-id" }),
+    useLocalSearchParams: () => ({
+      gigId: "test-gig-id",
+      assignmentId: "test-assignment-id",
+    }),
     Redirect: ({ href }: { href: string }) =>
       React.createElement(Text, null, `Redirected to ${href}`),
   };
@@ -41,6 +46,67 @@ jest.mock("@/features/auth/context/useAuth", () => ({
 jest.mock("@/features/shell/context/useShellMode", () => ({
   useShellMode: jest.fn(),
 }));
+
+jest.mock("@/features/assignments/data/assignment-gateway", () => {
+  const detail = {
+    assignment: {
+      id: "test-assignment-id",
+      gigId: "test-gig-id",
+      applicationId: "app-1",
+      employerId: "user-test",
+      workerId: "worker-1",
+      agreementVersion: 1,
+      agreedTitle: "Desk Assembly Agreement",
+      agreedDescription: "Assemble 4 desks in room 101.",
+      agreedAmount: 1500,
+      currency: "PHP" as const,
+      dueAt: null,
+      status: "active" as const,
+      employerConfirmedAt: "2026-10-25T01:00:00.000Z",
+      workerConfirmedAt: "2026-10-25T01:10:00.000Z",
+      startedAt: "2026-10-25T01:10:00.000Z",
+      completedAt: null,
+      cancelledAt: null,
+      clientRequestId: "req-1",
+      createdAt: "2026-10-25T01:00:00.000Z",
+      updatedAt: "2026-10-25T01:10:00.000Z",
+    },
+    employer: {
+      id: "user-test",
+      displayName: "Jordan Lee",
+      homeArea: "Quezon City",
+    },
+    worker: {
+      id: "worker-1",
+      displayName: "Warren Worker",
+      homeArea: "Makati",
+    },
+    gig: {
+      id: "test-gig-id",
+      title: "Desk Assembly Agreement",
+      category: "errands" as const,
+      workMode: "onsite" as const,
+      publicArea: "Quezon City",
+    },
+  };
+
+  const gateway = {
+    getAssignmentDetail: jest.fn(async () => detail),
+    listMilestones: jest.fn(async () => []),
+    confirmAssignment: jest.fn(),
+    declineAssignment: jest.fn(),
+    cancelProposedAssignment: jest.fn(),
+    createMilestone: jest.fn(),
+    startMilestone: jest.fn(),
+    listUserActivity: jest.fn(async () => []),
+    markActivityRead: jest.fn(),
+  };
+
+  return {
+    assignmentGateway: gateway,
+    getAssignmentGateway: () => gateway,
+  };
+});
 
 jest.mock("@/features/applications/data/application-gateway", () => ({
   applicationGateway: {
@@ -207,6 +273,22 @@ describe("Protected route components", () => {
     await waitFor(() => {
       expect(screen.getByText("Worker Route Gig")).toBeVisible();
       expect(screen.getByText("STATUS: PUBLISHED")).toBeVisible();
+    });
+  });
+
+  it("WorkerAssignmentDetailRoute renders worker agreement details screen", async () => {
+    await render(<WorkerAssignmentDetailRoute />);
+    await waitFor(() => {
+      expect(screen.getByText("TASK AGREEMENT")).toBeVisible();
+      expect(screen.getByText("Desk Assembly Agreement")).toBeVisible();
+    });
+  });
+
+  it("EmployerAssignmentDetailRoute renders employer agreement and milestones screen", async () => {
+    await render(<EmployerAssignmentDetailRoute />);
+    await waitFor(() => {
+      expect(screen.getByText("ASSIGNED CONTRACT")).toBeVisible();
+      expect(screen.getByText("Desk Assembly Agreement")).toBeVisible();
     });
   });
 

@@ -278,9 +278,7 @@ describe("EmployerGigDetailScreen", () => {
       expect(screen.getByText("STATUS: CLOSED")).toBeVisible();
       expect(screen.getByText("ACTIVE ASSIGNMENT")).toBeVisible();
       expect(
-        screen.getByText(
-          "Awaiting worker confirmation to begin work (Coming in M08).",
-        ),
+        screen.getByText("View and manage the agreed milestones below."),
       ).toBeVisible();
       expect(
         screen.getByText(
