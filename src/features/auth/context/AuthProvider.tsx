@@ -10,6 +10,10 @@ import {
 import { AppState, type AppStateStatus } from "react-native";
 
 import { getSupabaseClient } from "../../../shared/api/supabase";
+import {
+  cacheStore,
+  type CacheStore,
+} from "../../../shared/persistence/cache-store";
 import { getAuthGateway } from "../data/auth-gateway";
 import { createSupabaseProfileGateway } from "../data/profile-gateway";
 import { authReducer, initialAuthState } from "../model/auth-reducer";
@@ -41,6 +45,7 @@ export type AuthProviderDependencies = Readonly<{
   auth: ReturnTypeOfAuthGateway;
   profiles: ProfileGateway;
   profileGate: ProfileGateStore;
+  cache?: CacheStore;
   subscribe: (
     listener: (event: AuthChangeEvent, userId: string | null) => void,
   ) => () => void;
@@ -52,6 +57,7 @@ function createDefaultDependencies(): AuthProviderDependencies {
     auth: getAuthGateway(),
     profiles: createSupabaseProfileGateway(),
     profileGate: profileGateStore,
+    cache: cacheStore,
     subscribe: (listener) => {
       const { data } = client.auth.onAuthStateChange((event, session) => {
         // Supabase warns against awaiting client calls inside this callback.
@@ -89,6 +95,9 @@ export function AuthProvider({ children, dependencies }: AuthProviderProps) {
       if (knownUserId && previousUserId && knownUserId !== previousUserId) {
         try {
           await deps.profileGate.remove(previousUserId);
+          if (deps.cache) {
+            await deps.cache.purgeUser(previousUserId);
+          }
         } catch {
           // App-owned cache cleanup is best-effort and never grants access.
         }
@@ -179,6 +188,9 @@ export function AuthProvider({ children, dependencies }: AuthProviderProps) {
           if (previousUserId) {
             try {
               await deps.profileGate.remove(previousUserId);
+              if (deps.cache) {
+                await deps.cache.purgeUser(previousUserId);
+              }
             } catch {
               // Local routing must still clear when app-owned cache cleanup fails.
             }
@@ -291,6 +303,9 @@ export function AuthProvider({ children, dependencies }: AuthProviderProps) {
         if (userId) {
           try {
             await deps.profileGate.remove(userId);
+            if (deps.cache) {
+              await deps.cache.purgeUser(userId);
+            }
           } catch {
             // Local sign-out must finish even if app-owned cache cleanup fails.
           }
