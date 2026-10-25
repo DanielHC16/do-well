@@ -123,6 +123,49 @@ describe("evidence-image-service", () => {
         "Photo exceeds the 5 MB limit",
       );
     });
+
+    it("rejects an unsupported image instead of relabelling it as JPEG", async () => {
+      const mockPicker = createMockImagePicker({
+        launchImageLibraryAsync: jest.fn().mockResolvedValue({
+          canceled: false,
+          assets: [
+            {
+              uri: "file:///data/cache/proof.heic",
+              fileName: "proof.heic",
+              fileSize: 1024,
+              mimeType: "image/heic",
+              width: 1280,
+              height: 720,
+            },
+          ],
+        }),
+      });
+
+      await expect(
+        createEvidenceImageService(mockPicker).pickImageFromLibrary(),
+      ).rejects.toThrow("JPEG, PNG, or WebP");
+    });
+
+    it("rejects an image whose size cannot be verified", async () => {
+      const mockPicker = createMockImagePicker({
+        launchImageLibraryAsync: jest.fn().mockResolvedValue({
+          canceled: false,
+          assets: [
+            {
+              uri: "file:///data/cache/proof.jpg",
+              fileName: "proof.jpg",
+              mimeType: "image/jpeg",
+              width: 1280,
+              height: 720,
+            },
+          ],
+        }),
+      });
+
+      await expect(
+        createEvidenceImageService(mockPicker).pickImageFromLibrary(),
+      ).rejects.toThrow("size could not be verified");
+    });
   });
 
   describe("captureImageFromCamera", () => {

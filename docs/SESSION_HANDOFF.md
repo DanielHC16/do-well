@@ -4,11 +4,11 @@
 
 - **Last verified:** 2026-10-25 (Asia/Manila)
 - **Completed milestones:** M01 — Expo initialization and Android development proof; M02 — Supabase schema and authorization foundation; M03A — authentication foundation; D01 — Offline Demo Preview; M04 — Authenticated marketplace shell and dual-mode navigation; M05 — Gig creation and employer management; M06 — Nearby/remote discovery and explainable ranking; M07 — Worker applications and atomic employer selection; M08 — Implement agreements, milestones and activity; M09 — Add work submission, revision and approval; M10 — Prove and implement zero-cost AI Job Brief Builder; M11 — Add foreground location and decide map experience; M12 — Integrate local notifications and image evidence
-- **Current milestone:** M12 — Integrate local notifications and image evidence
-- **Status:** `COMPLETED` on branch `feat/android-evidence-notifications`; ready for PR and merge
-- **Branch:** `feat/android-evidence-notifications`
+- **Current milestone:** M12 corrective hardening after independent audit
+- **Status:** `IN PROGRESS` on branch `fix/m12-evidence-hardening`
+- **Branch:** `fix/m12-evidence-hardening`
 - **Base/default branch:** `main`
-- **Current implementation merge:** `58cf36a` (`Merge pull request #33`)
+- **Current implementation merge:** `04cf199` (`Merge pull request #34`)
 - **Remote:** `https://github.com/DanielHC16/do-well` (`PRIVATE`)
 - **Next issue:** [#14 — [M13] Harden weak-connectivity behavior](https://github.com/DanielHC16/do-well/issues/14)
 - **M01 PR:** [#17](https://github.com/DanielHC16/do-well/pull/17), squash-merged as `d073c4b`
@@ -23,6 +23,7 @@
 - **M09 PR:** [#31](https://github.com/DanielHC16/do-well/pull/31), merged as `70c6032`
 - **M10 PR:** [#32](https://github.com/DanielHC16/do-well/pull/32), merged as `29b9924`
 - **M11 PR:** [#33](https://github.com/DanielHC16/do-well/pull/33), merged as `58cf36a`
+- **M12 PR:** [#34](https://github.com/DanielHC16/do-well/pull/34), merged as `04cf199`
 
 This file records repository evidence, not chat state. Re-run the verification commands before relying on it.
 
@@ -200,12 +201,14 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
   - `src/features/submissions/evidence/components/EvidenceAttachmentPicker.tsx`: Accessible thumbnail preview cards, file size badges, and deletion controls.
 - Local notifications system:
   - `src/features/notifications/model/notification-schemas.ts`: Configured Android channels `assignment_updates`, `milestone_alerts`, `general_alerts`.
-  - `src/features/notifications/services/notification-service.ts`: Channel setup, permission checking, and immediate local notification dispatch with deep-link routes.
+  - `src/features/notifications/services/notification-service.ts`: Channel-aware local dispatch, foreground presentation, permission checks, and allowlisted cold-start/foreground notification-response routes.
 - UI Screens integrated:
-  - `WorkerAssignmentDetailScreen.tsx`: Evidence attachment picker, staged `begin -> upload -> finalize` pipeline with progress display, and local notification dispatch upon agreement confirmation and work submission.
-  - `EmployerAssignmentDetailScreen.tsx`: Evidence photo thumbnails with private short-lived signed URLs in work review card, and local notification dispatch upon completion approval and revision request.
-  - `AuthenticatedActivityScreen.tsx`: Channel registration on mount and event formatting for `work_submitted`, `revision_requested`, `assignment_completed`.
-- Quality verification: 67 Jest test suites / 420 tests pass, 12 pgTAP files / 212 database tests pass, clean `db:lint`, clean `db:types:check`, clean `format:check`, clean `lint`, clean `typecheck`, and 20/20 `expo-doctor` checks.
+  - `WorkerAssignmentDetailScreen.tsx`: Evidence attachment picker and staged `begin -> upload -> finalize` pipeline with stable per-attempt UUIDs, in-session retry reuse, and measured upload sizes.
+  - `EmployerAssignmentDetailScreen.tsx`: Evidence photo thumbnails with private short-lived signed URLs; review actions fail closed while evidence is loading or cannot be verified.
+  - `AuthenticatedActivityScreen.tsx`: Explicit local-alert permission control and per-account deduplicated recipient notifications derived from canonical unread activity events. Actor-side self-notifications were removed.
+- Corrective migration `20261025000700_harden_evidence_finalization.sql` locks assignment version allocation and requires every manifest entry to match an existing private Storage object, MIME, size, UUID path, extension, JSON shape, and five-file server cap before state advances.
+- The audit and disposition are recorded in `docs/reports/2026-10-25-m12-implementation-audit.md`.
+- Quality verification: 69 Jest test suites / 438 tests pass, 12 pgTAP files / 212 database tests pass, clean `db:lint`, clean `db:types:check`, clean `format:check`, clean `lint`, clean `typecheck`, and 20/20 `expo-doctor` checks.
 
 ## Open product decisions
 
@@ -221,12 +224,10 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 
 ## Exact next steps
 
-1. Commit M12 changes in small, logical Conventional Commits.
-2. Push branch `feat/android-evidence-notifications` to GitHub.
-3. Open Pull Request for M12 linking Issue #13 with full test evidence.
-4. Merge M12 pull request into `main`.
-5. Switch to `main` and pull latest commits.
-6. Begin Milestone M13: Harden weak-connectivity behavior (Issue #14).
+1. Finish verification of `fix/m12-evidence-hardening` and update the audit report with exact evidence.
+2. Push the corrective branch, open its PR, and merge it after green checks.
+3. Apply migration `20261025000700` to the authorized hosted Supabase project only after the reviewed PR is ready.
+4. Switch to updated `main` and begin M13 weak-connectivity work under Issue #14 on a new branch.
 
 ## Suggested continuation commands
 

@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap;
 
-select plan(21);
+select plan(29);
 
 -- Setup test users
 insert into auth.users (id, email, raw_user_meta_data)
@@ -156,9 +156,40 @@ select results_eq(
 
 -- 5. Idempotent begin_submission with same client_request_id
 select is(
-  (select id from public.begin_submission('e2000000-0000-4000-8000-000000000001', null, 'Another note', 'e3000000-0000-4000-8000-000000000001')),
+  (select id from public.begin_submission('e2000000-0000-4000-8000-000000000001', null, 'Initial photo shoot finished', 'e3000000-0000-4000-8000-000000000001')),
   (select id from public.submissions where client_request_id = 'e3000000-0000-4000-8000-000000000001'),
   'begin_submission is idempotent for same client_request_id'
+);
+
+select throws_ok(
+  $$ select public.begin_submission(
+    'e2000000-0000-4000-8000-000000000001',
+    null,
+    'Different payload',
+    'e3000000-0000-4000-8000-000000000001'
+  ) $$,
+  'P0050',
+  'Idempotency key was already used for different submission data.',
+  'Idempotency keys cannot be reused for a different payload'
+);
+
+-- A new reservation replaces an older unfinished reservation for the same
+-- assignment while preserving its row for later retention cleanup.
+select lives_ok(
+  $$ select public.begin_submission(
+    'e2000000-0000-4000-8000-000000000001',
+    null,
+    'Replacement upload attempt',
+    'e3000000-0000-4000-8000-000000000002'
+  ) $$,
+  'A new request can replace a prior pending upload reservation'
+);
+
+select results_eq(
+  $$ select status from public.submissions
+     where client_request_id = 'e3000000-0000-4000-8000-000000000001' $$,
+  $$ values ('abandoned'::text) $$,
+  'The prior pending reservation is marked abandoned'
 );
 
 -- 6. Finalize submission tests
@@ -167,7 +198,7 @@ do $$
 declare
   v_sub_id uuid;
 begin
-  select id into v_sub_id from public.submissions where client_request_id = 'e3000000-0000-4000-8000-000000000001';
+  select id into v_sub_id from public.submissions where client_request_id = 'e3000000-0000-4000-8000-000000000002';
   perform set_config('test.sub_id', v_sub_id::text, true);
 end;
 $$;
@@ -243,18 +274,109 @@ select throws_ok(
   'Oversized file is rejected'
 );
 
+-- Non-array manifests fail at the RPC boundary
+select throws_ok(
+  $$ select public.finalize_submission(
+    current_setting('test.sub_id')::uuid,
+    '{}'::jsonb
+  ) $$,
+  'P0046',
+  'Evidence files must be a JSON array.',
+  'Non-array evidence manifest is rejected'
+);
+
+-- File count is authorized server-side, not only limited by the UI
+select throws_ok(
+  $$ select public.finalize_submission(
+    current_setting('test.sub_id')::uuid,
+    jsonb_build_array('{}'::jsonb, '{}'::jsonb, '{}'::jsonb, '{}'::jsonb, '{}'::jsonb, '{}'::jsonb)
+  ) $$,
+  'P0047',
+  'A submission can include at most 5 evidence files.',
+  'More than five evidence files are rejected'
+);
+
+-- A syntactically valid but nonexistent private object cannot be finalized
+select throws_ok(
+  $$ select public.finalize_submission(
+    current_setting('test.sub_id')::uuid,
+    jsonb_build_array(
+      jsonb_build_object(
+        'object_path', 'e0000000-0000-4000-8000-000000000002/e2000000-0000-4000-8000-000000000001/' || current_setting('test.sub_id') || '/e4000000-0000-4000-8000-000000000099.jpg',
+        'media_type', 'image/jpeg',
+        'size_bytes', 1024
+      )
+    )
+  ) $$,
+  'P0044',
+  'Evidence object was not found in private storage.',
+  'Missing private evidence object is rejected'
+);
+
+-- A stale reservation cannot regress a terminal assignment.
+reset role;
+update public.assignments
+set status = 'completed', completed_at = now()
+where id = 'e2000000-0000-4000-8000-000000000001';
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'e0000000-0000-4000-8000-000000000002', true);
+select throws_ok(
+  $$ select public.finalize_submission(current_setting('test.sub_id')::uuid, '[]'::jsonb) $$,
+  'P0032',
+  'Work can only be submitted on active or revision-requested assignments.',
+  'Stale pending submission cannot reopen a completed assignment'
+);
+reset role;
+update public.assignments
+set status = 'active', completed_at = null
+where id = 'e2000000-0000-4000-8000-000000000001';
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'e0000000-0000-4000-8000-000000000002', true);
+
+select throws_ok(
+  $$ select public.finalize_submission(
+    current_setting('test.sub_id')::uuid,
+    jsonb_build_array(
+      jsonb_build_object('object_path', 'duplicate.jpg', 'media_type', 'image/jpeg', 'size_bytes', 1024),
+      jsonb_build_object('object_path', 'duplicate.jpg', 'media_type', 'image/jpeg', 'size_bytes', 1024)
+    )
+  ) $$,
+  'P0049',
+  'Evidence object paths must be unique.',
+  'Duplicate manifest paths are rejected'
+);
+
+-- Store the real objects that back the valid manifest.
+reset role;
+insert into storage.objects (bucket_id, name, owner_id, metadata)
+values
+  (
+    'submission-evidence',
+    'e0000000-0000-4000-8000-000000000002/e2000000-0000-4000-8000-000000000001/' || current_setting('test.sub_id') || '/e4000000-0000-4000-8000-000000000001.jpg',
+    'e0000000-0000-4000-8000-000000000002',
+    jsonb_build_object('mimetype', 'image/jpeg', 'size', 2048500)
+  ),
+  (
+    'submission-evidence',
+    'e0000000-0000-4000-8000-000000000002/e2000000-0000-4000-8000-000000000001/' || current_setting('test.sub_id') || '/e4000000-0000-4000-8000-000000000002.png',
+    'e0000000-0000-4000-8000-000000000002',
+    jsonb_build_object('mimetype', 'image/png', 'size', 1540200)
+  );
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'e0000000-0000-4000-8000-000000000002', true);
+
 -- Valid finalize succeeds
 select lives_ok(
   $$ select public.finalize_submission(
     current_setting('test.sub_id')::uuid,
     jsonb_build_array(
       jsonb_build_object(
-        'object_path', 'e0000000-0000-4000-8000-000000000002/e2000000-0000-4000-8000-000000000001/' || current_setting('test.sub_id') || '/photo1.jpg',
+        'object_path', 'e0000000-0000-4000-8000-000000000002/e2000000-0000-4000-8000-000000000001/' || current_setting('test.sub_id') || '/e4000000-0000-4000-8000-000000000001.jpg',
         'media_type', 'image/jpeg',
         'size_bytes', 2048500
       ),
       jsonb_build_object(
-        'object_path', 'e0000000-0000-4000-8000-000000000002/e2000000-0000-4000-8000-000000000001/' || current_setting('test.sub_id') || '/photo2.png',
+        'object_path', 'e0000000-0000-4000-8000-000000000002/e2000000-0000-4000-8000-000000000001/' || current_setting('test.sub_id') || '/e4000000-0000-4000-8000-000000000002.png',
         'media_type', 'image/png',
         'size_bytes', 1540200
       )

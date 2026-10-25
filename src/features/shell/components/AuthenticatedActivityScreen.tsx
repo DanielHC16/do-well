@@ -13,15 +13,66 @@ import {
   type AssignmentGateway,
 } from "@/features/assignments/data/assignment-gateway";
 import type { ActivityEventRecord } from "@/features/assignments/model/assignment-schemas";
-import { notificationService } from "@/features/notifications";
+import {
+  notificationDedupeStore,
+  type NotificationDedupeStore,
+  type NotificationPayload,
+  notificationService,
+  type NotificationService,
+} from "@/features/notifications";
 import { setupTheme } from "@/features/setup/setupTheme";
 import { useShellMode } from "@/features/shell/context/useShellMode";
 
 import { MarketplaceShell, marketplaceStyles } from "./MarketplaceShell";
 
 type AuthenticatedActivityScreenProps = Readonly<{
+  userId: string;
   gateway?: AssignmentGateway;
+  notifications?: Pick<
+    NotificationService,
+    | "checkPermissions"
+    | "requestPermissions"
+    | "configureChannels"
+    | "scheduleNotification"
+  >;
+  dedupeStore?: NotificationDedupeStore;
 }>;
+
+const workerRecipientEvents = new Set([
+  "gig_applicant_selected",
+  "assignment_cancelled",
+  "milestone_created",
+  "revision_requested",
+  "assignment_completed",
+]);
+
+export function createActivityNotification(
+  event: ActivityEventRecord,
+): NotificationPayload | null {
+  if (!event.assignmentId || event.readAt !== null) return null;
+  const recipientRole = workerRecipientEvents.has(event.eventType)
+    ? "worker"
+    : "employer";
+  const isMilestoneAlert = [
+    "milestone_created",
+    "milestone_started",
+    "work_submitted",
+    "revision_requested",
+    "assignment_completed",
+  ].includes(event.eventType);
+
+  return {
+    id: `activity_${event.id}`,
+    title: formatEventTitle(event),
+    body: formatEventDescription(event),
+    channelId: isMilestoneAlert ? "milestone_alerts" : "assignment_updates",
+    data: {
+      route: `/(protected)/${recipientRole}/assignments/${event.assignmentId}`,
+      assignmentId: event.assignmentId,
+      eventType: event.eventType,
+    },
+  };
+}
 
 function formatEventTitle(event: ActivityEventRecord): string {
   switch (event.eventType) {
@@ -105,17 +156,33 @@ function formatEventDescription(event: ActivityEventRecord): string {
 }
 
 export function AuthenticatedActivityScreen({
+  userId,
   gateway = assignmentGateway,
+  notifications = notificationService,
+  dedupeStore = notificationDedupeStore,
 }: AuthenticatedActivityScreenProps) {
   const router = useRouter();
   const { mode } = useShellMode();
   const [events, setEvents] = useState<ActivityEventRecord[]>([]);
   const [busy, setBusy] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [alertsEnabled, setAlertsEnabled] = useState(false);
+  const [alertsBusy, setAlertsBusy] = useState(false);
 
   useEffect(() => {
-    notificationService.configureChannels().catch(() => {});
-  }, []);
+    let mounted = true;
+    void (async () => {
+      const granted = await notifications.checkPermissions();
+      if (!granted) return;
+      await notifications.configureChannels();
+      if (mounted) setAlertsEnabled(true);
+    })().catch(() => {
+      // Permission/channel checks are optional and must not block activity.
+    });
+    return () => {
+      mounted = false;
+    };
+  }, [notifications]);
 
   useEffect(() => {
     let mounted = true;
@@ -145,6 +212,50 @@ export function AuthenticatedActivityScreen({
     };
   }, [gateway]);
 
+  useEffect(() => {
+    if (!alertsEnabled || busy) return;
+    let active = true;
+
+    void (async () => {
+      const initialized = await dedupeStore.isInitialized(userId);
+      if (!active) return;
+      if (!initialized) {
+        await dedupeStore.initialize(
+          userId,
+          events.map((event) => event.id),
+        );
+        return;
+      }
+      const seen = new Set(await dedupeStore.list(userId));
+      for (const event of events) {
+        if (!active || seen.has(event.id)) continue;
+        const payload = createActivityNotification(event);
+        if (!payload) continue;
+        try {
+          await notifications.scheduleNotification(payload);
+          await dedupeStore.mark(userId, event.id);
+          seen.add(event.id);
+        } catch {
+          // Keep the event unmarked so a later refresh can retry safely.
+        }
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [alertsEnabled, busy, dedupeStore, events, notifications, userId]);
+
+  async function handleEnableAlerts() {
+    setAlertsBusy(true);
+    try {
+      await notifications.configureChannels();
+      setAlertsEnabled(await notifications.requestPermissions());
+    } finally {
+      setAlertsBusy(false);
+    }
+  }
+
   async function handlePressEvent(event: ActivityEventRecord) {
     if (event.readAt === null) {
       try {
@@ -170,6 +281,27 @@ export function AuthenticatedActivityScreen({
       subtitle="Applications, assignments, submissions, and approvals share one readable trail."
       title="Nothing gets lost in the handoff."
     >
+      {!alertsEnabled ? (
+        <View style={marketplaceStyles.card}>
+          <Text style={marketplaceStyles.cardKicker}>LOCAL ALERTS</Text>
+          <Text style={marketplaceStyles.cardTitle}>Keep handoffs visible</Text>
+          <Text style={marketplaceStyles.body}>
+            Enable on-device alerts for new assignment activity already synced
+            to this account. No paid push service is used.
+          </Text>
+          <Pressable
+            accessibilityLabel="Enable local activity alerts"
+            accessibilityRole="button"
+            disabled={alertsBusy}
+            onPress={() => void handleEnableAlerts()}
+            style={marketplaceStyles.primaryButton}
+          >
+            <Text style={marketplaceStyles.primaryButtonText}>
+              {alertsBusy ? "Requesting permission..." : "Enable local alerts"}
+            </Text>
+          </Pressable>
+        </View>
+      ) : null}
       {busy ? (
         <View style={styles.loadingBox}>
           <ActivityIndicator color={setupTheme.color.foreground} />

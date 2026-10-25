@@ -33,17 +33,24 @@ function normalizeMimeType(
     return mime as EvidenceMimeType;
   }
   const ext = fileName?.split(".").pop()?.toLowerCase();
+  if (ext === "jpg" || ext === "jpeg") return "image/jpeg";
   if (ext === "png") return "image/png";
   if (ext === "webp") return "image/webp";
-  return "image/jpeg";
+  throw new Error("Evidence photos must be JPEG, PNG, or WebP images.");
 }
 
 function processAsset(
   asset: ImagePicker.ImagePickerAsset,
 ): SelectedEvidenceImage {
-  const fileName = asset.fileName ?? `evidence_${Date.now()}.jpg`;
+  const fileName = asset.fileName ?? `evidence_${Date.now()}`;
   const mimeType = normalizeMimeType(asset.mimeType, fileName);
-  const fileSize = asset.fileSize ?? 1024;
+  const fileSize = asset.fileSize;
+
+  if (fileSize === undefined || fileSize === null || fileSize < 1) {
+    throw new Error(
+      "This photo's size could not be verified. Choose another JPEG, PNG, or WebP image.",
+    );
+  }
 
   if (fileSize > EVIDENCE_MAX_FILE_SIZE) {
     throw new Error(

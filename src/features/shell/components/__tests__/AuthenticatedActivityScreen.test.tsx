@@ -61,6 +61,24 @@ function createMockGateway(
   };
 }
 
+function createMockNotifications(granted = false) {
+  return {
+    checkPermissions: jest.fn(async () => granted),
+    requestPermissions: jest.fn(async () => true),
+    configureChannels: jest.fn(async () => undefined),
+    scheduleNotification: jest.fn(async () => "notification-id"),
+  };
+}
+
+function createMockDedupeStore(initialized = false) {
+  return {
+    list: jest.fn(async () => []),
+    mark: jest.fn(async () => undefined),
+    isInitialized: jest.fn(async () => initialized),
+    initialize: jest.fn(async () => undefined),
+  };
+}
+
 describe("AuthenticatedActivityScreen", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -68,8 +86,14 @@ describe("AuthenticatedActivityScreen", () => {
 
   it("renders the empty activity notice when no events exist", async () => {
     const gateway = createMockGateway([]);
+    const notifications = createMockNotifications();
     const view = await render(
-      <AuthenticatedActivityScreen gateway={gateway} />,
+      <AuthenticatedActivityScreen
+        dedupeStore={createMockDedupeStore()}
+        gateway={gateway}
+        notifications={notifications}
+        userId="80000000-0000-4000-8000-000000000002"
+      />,
     );
 
     await waitFor(() => {
@@ -81,8 +105,14 @@ describe("AuthenticatedActivityScreen", () => {
 
   it("renders event cards and navigates on press", async () => {
     const gateway = createMockGateway([mockEvent]);
+    const notifications = createMockNotifications();
     const view = await render(
-      <AuthenticatedActivityScreen gateway={gateway} />,
+      <AuthenticatedActivityScreen
+        dedupeStore={createMockDedupeStore()}
+        gateway={gateway}
+        notifications={notifications}
+        userId="80000000-0000-4000-8000-000000000002"
+      />,
     );
 
     await waitFor(() => {
@@ -104,5 +134,75 @@ describe("AuthenticatedActivityScreen", () => {
     expect(mockRouter.push).toHaveBeenCalledWith(
       `/(protected)/worker/assignments/${mockEvent.assignmentId}`,
     );
+  });
+
+  it("configures Android channels when permission was already granted", async () => {
+    const notifications = createMockNotifications(true);
+    await render(
+      <AuthenticatedActivityScreen
+        dedupeStore={createMockDedupeStore()}
+        gateway={createMockGateway([])}
+        notifications={notifications}
+        userId="80000000-0000-4000-8000-000000000002"
+      />,
+    );
+
+    await waitFor(() => {
+      expect(notifications.configureChannels).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("creates a first opt-in baseline without alerting historical events", async () => {
+    const notifications = createMockNotifications();
+    const dedupeStore = createMockDedupeStore();
+    const view = await render(
+      <AuthenticatedActivityScreen
+        dedupeStore={dedupeStore}
+        gateway={createMockGateway([mockEvent])}
+        notifications={notifications}
+        userId="80000000-0000-4000-8000-000000000002"
+      />,
+    );
+
+    await waitFor(() => {
+      expect(view.getByText("Enable local alerts")).toBeVisible();
+    });
+    fireEvent.press(view.getByLabelText("Enable local activity alerts"));
+
+    await waitFor(() => {
+      expect(notifications.requestPermissions).toHaveBeenCalledTimes(1);
+      expect(dedupeStore.initialize).toHaveBeenCalledWith(
+        "80000000-0000-4000-8000-000000000002",
+        [mockEvent.id],
+      );
+      expect(notifications.scheduleNotification).not.toHaveBeenCalled();
+    });
+  });
+
+  it("schedules and records an unseen event after the baseline exists", async () => {
+    const notifications = createMockNotifications(true);
+    const dedupeStore = createMockDedupeStore(true);
+
+    await render(
+      <AuthenticatedActivityScreen
+        dedupeStore={dedupeStore}
+        gateway={createMockGateway([mockEvent])}
+        notifications={notifications}
+        userId="80000000-0000-4000-8000-000000000002"
+      />,
+    );
+
+    await waitFor(() => {
+      expect(notifications.scheduleNotification).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: `activity_${mockEvent.id}`,
+          title: "Selected for Task",
+        }),
+      );
+      expect(dedupeStore.mark).toHaveBeenCalledWith(
+        "80000000-0000-4000-8000-000000000002",
+        mockEvent.id,
+      );
+    });
   });
 });

@@ -1,5 +1,6 @@
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import * as Crypto from "expo-crypto";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -11,13 +12,10 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import {
-  notificationService,
-  type NotificationService,
-} from "@/features/notifications";
 import { setupTheme } from "@/features/setup/setupTheme";
 import {
   EvidenceAttachmentPicker,
+  EVIDENCE_MAX_FILE_SIZE,
   evidenceImageService,
   type EvidenceImageService,
   readImageBlob,
@@ -44,16 +42,21 @@ type WorkerAssignmentDetailScreenProps = Readonly<{
   gateway?: AssignmentGateway;
   submissionsGateway?: SubmissionGateway;
   imageService?: EvidenceImageService;
-  notifications?: NotificationService;
   blobReader?: (uri: string) => Promise<Blob>;
 }>;
+
+type EvidenceUploadAttempt = {
+  signature: string;
+  clientRequestId: string;
+  fileIds: string[];
+  uploadedFiles: Map<number, FinalizeSubmissionFileInput>;
+};
 
 export function WorkerAssignmentDetailScreen({
   assignmentId,
   gateway = assignmentGateway,
   submissionsGateway = submissionGateway,
   imageService = evidenceImageService,
-  notifications = notificationService,
   blobReader = readImageBlob,
 }: WorkerAssignmentDetailScreenProps) {
   const router = useRouter();
@@ -69,6 +72,7 @@ export function WorkerAssignmentDetailScreen({
   const [actionBusy, setActionBusy] = useState(false);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const evidenceAttemptRef = useRef<EvidenceUploadAttempt | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -113,19 +117,6 @@ export function WorkerAssignmentDetailScreen({
       const updated = await gateway.confirmAssignment(assignmentId);
       setDetail((prev) => (prev ? { ...prev, assignment: updated } : prev));
       setActionSuccess("Agreement confirmed! You can now start working.");
-
-      await notifications
-        .scheduleNotification({
-          id: `assignment_confirmed_${assignmentId}`,
-          title: "Agreement Confirmed",
-          body: "Agreement confirmed! You can now start work and complete milestones.",
-          channelId: "assignment_updates",
-          data: {
-            route: `/(protected)/worker/assignments/${assignmentId}`,
-            assignmentId,
-          },
-        })
-        .catch(() => {});
     } catch (err: unknown) {
       setErrorMessage(
         err instanceof Error ? err.message : "Failed to confirm agreement.",
@@ -179,21 +170,45 @@ export function WorkerAssignmentDetailScreen({
     try {
       let newSub: SubmissionRecord;
       if (selectedImages.length > 0) {
+        const signature = JSON.stringify({
+          note: submissionNote.trim(),
+          images: selectedImages.map(({ uri, fileSize, mimeType }) => ({
+            uri,
+            fileSize,
+            mimeType,
+          })),
+        });
+        let attempt = evidenceAttemptRef.current;
+        if (!attempt || attempt.signature !== signature) {
+          attempt = {
+            signature,
+            clientRequestId: Crypto.randomUUID(),
+            fileIds: selectedImages.map(() => Crypto.randomUUID()),
+            uploadedFiles: new Map(),
+          };
+          evidenceAttemptRef.current = attempt;
+        }
+
         setUploadProgress("Starting evidence submission...");
         const pendingSub = await submissionsGateway.beginSubmission({
           assignmentId,
           note: submissionNote.trim() || null,
+          clientRequestId: attempt.clientRequestId,
         });
 
         const uploadedFiles: FinalizeSubmissionFileInput[] = [];
 
         for (let i = 0; i < selectedImages.length; i++) {
           const img = selectedImages[i];
+          const previouslyUploaded = attempt.uploadedFiles.get(i);
+          if (previouslyUploaded) {
+            uploadedFiles.push(previouslyUploaded);
+            continue;
+          }
           setUploadProgress(
             `Uploading photo ${i + 1} of ${selectedImages.length}...`,
           );
-          const fileId =
-            globalThis.crypto?.randomUUID?.() ?? `f${Date.now()}_${i}`;
+          const fileId = attempt.fileIds[i];
           const ext =
             img.mimeType === "image/png"
               ? "png"
@@ -202,16 +217,23 @@ export function WorkerAssignmentDetailScreen({
                 : "jpg";
           const objectPath = `${pendingSub.submittedBy}/${assignmentId}/${pendingSub.id}/${fileId}.${ext}`;
           const blob = await blobReader(img.uri);
+          if (blob.size < 1 || blob.size > EVIDENCE_MAX_FILE_SIZE) {
+            throw new Error(
+              "The selected photo changed or exceeds the 5 MB upload limit. Please choose it again.",
+            );
+          }
           await submissionsGateway.uploadEvidenceBlob(
             objectPath,
             blob,
             img.mimeType,
           );
-          uploadedFiles.push({
+          const uploadedFile = {
             object_path: objectPath,
             media_type: img.mimeType,
-            size_bytes: img.fileSize,
-          });
+            size_bytes: blob.size,
+          } satisfies FinalizeSubmissionFileInput;
+          attempt.uploadedFiles.set(i, uploadedFile);
+          uploadedFiles.push(uploadedFile);
         }
 
         setUploadProgress("Finalizing submission...");
@@ -219,6 +241,7 @@ export function WorkerAssignmentDetailScreen({
           submissionId: pendingSub.id,
           files: uploadedFiles,
         });
+        evidenceAttemptRef.current = null;
         setSelectedImages([]);
       } else {
         newSub = await submissionsGateway.submitAssignmentWork({
@@ -241,22 +264,6 @@ export function WorkerAssignmentDetailScreen({
       );
       setSubmissionNote("");
       setActionSuccess("Work successfully submitted for employer review.");
-
-      await notifications
-        .scheduleNotification({
-          id: `work_submitted_${assignmentId}_${newSub.id}`,
-          title: "Work Submitted",
-          body:
-            selectedImages.length > 0
-              ? `Submitted with ${selectedImages.length} photo evidence attachment(s).`
-              : "Work completion note submitted for employer review.",
-          channelId: "assignment_updates",
-          data: {
-            route: `/(protected)/worker/assignments/${assignmentId}`,
-            assignmentId,
-          },
-        })
-        .catch(() => {});
     } catch (err: unknown) {
       setErrorMessage(
         err instanceof Error ? err.message : "Failed to submit work.",
@@ -457,9 +464,9 @@ export function WorkerAssignmentDetailScreen({
           <View style={styles.completedCard}>
             <Text style={styles.completedCardTitle}>CONTRACT COMPLETED</Text>
             <Text style={styles.completedCardText}>
-              This contract has been reviewed and approved by the employer.
-              Payment of ₱{assignment.agreedAmount.toLocaleString()} is
-              finalized.
+              This work has been reviewed and approved by the employer. The
+              agreed amount is ₱{assignment.agreedAmount.toLocaleString()}.
+              Payment is handled outside DO-WELL.
             </Text>
             {latestSubmission?.reviewNote ? (
               <View style={styles.completionNoteBox}>

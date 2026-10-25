@@ -6,7 +6,14 @@ import {
   NOTIFICATION_CHANNELS,
   type NotificationPayload,
   NotificationPayloadSchema,
+  NotificationRouteSchema,
 } from "../model/notification-schemas";
+
+type NotificationResponseSubscription = Readonly<{ remove: () => void }>;
+export type NotificationResponseTarget = Readonly<{
+  id: string;
+  route: string;
+}>;
 
 export type NotificationsModule = {
   setNotificationChannelAsync?: (
@@ -19,6 +26,12 @@ export type NotificationsModule = {
     request: Notifications.NotificationRequestInput,
   ) => Promise<string>;
   cancelAllScheduledNotificationsAsync: () => Promise<void>;
+  addNotificationResponseReceivedListener?: (
+    listener: (response: Notifications.NotificationResponse) => void,
+  ) => NotificationResponseSubscription;
+  getLastNotificationResponseAsync?: () => Promise<Notifications.NotificationResponse | null>;
+  clearLastNotificationResponseAsync?: () => Promise<void>;
+  setNotificationHandler?: typeof Notifications.setNotificationHandler;
 };
 
 export type NotificationService = Readonly<{
@@ -27,7 +40,23 @@ export type NotificationService = Readonly<{
   configureChannels: () => Promise<void>;
   scheduleNotification: (payload: NotificationPayload) => Promise<string>;
   cancelAllNotifications: () => Promise<void>;
+  configureForegroundPresentation: () => void;
+  subscribeToResponses: (
+    listener: (target: NotificationResponseTarget) => void,
+  ) => () => void;
+  getLastResponseTarget: () => Promise<NotificationResponseTarget | null>;
+  clearLastResponse: () => Promise<void>;
 }>;
+
+export function getAllowedNotificationTarget(
+  response: Notifications.NotificationResponse,
+): NotificationResponseTarget | null {
+  const route = response.notification.request.content.data?.route;
+  const parsed = NotificationRouteSchema.safeParse(route);
+  return parsed.success
+    ? { id: response.notification.request.identifier, route: parsed.data }
+    : null;
+}
 
 export function createNotificationService(
   module: NotificationsModule = Notifications,
@@ -81,12 +110,46 @@ export function createNotificationService(
           data: validated.data,
           sound: "default",
         },
-        trigger: null, // immediate local notification
+        trigger: { channelId: validated.channelId },
       });
     },
 
     async cancelAllNotifications(): Promise<void> {
       await module.cancelAllScheduledNotificationsAsync();
+    },
+
+    configureForegroundPresentation(): void {
+      module.setNotificationHandler?.({
+        handleNotification: async () => ({
+          shouldPlaySound: true,
+          shouldSetBadge: false,
+          shouldShowBanner: true,
+          shouldShowList: true,
+        }),
+      });
+    },
+
+    subscribeToResponses(
+      listener: (target: NotificationResponseTarget) => void,
+    ): () => void {
+      if (!module.addNotificationResponseReceivedListener) return () => {};
+      const subscription = module.addNotificationResponseReceivedListener(
+        (response) => {
+          const target = getAllowedNotificationTarget(response);
+          if (target) listener(target);
+        },
+      );
+      return () => subscription.remove();
+    },
+
+    async getLastResponseTarget(): Promise<NotificationResponseTarget | null> {
+      if (!module.getLastNotificationResponseAsync) return null;
+      const response = await module.getLastNotificationResponseAsync();
+      return response ? getAllowedNotificationTarget(response) : null;
+    },
+
+    async clearLastResponse(): Promise<void> {
+      await module.clearLastNotificationResponseAsync?.();
     },
   };
 }

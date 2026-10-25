@@ -6,6 +6,11 @@ import { DemoProvider } from "@/features/demo/context/DemoProvider";
 
 import { RootRuntime } from "../RootRuntime";
 
+jest.mock(
+  "@/features/notifications/components/NotificationResponseObserver",
+  () => ({ NotificationResponseObserver: () => null }),
+);
+
 jest.mock("@/features/auth/context/AuthProvider", () => ({
   AuthProvider: jest.fn(({ children }: React.PropsWithChildren) => children),
 }));

@@ -64,12 +64,12 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 | M04       | Shared shell and worker/employer navigation                               | **COMPLETED**   | [#5](https://github.com/DanielHC16/do-well/issues/5)   |
 | M05       | Gig creation and employer management                                      | **COMPLETED**   | [#6](https://github.com/DanielHC16/do-well/issues/6)   |
 | M06       | Nearby/remote discovery and explainable filtering                         | **COMPLETED**   | [#7](https://github.com/DanielHC16/do-well/issues/7)   |
-| M07       | Worker applications and employer selection                                | **NOT STARTED** | [#8](https://github.com/DanielHC16/do-well/issues/8)   |
-| M08       | Agreements, milestones, activity, state transitions                       | **NOT STARTED** | [#9](https://github.com/DanielHC16/do-well/issues/9)   |
-| M09       | Submission, evidence metadata, revision and approval                      | **NOT STARTED** | [#10](https://github.com/DanielHC16/do-well/issues/10) |
-| M10       | Zero-cost AI Job Brief Builder feasibility and implementation             | **NOT STARTED** | [#11](https://github.com/DanielHC16/do-well/issues/11) |
-| M11       | Android foreground location and optional map feasibility                  | **NOT STARTED** | [#12](https://github.com/DanielHC16/do-well/issues/12) |
-| M12       | Local notifications and image evidence integration                        | **NOT STARTED** | [#13](https://github.com/DanielHC16/do-well/issues/13) |
+| M07       | Worker applications and employer selection                                | **COMPLETED**   | [#8](https://github.com/DanielHC16/do-well/issues/8)   |
+| M08       | Agreements, milestones, activity, state transitions                       | **COMPLETED**   | [#9](https://github.com/DanielHC16/do-well/issues/9)   |
+| M09       | Submission, evidence metadata, revision and approval                      | **COMPLETED**   | [#10](https://github.com/DanielHC16/do-well/issues/10) |
+| M10       | Zero-cost AI Job Brief Builder feasibility and implementation             | **COMPLETED**   | [#11](https://github.com/DanielHC16/do-well/issues/11) |
+| M11       | Android foreground location and optional map feasibility                  | **COMPLETED**   | [#12](https://github.com/DanielHC16/do-well/issues/12) |
+| M12       | Local notifications and image evidence integration                        | **COMPLETED**   | [#13](https://github.com/DanielHC16/do-well/issues/13) |
 | M13       | Connectivity resilience, cached reads and offline drafts                  | **NOT STARTED** | [#14](https://github.com/DanielHC16/do-well/issues/14) |
 | M14       | Security verification, end-to-end tests and competition build             | **NOT STARTED** | [#15](https://github.com/DanielHC16/do-well/issues/15) |
 
@@ -267,7 +267,7 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 
 ## M12 — Integrate local notifications and image evidence
 
-**Status:** `COMPLETED` on branch `feat/android-evidence-notifications`; ready for PR and merge.
+**Status:** `COMPLETED` and merged via PR #34; corrective security and reliability hardening is tracked on `fix/m12-evidence-hardening`.
 
 - **Goal:** provide reliable on-device reminders/activity cues and private image evidence without making remote push a P0 dependency.
 - **Dependencies:** M09; M01 development build; private Storage policies from M02; retention/size/type rules approved.
@@ -325,4 +325,4 @@ Before changing any row to `COMPLETED`:
 
 ## Current milestone and blockers
 
-M01, M02, M03A, and D01 are complete and merged. M04 is next: build the real authenticated marketplace shell and dual-mode navigation against the hosted foundation while retaining the completed demo runtime as a truthful fallback. M03B hosted OAuth/physical-device acceptance remains deferred. Product decisions for cancellation, two-party agreement confirmation, and evidence retention remain unresolved and must stay out of executable workflow policy until approved.
+M01-M12 and D01 are complete and merged. The active corrective branch hardens M12 evidence finalization, upload retry identity, notification delivery, and review failure states after an independent audit. M13 is next after that corrective PR merges. M03B hosted OAuth/physical-device acceptance remains deferred. Evidence retention remains unresolved and cleanup policy must not be invented during M13.

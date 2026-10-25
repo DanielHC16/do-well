@@ -32,6 +32,13 @@ export const NOTIFICATION_CHANNELS: Record<
   },
 };
 
+const assignmentRoutePattern =
+  /^\/\(protected\)\/(worker|employer)\/assignments\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export const NotificationRouteSchema = z
+  .string()
+  .regex(assignmentRoutePattern, "Notification route is not allowed.");
+
 export const NotificationPayloadSchema = z.object({
   id: z.string().min(1),
   title: z.string().min(1).max(100),
@@ -39,7 +46,7 @@ export const NotificationPayloadSchema = z.object({
   channelId: NotificationChannelIdSchema.default("assignment_updates"),
   data: z
     .object({
-      route: z.string().optional(),
+      route: NotificationRouteSchema.optional(),
       assignmentId: z.string().uuid().optional(),
       gigId: z.string().uuid().optional(),
       eventType: z.string().optional(),

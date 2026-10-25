@@ -90,7 +90,7 @@ export function EvidenceAttachmentPicker({
       </View>
 
       {error ? (
-        <View style={styles.errorBox}>
+        <View accessibilityLiveRegion="polite" style={styles.errorBox}>
           <Text style={styles.errorText}>{error}</Text>
         </View>
       ) : null}
@@ -132,7 +132,11 @@ export function EvidenceAttachmentPicker({
         <View style={styles.previewList}>
           {selectedImages.map((img, index) => (
             <View key={`${img.uri}-${index}`} style={styles.previewCard}>
-              <Image source={{ uri: img.uri }} style={styles.previewImage} />
+              <Image
+                accessibilityLabel={`Selected evidence preview: ${img.fileName}`}
+                source={{ uri: img.uri }}
+                style={styles.previewImage}
+              />
               <View style={styles.previewInfo}>
                 <Text numberOfLines={1} style={styles.fileName}>
                   {img.fileName}
@@ -241,10 +245,12 @@ const styles = StyleSheet.create({
     marginTop: setupTheme.spacing.compact,
   },
   removeButton: {
+    alignItems: "center",
     backgroundColor: setupTheme.color.surfaceMuted,
     borderRadius: setupTheme.radius.small,
+    justifyContent: "center",
+    minHeight: 44,
     paddingHorizontal: setupTheme.spacing.compact,
-    paddingVertical: 4,
   },
   removeButtonText: {
     color: setupTheme.color.danger,

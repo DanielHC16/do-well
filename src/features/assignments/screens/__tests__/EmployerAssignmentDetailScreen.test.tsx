@@ -447,9 +447,16 @@ describe("EmployerAssignmentDetailScreen", () => {
 
     await waitFor(() => {
       expect(view.getByText("CONTRACT COMPLETED")).toBeVisible();
+      expect(view.getByText("LATEST PHOTO EVIDENCE")).toBeVisible();
+      expect(view.getByText("PHOTO EVIDENCE (1)")).toBeVisible();
+      expect(
+        view.getByLabelText(
+          "Attached photo evidence f0000000-0000-4000-8000-000000000001",
+        ),
+      ).toBeVisible();
       expect(
         view.getByText(
-          "Work has been reviewed, approved, and finalized. Total paid: ₱2,500.",
+          "Work has been reviewed and approved. Agreed amount: ₱2,500. Payment is handled outside DO-WELL.",
         ),
       ).toBeVisible();
     });
@@ -476,54 +483,45 @@ describe("EmployerAssignmentDetailScreen", () => {
 
     await waitFor(() => {
       expect(view.getByText("PHOTO EVIDENCE (1)")).toBeVisible();
-      expect(view.getByLabelText("Attached photo evidence")).toBeVisible();
+      expect(
+        view.getByLabelText(
+          "Attached photo evidence f0000000-0000-4000-8000-000000000001",
+        ),
+      ).toBeVisible();
       expect(view.getByText("1024 KB · JPEG")).toBeVisible();
     });
   });
 
-  it("schedules local notification when employer approves completion", async () => {
+  it("blocks review actions when private evidence cannot be verified", async () => {
     const submittedDetail: AssignmentDetail = {
       ...mockAssignmentDetail,
-      assignment: {
-        ...mockAssignmentDetail.assignment,
-        status: "submitted",
-      },
+      assignment: { ...mockAssignmentDetail.assignment, status: "submitted" },
     };
-    const gateway = createMockGateway(submittedDetail);
-    const submissionsGw = createMockSubmissionsGateway([mockSubmission]);
-    const mockNotifications = {
-      requestPermissions: jest.fn(async () => true),
-      checkPermissions: jest.fn(async () => true),
-      configureChannels: jest.fn(async () => {}),
-      scheduleNotification: jest.fn(async () => "notif-emp-1"),
-      cancelAllNotifications: jest.fn(async () => {}),
+    const submissionsGw = {
+      ...createMockSubmissionsGateway([mockSubmission]),
+      listSubmissionFiles: jest
+        .fn()
+        .mockRejectedValue(new Error("Signed evidence unavailable")),
     };
-
     const view = await render(
       <EmployerAssignmentDetailScreen
         assignmentId="90000000-0000-4000-8000-000000000001"
-        gateway={gateway}
+        gateway={createMockGateway(submittedDetail)}
         submissionsGateway={submissionsGw}
-        notifications={mockNotifications}
       />,
     );
 
     await waitFor(() => {
-      expect(view.getByText("Approve & Complete Work")).toBeVisible();
-    });
-
-    await fireEvent.press(view.getByText("Approve & Complete Work"));
-
-    await waitFor(() => {
-      expect(submissionsGw.approveAssignmentCompletion).toHaveBeenCalledWith({
-        submissionId: mockSubmission.id,
-      });
-      expect(mockNotifications.scheduleNotification).toHaveBeenCalledWith(
-        expect.objectContaining({
-          channelId: "assignment_updates",
-          title: "Assignment Completed",
-        }),
-      );
+      expect(
+        view.getByText(
+          "Evidence could not be verified: Signed evidence unavailable",
+        ),
+      ).toBeVisible();
+      expect(
+        view.getByLabelText("Approve and complete work").props
+          .accessibilityState.disabled,
+      ).toBe(true);
+      expect(view.getByLabelText("Retry loading photo evidence")).toBeVisible();
     });
   });
 });

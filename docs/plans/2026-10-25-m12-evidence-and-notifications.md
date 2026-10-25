@@ -6,7 +6,7 @@
 - **Database & Storage RPCs**:
   - `begin_submission(assignment_id, milestone_id, note, client_request_id)` reserves a version and `pending_upload` submission without advancing aggregate work state.
   - Supabase Storage RLS (`submission-evidence` private bucket) permits authenticated uploads only matching `{worker_id}/{assignment_id}/{submission_id}/{file_id}.(jpg|jpeg|png|webp)` while submission is in `pending_upload`.
-  - `finalize_submission(submission_id, files, client_request_id)` validates object paths, inserts `submission_files` records, advances submission to `submitted`, advances assignment to `submitted`, and emits `work_submitted` activity event atomically.
+  - `finalize_submission(submission_id, files)` validates object paths and verifies each private Storage object and its trusted metadata before inserting `submission_files`, advancing submission/assignment state, and emitting `work_submitted` atomically.
   - `list_submission_files(submission_id)` returns files for authorized participants.
 - **Client Evidence Pipeline**:
   - `expo-image-picker` with `microphonePermission: false`.
@@ -16,8 +16,8 @@
 - **Local Notifications**:
   - `expo-notifications` adapter with named Android notification channels (`assignment_updates`, `milestone_alerts`).
   - Android 13+ `POST_NOTIFICATIONS` permission handling.
-  - In-app activity sync: schedules local reminders for assignment state changes (`assignment_confirmed`, `work_submitted`, `revision_requested`, `assignment_completed`).
-  - Deep-link handling on notification response leading directly to the relevant assignment screen.
+  - In-app activity sync: schedules per-account deduplicated local alerts for canonical unread recipient events already fetched by the app.
+  - Allowlisted deep-link handling on cold-start and foreground notification responses leads to the relevant protected assignment screen.
 
 **Tech Stack:**
 - React Native / Expo SDK 58 New Architecture
@@ -38,9 +38,9 @@
    - Assignment status check (`P0032` - `active` or `revision_requested`).
    - Idempotency check on `(submitted_by, client_request_id)`.
    - Inserts submission with `status = 'pending_upload'`.
-2. `finalize_submission(p_submission_id uuid, p_files jsonb, p_client_request_id uuid)`:
+2. `finalize_submission(p_submission_id uuid, p_files jsonb)`:
    - Verifies caller is `submitted_by` (`P0031`), status is `pending_upload` (`P0040`).
-   - Verifies each file object path matches format `{submitted_by}/{assignment_id}/{submission_id}/{file_id}.ext`.
+   - Verifies each file object path matches format `{submitted_by}/{assignment_id}/{submission_id}/{file_id}.ext`, exists in the private bucket, and has matching stored MIME/size metadata.
    - Inserts into `submission_files`.
    - Updates submission to `status = 'submitted'`, `submitted_at = now()`.
    - Updates assignment to `status = 'submitted'`.
@@ -94,8 +94,8 @@
 2. `EmployerAssignmentDetailScreen.tsx`:
    - Evidence viewer displaying submitted photos using short-lived signed URLs.
 3. Notification Setup & Sync:
-   - Request notification permission upon assignment confirmation.
-   - Trigger local notifications on observed activity updates.
+   - Request notification permission from the explicit Activity-screen control.
+   - Trigger deduplicated local notifications only for observed recipient activity updates, never the actor's just-completed mutation.
 
 ---
 
