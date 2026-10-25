@@ -3,17 +3,18 @@
 ## Snapshot
 
 - **Last verified:** 2026-10-25 (Asia/Manila)
-- **Completed milestones:** M01 — Expo initialization and Android development proof; M02 — Supabase schema and authorization foundation; M03A — authentication foundation
-- **Current milestone:** D01 — Offline Demo Preview
-- **Status:** `IN PROGRESS`; isolated runtime, local lifecycle, persistence, and project-specific noticeboard UI are implemented and under closeout review
-- **Branch:** `feat/demo-preview`
+- **Completed milestones:** M01 — Expo initialization and Android development proof; M02 — Supabase schema and authorization foundation; M03A — authentication foundation; D01 — Offline Demo Preview
+- **Current milestone:** M04 — Authenticated marketplace shell and dual-mode navigation
+- **Status:** `NOT STARTED`; D01 is merged and the hosted database foundation is deployed
+- **Branch:** `main`
 - **Base/default branch:** `main`
-- **Current implementation merge:** `368613a` (`Merge pull request #22`)
+- **Current implementation merge:** `d7092c3` (`Merge pull request #24`)
 - **Remote:** `https://github.com/DanielHC16/do-well` (`PRIVATE`)
-- **Next issue:** [#23 — D01 Deliver offline Demo Preview lifecycle](https://github.com/DanielHC16/do-well/issues/23)
+- **Next issue:** [#5 — M04 Add authenticated shell and dual-mode navigation](https://github.com/DanielHC16/do-well/issues/5)
 - **M01 PR:** [#17](https://github.com/DanielHC16/do-well/pull/17), squash-merged as `d073c4b`
 - **M02 PR:** [#19](https://github.com/DanielHC16/do-well/pull/19), merge commit `f7a3317`
 - **M03A PR:** [#22](https://github.com/DanielHC16/do-well/pull/22), merged as `368613a`
+- **D01 PR:** [#24](https://github.com/DanielHC16/do-well/pull/24), merged as `d7092c3`
 
 This file records repository evidence, not chat state. Re-run the verification commands before relying on it.
 
@@ -81,10 +82,10 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 
 ## Exact next steps
 
-1. Merge PR #22 as M03A only after its revised foundation-only contract, verification, and limitations are reflected in the PR and issue.
-2. Create `feat/demo-preview` from current `main` and execute `docs/plans/2026-10-25-demo-first-mvp.md` test-first.
-3. Prove the full local lifecycle on the Android emulator, including restart persistence and deterministic reset, then document the exact demo script.
-4. Resume M03B after the demo; keep hosted configuration changes and credential values out of Git, commands, logs, screenshots, issues, and PR text.
+1. Start M04 from current `main` and build the authenticated worker/employer shell using the noticeboard visual language established by D01.
+2. Add hosted repository adapters milestone-by-milestone for gigs, discovery, applications, selection, submissions, and approval; do not reuse local demo persistence as a security boundary.
+3. Resume M03B hosted OAuth/device acceptance before release, without blocking product UI development on physical-device testing.
+4. Keep hosted credential values out of Git, commands, logs, screenshots, issues, and PR text; rotate the exposed development credentials after the hosted setup work.
 
 ## Suggested continuation commands
 

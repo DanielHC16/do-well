@@ -60,7 +60,7 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 | M02       | Supabase local config, schema foundations, migrations and generated types | **COMPLETED**   | [#3](https://github.com/DanielHC16/do-well/issues/3)   |
 | M03A      | Authentication and profile foundation                                     | **COMPLETED**   | [#4](https://github.com/DanielHC16/do-well/issues/4)   |
 | M03B      | Hosted auth and physical-device acceptance                                | **DEFERRED**    | [#4](https://github.com/DanielHC16/do-well/issues/4)   |
-| D01       | Offline Demo Preview: complete local gig lifecycle                        | **IN PROGRESS** | [#23](https://github.com/DanielHC16/do-well/issues/23)  |
+| D01       | Offline Demo Preview: complete local gig lifecycle                        | **COMPLETED**   | [#23](https://github.com/DanielHC16/do-well/issues/23)  |
 | M04       | Shared shell and worker/employer navigation                               | **NOT STARTED** | [#5](https://github.com/DanielHC16/do-well/issues/5)   |
 | M05       | Gig creation and employer management                                      | **NOT STARTED** | [#6](https://github.com/DanielHC16/do-well/issues/6)   |
 | M06       | Nearby/remote discovery and explainable filtering                         | **NOT STARTED** | [#7](https://github.com/DanielHC16/do-well/issues/7)   |
@@ -135,7 +135,7 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 
 ## D01 — Deliver the offline Demo Preview
 
-**Status:** `IN PROGRESS` on `feat/demo-preview`; prioritized immediately after M03A.
+**Status:** `COMPLETED` after review and merge of [PR #24](https://github.com/DanielHC16/do-well/pull/24) on 2026-10-25. The isolated runtime, validated local lifecycle, persistence/reset behavior, project-specific noticeboard UI, full automated journey, Android bundle, and emulator walkthrough are verified.
 
 - **Goal:** demonstrate create/publish -> discover/apply -> select -> submit -> approve on an Android emulator in under five minutes without an account or network.
 - **Dependencies:** M01/M02 and accepted ADR 0006. D01 does not depend on M03B and does not complete M04-M09 production acceptance.
@@ -325,4 +325,4 @@ Before changing any row to `COMPLETED`:
 
 ## Current milestone and blockers
 
-M01, M02, and the M03A authentication foundation are complete and merged. D01 is the active milestone on `feat/demo-preview`; M03B hosted OAuth/physical-device acceptance remains deferred. The reviewed M01-M03A migration chain is applied to the authorized hosted Supabase project without seed data. Product decisions for cancellation, two-party agreement confirmation, and evidence retention remain unresolved and must stay out of executable workflow policy until approved.
+M01, M02, M03A, and D01 are complete and merged. M04 is next: build the real authenticated marketplace shell and dual-mode navigation against the hosted foundation while retaining the completed demo runtime as a truthful fallback. M03B hosted OAuth/physical-device acceptance remains deferred. Product decisions for cancellation, two-party agreement confirmation, and evidence retention remain unresolved and must stay out of executable workflow policy until approved.
