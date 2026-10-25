@@ -4,11 +4,11 @@
 
 - **Last verified:** 2026-10-25 (Asia/Manila)
 - **Completed milestones:** M01 — Expo initialization and Android development proof; M02 — Supabase schema and authorization foundation; M03A — authentication foundation; D01 — Offline Demo Preview; M04 — Authenticated marketplace shell and dual-mode navigation; M05 — Gig creation and employer management; M06 — Nearby/remote discovery and explainable ranking; M07 — Worker applications and atomic employer selection; M08 — Implement agreements, milestones and activity; M09 — Add work submission, revision and approval; M10 — Prove and implement zero-cost AI Job Brief Builder; M11 — Add foreground location and decide map experience; M12 — Integrate local notifications and image evidence
-- **Current milestone:** M12 corrective hardening after independent audit
-- **Status:** `IN PROGRESS` on branch `fix/m12-evidence-hardening`
-- **Branch:** `fix/m12-evidence-hardening`
+- **Current milestone:** M13 — Harden weak-connectivity behavior
+- **Status:** `NOT STARTED` (ready to branch)
+- **Branch:** `main`
 - **Base/default branch:** `main`
-- **Current implementation merge:** `04cf199` (`Merge pull request #34`)
+- **Current implementation merge:** `ae953f3` (`Merge pull request #35`)
 - **Remote:** `https://github.com/DanielHC16/do-well` (`PRIVATE`)
 - **Next issue:** [#14 — [M13] Harden weak-connectivity behavior](https://github.com/DanielHC16/do-well/issues/14)
 - **M01 PR:** [#17](https://github.com/DanielHC16/do-well/pull/17), squash-merged as `d073c4b`
@@ -23,7 +23,7 @@
 - **M09 PR:** [#31](https://github.com/DanielHC16/do-well/pull/31), merged as `70c6032`
 - **M10 PR:** [#32](https://github.com/DanielHC16/do-well/pull/32), merged as `29b9924`
 - **M11 PR:** [#33](https://github.com/DanielHC16/do-well/pull/33), merged as `58cf36a`
-- **M12 PR:** [#34](https://github.com/DanielHC16/do-well/pull/34), merged as `04cf199`
+- **M12 PR:** [#34](https://github.com/DanielHC16/do-well/pull/34), merged as `04cf199`; corrective hardening merged via [#35](https://github.com/DanielHC16/do-well/pull/35) as `ae953f3`
 
 This file records repository evidence, not chat state. Re-run the verification commands before relying on it.
 
@@ -224,10 +224,11 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 
 ## Exact next steps
 
-1. Finish verification of `fix/m12-evidence-hardening` and update the audit report with exact evidence.
-2. Push the corrective branch, open its PR, and merge it after green checks.
-3. Apply migration `20261025000700` to the authorized hosted Supabase project only after the reviewed PR is ready.
-4. Switch to updated `main` and begin M13 weak-connectivity work under Issue #14 on a new branch.
+1. Create a short-lived branch `feat/m13-offline-resilience` off `main`.
+2. Review Issue #14 acceptance criteria: connectivity detection, cached read fallbacks, offline draft safety, and retry boundaries.
+3. Write plan document `docs/plans/2026-10-25-m13-connectivity-resilience.md`.
+4. Apply migration `20261025000700` to the authorized hosted Supabase project during planned maintenance.
+5. Implement M13 features test-first, run all verification checks, and open PR linking Issue #14.
 
 ## Suggested continuation commands
 

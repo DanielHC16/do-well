@@ -325,4 +325,4 @@ Before changing any row to `COMPLETED`:
 
 ## Current milestone and blockers
 
-M01-M12 and D01 are complete and merged. The active corrective branch hardens M12 evidence finalization, upload retry identity, notification delivery, and review failure states after an independent audit. M13 is next after that corrective PR merges. M03B hosted OAuth/physical-device acceptance remains deferred. Evidence retention remains unresolved and cleanup policy must not be invented during M13.
+M01-M12 and D01 are complete and merged (including M12 corrective hardening in PR #35). M13 is next: harden weak-connectivity behavior (Issue #14). M03B hosted OAuth/physical-device acceptance remains deferred. Evidence retention remains unresolved and cleanup policy must not be invented during M13.
