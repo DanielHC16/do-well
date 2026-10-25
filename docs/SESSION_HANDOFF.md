@@ -3,14 +3,14 @@
 ## Snapshot
 
 - **Last verified:** 2026-10-25 (Asia/Manila)
-- **Completed milestones:** M01 — Expo initialization and Android development proof; M02 — Supabase schema and authorization foundation; M03A — authentication foundation; D01 — Offline Demo Preview; M04 — Authenticated marketplace shell and dual-mode navigation; M05 — Gig creation and employer management; M06 — Nearby/remote discovery and explainable ranking; M07 — Worker applications and atomic employer selection; M08 — Implement agreements, milestones and activity; M09 — Add work submission, revision and approval; M10 — Prove and implement zero-cost AI Job Brief Builder; M11 — Add foreground location and decide map experience; M12 — Integrate local notifications and image evidence
-- **Current milestone:** M13 — Harden weak-connectivity behavior
+- **Completed milestones:** M01 — Expo initialization and Android development proof; M02 — Supabase schema and authorization foundation; M03A — authentication foundation; D01 — Offline Demo Preview; M04 — Authenticated marketplace shell and dual-mode navigation; M05 — Gig creation and employer management; M06 — Nearby/remote discovery and explainable ranking; M07 — Worker applications and atomic employer selection; M08 — Implement agreements, milestones and activity; M09 — Add work submission, revision and approval; M10 — Prove and implement zero-cost AI Job Brief Builder; M11 — Add foreground location and decide map experience; M12 — Integrate local notifications and image evidence; M13 — Harden weak-connectivity behavior
+- **Current milestone:** M14 — Security verification, end-to-end tests and competition build
 - **Status:** `NOT STARTED` (ready to branch)
 - **Branch:** `main`
 - **Base/default branch:** `main`
 - **Current implementation merge:** `ae953f3` (`Merge pull request #35`)
 - **Remote:** `https://github.com/DanielHC16/do-well` (`PRIVATE`)
-- **Next issue:** [#14 — [M13] Harden weak-connectivity behavior](https://github.com/DanielHC16/do-well/issues/14)
+- **Next issue:** [#15 — [M14] Security verification, end-to-end tests and competition build](https://github.com/DanielHC16/do-well/issues/15)
 - **M01 PR:** [#17](https://github.com/DanielHC16/do-well/pull/17), squash-merged as `d073c4b`
 - **M02 PR:** [#19](https://github.com/DanielHC16/do-well/pull/19), merge commit `f7a3317`
 - **M03A PR:** [#22](https://github.com/DanielHC16/do-well/pull/22), merged as `368613a`
@@ -24,6 +24,7 @@
 - **M10 PR:** [#32](https://github.com/DanielHC16/do-well/pull/32), merged as `29b9924`
 - **M11 PR:** [#33](https://github.com/DanielHC16/do-well/pull/33), merged as `58cf36a`
 - **M12 PR:** [#34](https://github.com/DanielHC16/do-well/pull/34), merged as `04cf199`; corrective hardening merged via [#35](https://github.com/DanielHC16/do-well/pull/35) as `ae953f3`
+- **M13 PR:** [#36](https://github.com/DanielHC16/do-well/pull/36) (ready for merge)
 
 This file records repository evidence, not chat state. Re-run the verification commands before relying on it.
 
@@ -210,6 +211,25 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 - The audit and disposition are recorded in `docs/reports/2026-10-25-m12-implementation-audit.md`.
 - Quality verification: 69 Jest test suites / 438 tests pass, 12 pgTAP files / 212 database tests pass, clean `db:lint`, clean `db:types:check`, clean `format:check`, clean `lint`, clean `typecheck`, and 20/20 `expo-doctor` checks.
 
+## M13 completed state
+
+- Plan document penned at `docs/plans/2026-10-25-m13-connectivity-resilience.md`.
+- Network detection and context:
+  - Installed `expo-network` (`~58.0.4`).
+  - `src/features/connectivity/services/connectivity-service.ts`: Testable `expo-network` wrapper with fail-open fallback and clean listener teardown.
+  - `src/features/connectivity/context/ConnectivityProvider.tsx`: React context provider supplying reactive `isConnected`, `isInternetReachable`, and `connectionType`.
+  - `src/features/connectivity/components/OfflineBanner.tsx`: High-contrast accessible offline warning banner mounted in `MarketplaceShell`.
+  - `src/features/connectivity/components/StaleDataBadge.tsx`: Visual badge indicating snapshot timestamp on cached data.
+- User-scoped bounded read cache:
+  - `src/shared/persistence/cache-store.ts`: User-isolated AsyncStorage cache scoped to `@dowell/cache/{userId}/{key}` with 50-entry LRU eviction cap and 500 KB per-entry boundary.
+  - Automatic cache purge on sign-out and account switch wired into `AuthProvider`.
+  - Integrated offline cache fallback with `cachedAt` metadata in `discoveryGateway` and `assignmentGateway`.
+- Form drafts and mutation resilience:
+  - `src/features/applications/data/application-draft-store.ts`: Persistent AsyncStorage draft store for worker bids.
+  - `src/features/submissions/data/submission-draft-store.ts`: Persistent AsyncStorage draft store for worker submission notes and photo references.
+  - `src/shared/api/network-timeout.ts`: 12-second bounded abort timeouts and mutation reconciliation helpers.
+- Quality verification: 77 Jest test suites / 468 tests pass, clean `format:check`, clean `lint`, clean `typecheck`, and 20/20 `expo-doctor` checks.
+
 ## Open product decisions
 
 - Set evidence and abandoned-upload retention periods before M09 cleanup behavior is implemented.
@@ -224,11 +244,11 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 
 ## Exact next steps
 
-1. Create a short-lived branch `feat/m13-offline-resilience` off `main`.
-2. Review Issue #14 acceptance criteria: connectivity detection, cached read fallbacks, offline draft safety, and retry boundaries.
-3. Write plan document `docs/plans/2026-10-25-m13-connectivity-resilience.md`.
-4. Apply migration `20261025000700` to the authorized hosted Supabase project during planned maintenance.
-5. Implement M13 features test-first, run all verification checks, and open PR linking Issue #14.
+1. Merge M13 PR #36 into `main`.
+2. Create a short-lived branch `feat/m14-security-and-build` off `main`.
+3. Review Issue #15 acceptance criteria: security verification, end-to-end tests, and production Android release build validation.
+4. Write plan document `docs/plans/2026-10-25-m14-security-build.md`.
+5. Implement M14, run all verification checks, and open PR linking Issue #15.
 
 ## Suggested continuation commands
 
