@@ -1,6 +1,6 @@
 # ADR 0002: Browser OAuth and deep linking
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-10-21
 
 ## Context

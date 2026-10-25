@@ -1,6 +1,6 @@
 # ADR 0004: Zero-cost AI inference
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-10-21
 
 ## Context

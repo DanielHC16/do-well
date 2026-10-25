@@ -21,9 +21,10 @@ ADRs capture significant decisions whose reasoning must survive team and session
 
 | ADR | Status | Decision |
 |---|---|---|
-| [0001](0001-expo-supabase-modular-architecture.md) | Proposed | Expo modular monolith with Supabase backend |
-| [0002](0002-browser-oauth-and-deep-linking.md) | Proposed | Browser OAuth with hosted callback and app deep link |
-| [0003](0003-zero-cost-nearby-discovery.md) | Proposed | List-first Haversine discovery; map is optional |
-| [0004](0004-zero-cost-ai-inference.md) | Proposed | Local Ollama experiment through an authenticated LAN gateway |
-| [0005](0005-offline-capability-boundaries.md) | Proposed | Cache and drafts first; background sync deferred |
+| [0001](0001-expo-supabase-modular-architecture.md) | Accepted | Expo modular monolith with Supabase backend |
+| [0002](0002-browser-oauth-and-deep-linking.md) | Accepted | Browser OAuth with hosted callback and app deep link |
+| [0003](0003-zero-cost-nearby-discovery.md) | Accepted | List-first Haversine discovery; map is optional |
+| [0004](0004-zero-cost-ai-inference.md) | Accepted | Local/deterministic zero-cost AI Job Brief Builder |
+| [0005](0005-offline-capability-boundaries.md) | Accepted | Cache and drafts first; background sync deferred |
 | [0006](0006-explicit-local-demo-runtime.md) | Accepted | Explicit, isolated local runtime for the competition demo |
+| [0007](0007-foreground-location-and-list-first-discovery.md) | Accepted | Foreground location and list-first nearby discovery |

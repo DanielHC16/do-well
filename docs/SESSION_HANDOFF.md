@@ -261,11 +261,10 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 
 ## Exact next steps
 
-1. Merge M13 PR #36 into `main`.
-2. Create a short-lived branch `feat/m14-security-and-build` off `main`.
-3. Review Issue #15 acceptance criteria: security verification, end-to-end tests, and production Android release build validation.
-4. Write plan document `docs/plans/2026-10-25-m14-security-build.md`.
-5. Implement M14, run all verification checks, and open PR linking Issue #15.
+1. Rehearse the 3-5 minute competition judging presentation using `docs/DEMO_RUNBOOK.md`.
+2. Compile and package the standalone Android release APK using `docs/COMPETITION_BUILD.md`.
+3. Validate APK installation and launch on physical Android device (Infinix X6840 or competition test device).
+4. Maintain M03B hosted OAuth acceptance deferred until operator-managed credentials and live physical device tests are scheduled.
 
 ## Suggested continuation commands
 

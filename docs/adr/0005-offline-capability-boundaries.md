@@ -1,6 +1,6 @@
 # ADR 0005: Offline capability boundaries
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-10-21
 
 ## Context
