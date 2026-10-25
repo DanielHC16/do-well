@@ -223,6 +223,165 @@ describe("AssignmentGateway", () => {
     expect(detail.employer.displayName).toBe("Elena Employer");
   });
 
+  it("writes to cache on successful getAssignmentDetail call", async () => {
+    const mockDetailData = {
+      assignment: {
+        id: mockRawAssignment.id,
+        gigId: mockRawAssignment.gig_id,
+        applicationId: mockRawAssignment.application_id,
+        employerId: mockRawAssignment.employer_id,
+        workerId: mockRawAssignment.worker_id,
+        agreementVersion: 1,
+        agreedTitle: "Office Furniture Assembly",
+        agreedDescription: "Assemble office chairs and desks carefully.",
+        agreedAmount: 2500,
+        currency: "PHP",
+        dueAt: null,
+        status: "proposed",
+        employerConfirmedAt: "2026-10-25T01:00:00.000Z",
+        workerConfirmedAt: null,
+        startedAt: null,
+        completedAt: null,
+        cancelledAt: null,
+        clientRequestId: mockRawAssignment.client_request_id,
+        createdAt: "2026-10-25T01:00:00.000Z",
+        updatedAt: "2026-10-25T01:00:00.000Z",
+      },
+      employer: {
+        id: "80000000-0000-4000-8000-000000000001",
+        displayName: "Elena Employer",
+        homeArea: "Makati",
+      },
+      worker: {
+        id: "80000000-0000-4000-8000-000000000002",
+        displayName: "Warren Worker",
+        homeArea: "Makati",
+      },
+      gig: {
+        id: mockRawAssignment.gig_id,
+        title: "Office Furniture Assembly",
+        category: "assembly",
+        workMode: "onsite",
+        publicArea: "Makati",
+      },
+    };
+
+    const client = {
+      rpc: jest.fn().mockResolvedValue({ data: mockDetailData, error: null }),
+    } as unknown as SupabaseClient<Database>;
+
+    const mockCache = {
+      get: jest.fn(),
+      set: jest.fn().mockResolvedValue(undefined),
+      remove: jest.fn(),
+      purgeUser: jest.fn(),
+      clearAll: jest.fn(),
+    };
+
+    const gateway = createAssignmentGateway(client, mockCache as any);
+    const result = await gateway.getAssignmentDetailWithMetadata(
+      mockRawAssignment.id,
+      "worker-1",
+    );
+
+    expect(result.isFromCache).toBe(false);
+    expect(result.detail.assignment.agreedTitle).toBe(
+      "Office Furniture Assembly",
+    );
+    expect(mockCache.set).toHaveBeenCalledWith(
+      "worker-1",
+      `assignment:detail:${mockRawAssignment.id}`,
+      result.detail,
+    );
+  });
+
+  it("falls back to cached assignment detail when network fails", async () => {
+    const failingClient = {
+      rpc: jest.fn().mockResolvedValue({
+        data: null,
+        error: { message: "Network connection lost" },
+      }),
+    } as unknown as SupabaseClient<Database>;
+
+    const cachedDetail = {
+      assignment: {
+        id: mockRawAssignment.id,
+        gigId: mockRawAssignment.gig_id,
+        applicationId: mockRawAssignment.application_id,
+        employerId: mockRawAssignment.employer_id,
+        workerId: mockRawAssignment.worker_id,
+        agreementVersion: 1,
+        agreedTitle: "Cached Furniture Assembly",
+        agreedDescription: "Assemble office chairs and desks carefully.",
+        agreedAmount: 2500,
+        currency: "PHP" as const,
+        dueAt: null,
+        status: "proposed" as const,
+        employerConfirmedAt: "2026-10-25T01:00:00.000Z",
+        workerConfirmedAt: null,
+        startedAt: null,
+        completedAt: null,
+        cancelledAt: null,
+        clientRequestId: mockRawAssignment.client_request_id,
+        createdAt: "2026-10-25T01:00:00.000Z",
+        updatedAt: "2026-10-25T01:00:00.000Z",
+      },
+      employer: {
+        id: "80000000-0000-4000-8000-000000000001",
+        displayName: "Elena Employer",
+        homeArea: "Makati",
+      },
+      worker: {
+        id: "80000000-0000-4000-8000-000000000002",
+        displayName: "Warren Worker",
+        homeArea: "Makati",
+      },
+      gig: {
+        id: mockRawAssignment.gig_id,
+        title: "Office Furniture Assembly",
+        category: "assembly" as const,
+        workMode: "onsite" as const,
+        publicArea: "Makati",
+      },
+    };
+
+    const mockCache = {
+      get: jest.fn().mockResolvedValue({
+        data: cachedDetail,
+        cachedAt: "2026-10-25T11:00:00.000Z",
+        userId: "worker-1",
+        version: 1,
+        key: `assignment:detail:${mockRawAssignment.id}`,
+        byteSize: 200,
+      }),
+      set: jest.fn(),
+      remove: jest.fn(),
+      purgeUser: jest.fn(),
+      clearAll: jest.fn(),
+    };
+
+    const gateway = createAssignmentGateway(failingClient, mockCache as any);
+    const result = await gateway.getAssignmentDetailWithMetadata(
+      mockRawAssignment.id,
+      "worker-1",
+    );
+
+    expect(result.isFromCache).toBe(true);
+    expect(result.cachedAt).toBe("2026-10-25T11:00:00.000Z");
+    expect(result.detail.assignment.agreedTitle).toBe(
+      "Cached Furniture Assembly",
+    );
+
+    // Also verify getAssignmentDetail returns cached data directly
+    const directFallback = await gateway.getAssignmentDetail(
+      mockRawAssignment.id,
+      "worker-1",
+    );
+    expect(directFallback.assignment.agreedTitle).toBe(
+      "Cached Furniture Assembly",
+    );
+  });
+
   it("lists user activity and marks event read", async () => {
     const rawActivity = {
       id: "95000000-0000-4000-8000-000000000001",

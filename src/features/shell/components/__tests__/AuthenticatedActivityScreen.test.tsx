@@ -52,6 +52,7 @@ function createMockGateway(
     startMilestone: jest.fn(),
     listMilestones: jest.fn(async () => []),
     getAssignmentDetail: jest.fn(),
+    getAssignmentDetailWithMetadata: jest.fn(),
     listUserActivity: jest.fn(async () => events),
     markActivityRead: jest.fn(async (id: string) => ({
       ...mockEvent,

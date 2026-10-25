@@ -123,4 +123,83 @@ describe("discovery gateway", () => {
     expect(gig?.id).toBe("81000000-0000-4000-8000-000000000001");
     expect(gig?.title).toBe("Makati House Deep Cleaning");
   });
+
+  it("writes to cache on successful discoverGigs call", async () => {
+    const { client } = createFakeSupabase();
+    const mockCache = {
+      get: jest.fn(),
+      set: jest.fn().mockResolvedValue(undefined),
+      remove: jest.fn(),
+      purgeUser: jest.fn(),
+      clearAll: jest.fn(),
+    };
+    const gateway = createDiscoveryGateway(client, mockCache as any);
+
+    const result = await gateway.discoverGigsWithMetadata({}, "worker-1");
+
+    expect(result.isFromCache).toBe(false);
+    expect(result.gigs.length).toBe(1);
+    expect(mockCache.set).toHaveBeenCalledWith(
+      "worker-1",
+      expect.stringContaining("discovery:feed"),
+      result.gigs,
+    );
+  });
+
+  it("falls back to cached feed when network fails", async () => {
+    const failingClient = {
+      rpc: jest.fn().mockResolvedValue({
+        data: null,
+        error: { message: "Network request failed" },
+      }),
+    } as unknown as SupabaseClient<Database>;
+
+    const mockCachedGigs = [
+      {
+        id: "81000000-0000-4000-8000-000000000001",
+        employerId: "80000000-0000-4000-8000-000000000001",
+        title: "Cached Gig",
+        description: "Cached description",
+        category: "errands",
+        workMode: "onsite",
+        publicArea: "Makati",
+        publicLatitude: null,
+        publicLongitude: null,
+        budgetAmount: 1000,
+        currency: "PHP",
+        status: "published",
+        distanceKm: null,
+        publishedAt: "2026-10-25T00:00:00.000Z",
+        createdAt: "2026-10-25T00:00:00.000Z",
+        reasons: [],
+      },
+    ];
+
+    const mockCache = {
+      get: jest.fn().mockResolvedValue({
+        data: mockCachedGigs,
+        cachedAt: "2026-10-25T12:00:00.000Z",
+        userId: "worker-1",
+        version: 1,
+        key: "discovery:feed:{}",
+        byteSize: 100,
+      }),
+      set: jest.fn(),
+      remove: jest.fn(),
+      purgeUser: jest.fn(),
+      clearAll: jest.fn(),
+    };
+
+    const gateway = createDiscoveryGateway(failingClient, mockCache as any);
+
+    const result = await gateway.discoverGigsWithMetadata({}, "worker-1");
+
+    expect(result.isFromCache).toBe(true);
+    expect(result.cachedAt).toBe("2026-10-25T12:00:00.000Z");
+    expect(result.gigs[0].title).toBe("Cached Gig");
+
+    // Also verify transparent discoverGigs() returns the cached list
+    const fallbackList = await gateway.discoverGigs();
+    expect(fallbackList[0].title).toBe("Cached Gig");
+  });
 });

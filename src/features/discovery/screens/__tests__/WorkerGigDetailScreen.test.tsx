@@ -70,6 +70,11 @@ function createMockGateway(
 ): DiscoveryGateway {
   return {
     discoverGigs: jest.fn(async () => []),
+    discoverGigsWithMetadata: jest.fn(async () => ({
+      gigs: [],
+      isFromCache: false,
+      cachedAt: null,
+    })),
     getPublicGig: jest.fn(async () => gig),
   };
 }
