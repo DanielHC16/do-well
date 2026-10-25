@@ -172,6 +172,42 @@ function createMockSubmissionsGateway(
       createdAt: "2026-10-25T03:00:00.000Z",
       updatedAt: "2026-10-25T03:00:00.000Z",
     })),
+    beginSubmission: jest.fn(async (input) => ({
+      id: "s0000000-0000-4000-8000-000000000099",
+      assignmentId: input.assignmentId,
+      milestoneId: input.milestoneId ?? null,
+      submittedBy: "80000000-0000-4000-8000-000000000002",
+      version: submissions.length + 1,
+      note: input.note ?? null,
+      status: "pending_upload" as const,
+      reviewNote: null,
+      submittedAt: null,
+      reviewedAt: null,
+      clientRequestId:
+        input.clientRequestId ?? "c0000000-0000-4000-8000-000000000099",
+      createdAt: "2026-10-25T03:00:00.000Z",
+      updatedAt: "2026-10-25T03:00:00.000Z",
+    })),
+    finalizeSubmission: jest.fn(async (input) => ({
+      id: input.submissionId,
+      assignmentId: "90000000-0000-4000-8000-000000000001",
+      milestoneId: null,
+      submittedBy: "80000000-0000-4000-8000-000000000002",
+      version: submissions.length + 1,
+      note: "Work completed with photo evidence.",
+      status: "submitted" as const,
+      reviewNote: null,
+      submittedAt: "2026-10-25T03:05:00.000Z",
+      reviewedAt: null,
+      clientRequestId: "c0000000-0000-4000-8000-000000000099",
+      createdAt: "2026-10-25T03:00:00.000Z",
+      updatedAt: "2026-10-25T03:05:00.000Z",
+    })),
+    listSubmissionFiles: jest.fn(async () => []),
+    createEvidenceSignedUrl: jest.fn(
+      async () => "https://signed.url/evidence.jpg",
+    ),
+    uploadEvidenceBlob: jest.fn(async (path) => path),
     requestSubmissionRevision: jest.fn(),
     approveAssignmentCompletion: jest.fn(),
     listAssignmentSubmissions: jest.fn(async () => submissions),
@@ -420,6 +456,122 @@ describe("WorkerAssignmentDetailScreen", () => {
     await waitFor(() => {
       expect(view.getByText("CONTRACT COMPLETED")).toBeVisible();
       expect(view.getByText('"Verified and accepted."')).toBeVisible();
+    });
+  });
+
+  it("schedules local notification when agreement confirmed", async () => {
+    const gateway = createMockGateway(mockAssignmentDetail);
+    const submissionsGw = createMockSubmissionsGateway();
+    const mockNotifications = {
+      requestPermissions: jest.fn(async () => true),
+      checkPermissions: jest.fn(async () => true),
+      configureChannels: jest.fn(async () => {}),
+      scheduleNotification: jest.fn(async () => "notif-id-2"),
+      cancelAllNotifications: jest.fn(async () => {}),
+    };
+
+    const view = await render(
+      <WorkerAssignmentDetailScreen
+        assignmentId="90000000-0000-4000-8000-000000000001"
+        gateway={gateway}
+        submissionsGateway={submissionsGw}
+        notifications={mockNotifications}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(view.getByText("Accept Agreement")).toBeVisible();
+    });
+
+    await fireEvent.press(view.getByText("Accept Agreement"));
+
+    await waitFor(() => {
+      expect(gateway.confirmAssignment).toHaveBeenCalled();
+      expect(mockNotifications.scheduleNotification).toHaveBeenCalledWith(
+        expect.objectContaining({
+          channelId: "assignment_updates",
+          title: "Agreement Confirmed",
+        }),
+      );
+    });
+  });
+
+  it("attaches photo evidence and finalizes multi-step submission", async () => {
+    const activeDetail: AssignmentDetail = {
+      ...mockAssignmentDetail,
+      assignment: {
+        ...mockAssignmentDetail.assignment,
+        status: "active",
+      },
+    };
+    const gateway = createMockGateway(activeDetail);
+    const submissionsGw = createMockSubmissionsGateway();
+    const mockImageService = {
+      pickImageFromLibrary: jest.fn(async () => ({
+        uri: "file:///mock/desk_assembled.jpg",
+        fileName: "desk_assembled.jpg",
+        fileSize: 1048576,
+        mimeType: "image/jpeg" as const,
+        width: 1920,
+        height: 1080,
+      })),
+      captureImageFromCamera: jest.fn(async () => null),
+    };
+    const mockNotifications = {
+      requestPermissions: jest.fn(async () => true),
+      checkPermissions: jest.fn(async () => true),
+      configureChannels: jest.fn(async () => {}),
+      scheduleNotification: jest.fn(async () => "notif-id-1"),
+      cancelAllNotifications: jest.fn(async () => {}),
+    };
+    const mockBlob = {} as Blob;
+    const mockBlobReader = jest.fn(async () => mockBlob);
+
+    const view = await render(
+      <WorkerAssignmentDetailScreen
+        assignmentId="90000000-0000-4000-8000-000000000001"
+        gateway={gateway}
+        submissionsGateway={submissionsGw}
+        imageService={mockImageService}
+        notifications={mockNotifications}
+        blobReader={mockBlobReader}
+      />,
+    );
+
+    // Pick photo evidence
+    await waitFor(() => {
+      expect(view.getByLabelText("Pick photo from gallery")).toBeVisible();
+    });
+
+    fireEvent.press(view.getByLabelText("Pick photo from gallery"));
+
+    await waitFor(() => {
+      expect(view.getByText("desk_assembled.jpg")).toBeVisible();
+    });
+
+    // Enter completion note and submit
+    fireEvent.changeText(
+      view.getByLabelText("Completion notes"),
+      "Desks assembled with evidence photo.",
+    );
+    fireEvent.press(view.getByLabelText("Submit work for review"));
+
+    await waitFor(() => {
+      expect(submissionsGw.beginSubmission).toHaveBeenCalled();
+      expect(mockBlobReader).toHaveBeenCalledWith(
+        "file:///mock/desk_assembled.jpg",
+      );
+      expect(submissionsGw.uploadEvidenceBlob).toHaveBeenCalled();
+      expect(submissionsGw.finalizeSubmission).toHaveBeenCalled();
+      expect(mockNotifications.scheduleNotification).toHaveBeenCalledWith(
+        expect.objectContaining({
+          channelId: "assignment_updates",
+          title: "Work Submitted",
+        }),
+      );
+      expect(
+        view.getByText("Work successfully submitted for employer review."),
+      ).toBeVisible();
     });
   });
 });

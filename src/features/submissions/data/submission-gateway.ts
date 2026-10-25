@@ -6,8 +6,14 @@ import type { Database } from "@/types/database.generated";
 import {
   type ApproveSubmissionInput,
   ApproveSubmissionInputSchema,
+  type BeginSubmissionInput,
+  BeginSubmissionInputSchema,
+  type FinalizeSubmissionInput,
+  FinalizeSubmissionInputSchema,
   type RequestRevisionInput,
   RequestRevisionInputSchema,
+  type SubmissionFileRecord,
+  SubmissionFileRecordSchema,
   type SubmissionRecord,
   SubmissionRecordSchema,
   type SubmitWorkInput,
@@ -15,6 +21,8 @@ import {
 } from "../model/submission-schemas";
 
 type SubmissionRow = Database["public"]["Tables"]["submissions"]["Row"];
+type SubmissionFileRow =
+  Database["public"]["Tables"]["submission_files"]["Row"];
 
 function mapSubmissionRow(row: SubmissionRow): SubmissionRecord {
   return SubmissionRecordSchema.parse({
@@ -34,8 +42,37 @@ function mapSubmissionRow(row: SubmissionRow): SubmissionRecord {
   });
 }
 
+function mapSubmissionFileRow(row: SubmissionFileRow): SubmissionFileRecord {
+  return SubmissionFileRecordSchema.parse({
+    id: row.id,
+    submissionId: row.submission_id,
+    uploaderId: row.uploader_id,
+    objectPath: row.object_path,
+    mediaType: row.media_type,
+    sizeBytes: row.size_bytes,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  });
+}
+
 export type SubmissionGateway = Readonly<{
   submitAssignmentWork: (input: SubmitWorkInput) => Promise<SubmissionRecord>;
+  beginSubmission: (input: BeginSubmissionInput) => Promise<SubmissionRecord>;
+  finalizeSubmission: (
+    input: FinalizeSubmissionInput,
+  ) => Promise<SubmissionRecord>;
+  listSubmissionFiles: (
+    submissionId: string,
+  ) => Promise<SubmissionFileRecord[]>;
+  createEvidenceSignedUrl: (
+    objectPath: string,
+    expiresInSeconds?: number,
+  ) => Promise<string>;
+  uploadEvidenceBlob: (
+    objectPath: string,
+    fileBlob: Blob | ArrayBuffer,
+    contentType: string,
+  ) => Promise<string>;
   requestSubmissionRevision: (
     input: RequestRevisionInput,
   ) => Promise<SubmissionRecord>;
@@ -77,6 +114,106 @@ export function createSubmissionGateway(
       }
 
       return mapSubmissionRow(data as SubmissionRow);
+    },
+
+    async beginSubmission(input: BeginSubmissionInput) {
+      const validated = BeginSubmissionInputSchema.parse(input);
+      const clientRequestId =
+        validated.clientRequestId ??
+        globalThis.crypto?.randomUUID?.() ??
+        "00000000-0000-4000-8000-000000000000";
+
+      const { data, error } = await client.rpc("begin_submission", {
+        p_assignment_id: validated.assignmentId,
+        p_note: validated.note ?? undefined,
+        p_milestone_id: validated.milestoneId ?? undefined,
+        p_client_request_id: clientRequestId,
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (!data) {
+        throw new Error("Failed to begin submission: no record returned.");
+      }
+
+      return mapSubmissionRow(data as SubmissionRow);
+    },
+
+    async finalizeSubmission(input: FinalizeSubmissionInput) {
+      const validated = FinalizeSubmissionInputSchema.parse(input);
+
+      const { data, error } = await client.rpc("finalize_submission", {
+        p_submission_id: validated.submissionId,
+        p_files: validated.files,
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (!data) {
+        throw new Error("Failed to finalize submission: no record returned.");
+      }
+
+      return mapSubmissionRow(data as SubmissionRow);
+    },
+
+    async listSubmissionFiles(submissionId: string) {
+      const { data, error } = await client.rpc("list_submission_files", {
+        p_submission_id: submissionId,
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return (data ?? []).map((row) =>
+        mapSubmissionFileRow(row as SubmissionFileRow),
+      );
+    },
+
+    async createEvidenceSignedUrl(
+      objectPath: string,
+      expiresInSeconds: number = 3600,
+    ) {
+      const { data, error } = await client.storage
+        .from("submission-evidence")
+        .createSignedUrl(objectPath, expiresInSeconds);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (!data?.signedUrl) {
+        throw new Error("Failed to create signed URL for evidence.");
+      }
+
+      return data.signedUrl;
+    },
+
+    async uploadEvidenceBlob(
+      objectPath: string,
+      fileBlob: Blob | ArrayBuffer,
+      contentType: string,
+    ) {
+      const { data, error } = await client.storage
+        .from("submission-evidence")
+        .upload(objectPath, fileBlob, {
+          contentType,
+          upsert: true,
+        });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (!data?.path) {
+        throw new Error("Failed to upload evidence object.");
+      }
+
+      return data.path;
     },
 
     async requestSubmissionRevision(input: RequestRevisionInput) {
@@ -163,6 +300,22 @@ export function getSubmissionGateway(): SubmissionGateway {
 export const submissionGateway: SubmissionGateway = {
   submitAssignmentWork: (input) =>
     getSubmissionGateway().submitAssignmentWork(input),
+  beginSubmission: (input) => getSubmissionGateway().beginSubmission(input),
+  finalizeSubmission: (input) =>
+    getSubmissionGateway().finalizeSubmission(input),
+  listSubmissionFiles: (submissionId) =>
+    getSubmissionGateway().listSubmissionFiles(submissionId),
+  createEvidenceSignedUrl: (objectPath, expiresInSeconds) =>
+    getSubmissionGateway().createEvidenceSignedUrl(
+      objectPath,
+      expiresInSeconds,
+    ),
+  uploadEvidenceBlob: (objectPath, fileBlob, contentType) =>
+    getSubmissionGateway().uploadEvidenceBlob(
+      objectPath,
+      fileBlob,
+      contentType,
+    ),
   requestSubmissionRevision: (input) =>
     getSubmissionGateway().requestSubmissionRevision(input),
   approveAssignmentCompletion: (input) =>

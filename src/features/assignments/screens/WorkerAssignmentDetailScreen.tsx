@@ -11,12 +11,24 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import {
+  notificationService,
+  type NotificationService,
+} from "@/features/notifications";
 import { setupTheme } from "@/features/setup/setupTheme";
 import {
+  EvidenceAttachmentPicker,
+  evidenceImageService,
+  type EvidenceImageService,
+  readImageBlob,
   submissionGateway,
   type SubmissionGateway,
-} from "@/features/submissions/data/submission-gateway";
-import type { SubmissionRecord } from "@/features/submissions/model/submission-schemas";
+} from "@/features/submissions";
+import type {
+  FinalizeSubmissionFileInput,
+  SelectedEvidenceImage,
+  SubmissionRecord,
+} from "@/features/submissions/model/submission-schemas";
 
 import {
   assignmentGateway,
@@ -31,18 +43,28 @@ type WorkerAssignmentDetailScreenProps = Readonly<{
   assignmentId: string;
   gateway?: AssignmentGateway;
   submissionsGateway?: SubmissionGateway;
+  imageService?: EvidenceImageService;
+  notifications?: NotificationService;
+  blobReader?: (uri: string) => Promise<Blob>;
 }>;
 
 export function WorkerAssignmentDetailScreen({
   assignmentId,
   gateway = assignmentGateway,
   submissionsGateway = submissionGateway,
+  imageService = evidenceImageService,
+  notifications = notificationService,
+  blobReader = readImageBlob,
 }: WorkerAssignmentDetailScreenProps) {
   const router = useRouter();
   const [detail, setDetail] = useState<AssignmentDetail | null>(null);
   const [milestones, setMilestones] = useState<MilestoneRecord[]>([]);
   const [submissions, setSubmissions] = useState<SubmissionRecord[]>([]);
   const [submissionNote, setSubmissionNote] = useState("");
+  const [selectedImages, setSelectedImages] = useState<SelectedEvidenceImage[]>(
+    [],
+  );
+  const [uploadProgress, setUploadProgress] = useState<string | null>(null);
   const [busy, setBusy] = useState(true);
   const [actionBusy, setActionBusy] = useState(false);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
@@ -91,6 +113,19 @@ export function WorkerAssignmentDetailScreen({
       const updated = await gateway.confirmAssignment(assignmentId);
       setDetail((prev) => (prev ? { ...prev, assignment: updated } : prev));
       setActionSuccess("Agreement confirmed! You can now start working.");
+
+      await notifications
+        .scheduleNotification({
+          id: `assignment_confirmed_${assignmentId}`,
+          title: "Agreement Confirmed",
+          body: "Agreement confirmed! You can now start work and complete milestones.",
+          channelId: "assignment_updates",
+          data: {
+            route: `/(protected)/worker/assignments/${assignmentId}`,
+            assignmentId,
+          },
+        })
+        .catch(() => {});
     } catch (err: unknown) {
       setErrorMessage(
         err instanceof Error ? err.message : "Failed to confirm agreement.",
@@ -140,11 +175,58 @@ export function WorkerAssignmentDetailScreen({
     setActionBusy(true);
     setErrorMessage(null);
     setActionSuccess(null);
+    setUploadProgress(null);
     try {
-      const newSub = await submissionsGateway.submitAssignmentWork({
-        assignmentId,
-        note: submissionNote.trim() || null,
-      });
+      let newSub: SubmissionRecord;
+      if (selectedImages.length > 0) {
+        setUploadProgress("Starting evidence submission...");
+        const pendingSub = await submissionsGateway.beginSubmission({
+          assignmentId,
+          note: submissionNote.trim() || null,
+        });
+
+        const uploadedFiles: FinalizeSubmissionFileInput[] = [];
+
+        for (let i = 0; i < selectedImages.length; i++) {
+          const img = selectedImages[i];
+          setUploadProgress(
+            `Uploading photo ${i + 1} of ${selectedImages.length}...`,
+          );
+          const fileId =
+            globalThis.crypto?.randomUUID?.() ?? `f${Date.now()}_${i}`;
+          const ext =
+            img.mimeType === "image/png"
+              ? "png"
+              : img.mimeType === "image/webp"
+                ? "webp"
+                : "jpg";
+          const objectPath = `${pendingSub.submittedBy}/${assignmentId}/${pendingSub.id}/${fileId}.${ext}`;
+          const blob = await blobReader(img.uri);
+          await submissionsGateway.uploadEvidenceBlob(
+            objectPath,
+            blob,
+            img.mimeType,
+          );
+          uploadedFiles.push({
+            object_path: objectPath,
+            media_type: img.mimeType,
+            size_bytes: img.fileSize,
+          });
+        }
+
+        setUploadProgress("Finalizing submission...");
+        newSub = await submissionsGateway.finalizeSubmission({
+          submissionId: pendingSub.id,
+          files: uploadedFiles,
+        });
+        setSelectedImages([]);
+      } else {
+        newSub = await submissionsGateway.submitAssignmentWork({
+          assignmentId,
+          note: submissionNote.trim() || null,
+        });
+      }
+
       setSubmissions((prev) => [newSub, ...prev]);
       setDetail((prev) =>
         prev
@@ -159,12 +241,29 @@ export function WorkerAssignmentDetailScreen({
       );
       setSubmissionNote("");
       setActionSuccess("Work successfully submitted for employer review.");
+
+      await notifications
+        .scheduleNotification({
+          id: `work_submitted_${assignmentId}_${newSub.id}`,
+          title: "Work Submitted",
+          body:
+            selectedImages.length > 0
+              ? `Submitted with ${selectedImages.length} photo evidence attachment(s).`
+              : "Work completion note submitted for employer review.",
+          channelId: "assignment_updates",
+          data: {
+            route: `/(protected)/worker/assignments/${assignmentId}`,
+            assignmentId,
+          },
+        })
+        .catch(() => {});
     } catch (err: unknown) {
       setErrorMessage(
         err instanceof Error ? err.message : "Failed to submit work.",
       );
     } finally {
       setActionBusy(false);
+      setUploadProgress(null);
     }
   }
 
@@ -422,6 +521,26 @@ export function WorkerAssignmentDetailScreen({
             <Text style={styles.charCount}>
               {submissionNote.length} / 2000 characters
             </Text>
+            <EvidenceAttachmentPicker
+              disabled={actionBusy}
+              onAddImage={(img) => setSelectedImages((prev) => [...prev, img])}
+              onRemoveImage={(idx) =>
+                setSelectedImages((prev) => prev.filter((_, i) => i !== idx))
+              }
+              selectedImages={selectedImages}
+              service={imageService}
+            />
+
+            {uploadProgress ? (
+              <View style={styles.uploadProgressBox}>
+                <ActivityIndicator
+                  color={setupTheme.color.accent}
+                  size="small"
+                />
+                <Text style={styles.uploadProgressText}>{uploadProgress}</Text>
+              </View>
+            ) : null}
+
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Submit work for review"
@@ -1119,5 +1238,19 @@ const styles = StyleSheet.create({
   },
   disabledAction: {
     opacity: 0.6,
+  },
+  uploadProgressBox: {
+    alignItems: "center",
+    backgroundColor: setupTheme.color.surfaceMuted,
+    borderRadius: setupTheme.radius.control,
+    flexDirection: "row",
+    gap: setupTheme.spacing.tight,
+    marginVertical: setupTheme.spacing.tight,
+    padding: setupTheme.spacing.compact,
+  },
+  uploadProgressText: {
+    color: setupTheme.color.foreground,
+    fontSize: setupTheme.type.caption,
+    fontWeight: "600",
   },
 });

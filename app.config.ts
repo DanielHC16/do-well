@@ -10,7 +10,11 @@ const appConfig: ExpoConfig = {
   android: {
     package: "com.anghulingpullrequest.dowell",
     predictiveBackGestureEnabled: false,
-    permissions: ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"],
+    permissions: [
+      "ACCESS_COARSE_LOCATION",
+      "ACCESS_FINE_LOCATION",
+      "POST_NOTIFICATIONS",
+    ],
   },
   web: {
     output: "static",
@@ -34,6 +38,17 @@ const appConfig: ExpoConfig = {
         isAndroidForegroundServiceEnabled: false,
       },
     ],
+    [
+      "expo-image-picker",
+      {
+        photosPermission:
+          "Allow Do Well to access your photos for work submission evidence.",
+        cameraPermission:
+          "Allow Do Well to take photos for work submission evidence.",
+        microphonePermission: false,
+      },
+    ],
+    "expo-notifications",
   ],
   experiments: {
     typedRoutes: true,
