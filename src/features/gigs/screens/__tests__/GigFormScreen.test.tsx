@@ -124,7 +124,8 @@ describe("GigFormScreen", () => {
 
     expect(screen.getByText("POST A GIG")).toBeVisible();
     expect(screen.getByText("AI JOB BRIEF BUILDER")).toBeVisible();
-    expect(screen.getByText("COMING IN M10")).toBeVisible();
+    expect(screen.getByText("TEMPLATE BUILDER")).toBeVisible();
+    expect(screen.getByLabelText("Draft with Brief Builder")).toBeVisible();
     expect(screen.getByLabelText("Gig Title")).toBeVisible();
     expect(screen.getByLabelText("Neighborhood Area")).toBeVisible();
   });
@@ -141,6 +142,37 @@ describe("GigFormScreen", () => {
       expect(screen.getByText("CANNOT POST NOTICE")).toBeVisible();
     });
     expect(gateway.createDraft).not.toHaveBeenCalled();
+  });
+
+  it("opens AI job brief builder modal and applies draft to form fields", async () => {
+    const gateway = createMockGateway();
+    const draftStore = createMockDraftStore();
+
+    await render(<GigFormScreen draftStore={draftStore} gateway={gateway} />);
+
+    await fireEvent.press(screen.getByLabelText("Draft with Brief Builder"));
+
+    expect(screen.getByText("JOB BRIEF BUILDER")).toBeVisible();
+
+    await fireEvent.changeText(
+      screen.getByLabelText("Task Summary"),
+      "Assemble 4 study desks and organize cabling.",
+    );
+    await fireEvent.changeText(
+      screen.getByLabelText("General Public Area"),
+      "Makati CBD",
+    );
+
+    await fireEvent.press(screen.getByLabelText("Generate Job Brief"));
+
+    expect(await screen.findByText("MANUAL TEMPLATE DRAFT")).toBeVisible();
+
+    await fireEvent.press(screen.getByLabelText("Apply Draft to Form"));
+
+    expect(screen.getByLabelText("Gig Title")).toHaveProp(
+      "value",
+      "Assemble 4 study desks and organize cabling",
+    );
   });
 
   it("publishes valid gig notice and redirects to detail view", async () => {

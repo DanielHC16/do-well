@@ -12,6 +12,12 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useAuth } from "@/features/auth/context/useAuth";
+import {
+  AiJobBriefModal,
+  aiBriefGateway,
+  type AiBriefGateway,
+  type JobBriefDraft,
+} from "@/features/ai-brief";
 import { setupTheme } from "@/features/setup/setupTheme";
 
 import { gigDraftStore, type GigDraftStore } from "../data/gig-draft-store";
@@ -29,9 +35,11 @@ import {
 type GigFormScreenProps = Readonly<{
   gateway?: GigGateway;
   draftStore?: GigDraftStore;
+  aiGateway?: AiBriefGateway;
 }>;
 
 export function GigFormScreen({
+  aiGateway = aiBriefGateway,
   draftStore = gigDraftStore,
   gateway = gigGateway,
 }: GigFormScreenProps) {
@@ -49,6 +57,48 @@ export function GigFormScreen({
   const [busy, setBusy] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [savedDraftNotice, setSavedDraftNotice] = useState(false);
+  const [isBuilderModalVisible, setIsBuilderModalVisible] = useState(false);
+  const [aiAvailable, setAiAvailable] = useState(false);
+  const [builderNotice, setBuilderNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    void aiGateway.checkAvailability().then((res) => {
+      setAiAvailable(res.isAiAvailable);
+    });
+  }, [aiGateway]);
+
+  async function handleApplyAiDraft(
+    draft: JobBriefDraft,
+    area?: string | null,
+  ) {
+    setTitle(draft.title);
+    setDescription(draft.description);
+    setCategory(draft.category);
+    setWorkMode(draft.workMode);
+    if (area !== undefined) {
+      setPublicArea(area ?? "");
+    }
+    setBuilderNotice(
+      "Job brief draft applied. You can edit any details below before posting.",
+    );
+    setTimeout(() => setBuilderNotice(null), 5000);
+
+    if (userId) {
+      try {
+        await draftStore.save(userId, {
+          title: draft.title,
+          description: draft.description,
+          category: draft.category,
+          workMode: draft.workMode,
+          publicArea: draft.workMode === "remote" ? null : (area ?? publicArea),
+          budgetAmount: Number(budgetAmount) || 0,
+          currency: "PHP",
+        });
+      } catch {
+        // preserve in memory
+      }
+    }
+  }
 
   useEffect(() => {
     if (!userId) return;
@@ -141,13 +191,34 @@ export function GigFormScreen({
         <View style={styles.aiNoticeCard}>
           <View style={styles.aiBadgeRow}>
             <Text style={styles.aiBadge}>AI JOB BRIEF BUILDER</Text>
-            <Text style={styles.aiStatusPill}>COMING IN M10</Text>
+            <Text style={styles.aiStatusPill}>
+              {aiAvailable ? "AI READY" : "TEMPLATE BUILDER"}
+            </Text>
           </View>
           <Text style={styles.aiBody}>
-            Automated brief authoring with zero external compute costs arrives
-            in milestone 10. Manual entry is fully operational.
+            {aiAvailable
+              ? "Draft a structured job brief with machine learning task breakdown, acceptance criteria, and safety notes."
+              : "Generate a structured job brief with rule-based task milestones, acceptance criteria, and safety reminders."}
           </Text>
+          <Pressable
+            accessibilityLabel="Draft with Brief Builder"
+            accessibilityRole="button"
+            onPress={() => setIsBuilderModalVisible(true)}
+            style={styles.openBuilderButton}
+          >
+            <Text style={styles.openBuilderButtonText}>
+              {aiAvailable
+                ? "Draft with AI Builder →"
+                : "Draft with Template Builder →"}
+            </Text>
+          </Pressable>
         </View>
+
+        {builderNotice ? (
+          <View accessibilityRole="alert" style={styles.builderNoticeBanner}>
+            <Text style={styles.builderNoticeText}>{builderNotice}</Text>
+          </View>
+        ) : null}
 
         {errorMessage ? (
           <View accessibilityRole="alert" style={styles.errorBanner}>
@@ -298,6 +369,15 @@ export function GigFormScreen({
             )}
           </Pressable>
         </View>
+        <AiJobBriefModal
+          gateway={aiGateway}
+          initialCategory={category}
+          initialPublicArea={publicArea}
+          initialWorkMode={workMode}
+          onApplyDraft={handleApplyAiDraft}
+          onClose={() => setIsBuilderModalVisible(false)}
+          visible={isBuilderModalVisible}
+        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -488,6 +568,31 @@ const styles = StyleSheet.create({
     flex: 2,
     justifyContent: "center",
     minHeight: 52,
+  },
+  openBuilderButton: {
+    alignItems: "center",
+    backgroundColor: setupTheme.color.foreground,
+    borderRadius: setupTheme.radius.control,
+    justifyContent: "center",
+    marginTop: setupTheme.spacing.compact,
+    paddingVertical: setupTheme.spacing.compact,
+  },
+  openBuilderButtonText: {
+    color: setupTheme.color.surface,
+    fontSize: setupTheme.type.body,
+    fontWeight: "800",
+  },
+  builderNoticeBanner: {
+    backgroundColor: "#F0FDF4",
+    borderColor: "#22C55E",
+    borderRadius: setupTheme.radius.control,
+    borderWidth: 1,
+    padding: setupTheme.spacing.compact,
+  },
+  builderNoticeText: {
+    color: "#15803D",
+    fontSize: setupTheme.type.caption,
+    fontWeight: "800",
   },
   primaryButtonText: {
     color: setupTheme.color.foreground,
