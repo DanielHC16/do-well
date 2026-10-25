@@ -6,9 +6,9 @@
 - **Completed milestones:** M01 — Expo initialization and Android development proof; M02 — Supabase schema and authorization foundation; M03A — authentication foundation; D01 — Offline Demo Preview; M04 — Authenticated marketplace shell and dual-mode navigation; M05 — Gig creation and employer management; M06 — Nearby/remote discovery and explainable ranking; M07 — Worker applications and atomic employer selection; M08 — Implement agreements, milestones and activity; M09 — Add work submission, revision and approval; M10 — Prove and implement zero-cost AI Job Brief Builder; M11 — Add foreground location and decide map experience; M12 — Integrate local notifications and image evidence; M13 — Harden weak-connectivity behavior; M14 — Security verification, end-to-end tests and competition build
 - **Current milestone:** M14 — Security verification, end-to-end tests and competition build
 - **Status:** `COMPLETED`
-- **Branch:** `test/security-validation`
+- **Branch:** `main`
 - **Base/default branch:** `main`
-- **Current implementation merge:** `e0d3a5d` (`Merge pull request #36`)
+- **Current implementation merge:** `efe12fd` (`Merge pull request #37`)
 - **Remote:** `https://github.com/DanielHC16/do-well` (`PRIVATE`)
 - **Next issue:** All roadmap milestones completed
 - **M01 PR:** [#17](https://github.com/DanielHC16/do-well/pull/17), squash-merged as `d073c4b`
@@ -25,7 +25,7 @@
 - **M11 PR:** [#33](https://github.com/DanielHC16/do-well/pull/33), merged as `58cf36a`
 - **M12 PR:** [#34](https://github.com/DanielHC16/do-well/pull/34), merged as `04cf199`; corrective hardening merged via [#35](https://github.com/DanielHC16/do-well/pull/35) as `ae953f3`
 - **M13 PR:** [#36](https://github.com/DanielHC16/do-well/pull/36), merged as `e0d3a5d`
-- **M14 PR:** [#37](https://github.com/DanielHC16/do-well/pull/37) (ready for merge)
+- **M14 PR:** [#37](https://github.com/DanielHC16/do-well/pull/37), merged as `efe12fd`
 
 This file records repository evidence, not chat state. Re-run the verification commands before relying on it.
 
