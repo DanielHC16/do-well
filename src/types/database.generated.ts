@@ -365,6 +365,28 @@ isOneToOne: true
         isOneToOne: true
         isSetofReturn: false
       } },
+"approve_assignment_completion":
+{ Args: { "p_review_note"?: string,"p_submission_id": string }; Returns: {
+              "assignment_id": string,
+"client_request_id": string,
+"created_at": string,
+"id": string,
+"milestone_id": string | null,
+"note": string | null,
+"review_note": string | null,
+"reviewed_at": string | null,
+"status": string,
+"submitted_at": string | null,
+"submitted_by": string,
+"updated_at": string,
+"version": number
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "submissions"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "calculate_distance_km":
 { Args: { "p_lat1": number,"p_lat2": number,"p_lon1": number,"p_lon2": number }; Returns: number
                            },
@@ -545,6 +567,28 @@ isOneToOne: true
 "get_assignment_detail":
 { Args: { "p_assignment_id": string }; Returns: Json
                            },
+"get_latest_assignment_submission":
+{ Args: { "p_assignment_id": string }; Returns: {
+              "assignment_id": string,
+"client_request_id": string,
+"created_at": string,
+"id": string,
+"milestone_id": string | null,
+"note": string | null,
+"review_note": string | null,
+"reviewed_at": string | null,
+"status": string,
+"submitted_at": string | null,
+"submitted_by": string,
+"updated_at": string,
+"version": number
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "submissions"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "get_worker_application_for_gig":
 { Args: { "p_gig_id": string }; Returns: {
               "client_request_id": string,
@@ -579,6 +623,28 @@ isOneToOne: true
                           SetofOptions: {
         from: "*"
         to: "milestones"
+        isOneToOne: false
+        isSetofReturn: true
+      } },
+"list_assignment_submissions":
+{ Args: { "p_assignment_id": string }; Returns: {
+              "assignment_id": string,
+"client_request_id": string,
+"created_at": string,
+"id": string,
+"milestone_id": string | null,
+"note": string | null,
+"review_note": string | null,
+"reviewed_at": string | null,
+"status": string,
+"submitted_at": string | null,
+"submitted_by": string,
+"updated_at": string,
+"version": number
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "submissions"
         isOneToOne: false
         isSetofReturn: true
       } },
@@ -639,6 +705,28 @@ isOneToOne: true
         isOneToOne: true
         isSetofReturn: false
       } },
+"request_submission_revision":
+{ Args: { "p_review_note": string,"p_submission_id": string }; Returns: {
+              "assignment_id": string,
+"client_request_id": string,
+"created_at": string,
+"id": string,
+"milestone_id": string | null,
+"note": string | null,
+"review_note": string | null,
+"reviewed_at": string | null,
+"status": string,
+"submitted_at": string | null,
+"submitted_by": string,
+"updated_at": string,
+"version": number
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "submissions"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "select_worker_atomic":
 { Args: { "p_application_id": string,"p_client_request_id"?: string }; Returns: {
               "agreed_amount": number,
@@ -684,6 +772,28 @@ isOneToOne: true
                           SetofOptions: {
         from: "*"
         to: "milestones"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"submit_assignment_work":
+{ Args: { "p_assignment_id": string,"p_client_request_id"?: string,"p_milestone_id"?: string,"p_note"?: string }; Returns: {
+              "assignment_id": string,
+"client_request_id": string,
+"created_at": string,
+"id": string,
+"milestone_id": string | null,
+"note": string | null,
+"review_note": string | null,
+"reviewed_at": string | null,
+"status": string,
+"submitted_at": string | null,
+"submitted_by": string,
+"updated_at": string,
+"version": number
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "submissions"
         isOneToOne: true
         isSetofReturn: false
       } },
