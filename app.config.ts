@@ -10,6 +10,7 @@ const appConfig: ExpoConfig = {
   android: {
     package: "com.anghulingpullrequest.dowell",
     predictiveBackGestureEnabled: false,
+    permissions: ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"],
   },
   web: {
     output: "static",
@@ -22,6 +23,15 @@ const appConfig: ExpoConfig = {
         android: {
           cmakeVersion: "3.31.6",
         },
+      },
+    ],
+    [
+      "expo-location",
+      {
+        locationWhenInUsePermission:
+          "Do Well uses your approximate location to show nearby gigs in your community.",
+        isAndroidBackgroundLocationEnabled: false,
+        isAndroidForegroundServiceEnabled: false,
       },
     ],
   ],
