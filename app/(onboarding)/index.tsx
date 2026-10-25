@@ -12,8 +12,12 @@ export default function OnboardingScreen() {
   const initialDisplayName =
     savedDisplayName && savedDisplayName !== "New user" ? savedDisplayName : "";
 
-  const submit = async ({ displayName, homeArea }: OnboardingProfile) => {
-    await completeOnboarding(displayName, homeArea);
+  const submit = async ({
+    displayName,
+    homeArea,
+    preferredMode,
+  }: OnboardingProfile) => {
+    await completeOnboarding(displayName, homeArea, preferredMode);
   };
 
   return (

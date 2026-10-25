@@ -16,8 +16,10 @@ export const passwordSchema = z
 export const displayNameSchema = z.string().trim().min(2).max(80);
 
 export const homeAreaSchema = z.string().trim().min(1).max(120);
+export const accountModeSchema = z.enum(["worker", "employer"]);
 
 export type Email = z.infer<typeof emailSchema>;
 export type Password = z.infer<typeof passwordSchema>;
 export type DisplayName = z.infer<typeof displayNameSchema>;
 export type HomeArea = z.infer<typeof homeAreaSchema>;
+export type AccountMode = z.infer<typeof accountModeSchema>;

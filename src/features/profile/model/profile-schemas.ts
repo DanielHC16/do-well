@@ -11,6 +11,7 @@ export const onboardingProfileSchema = z.object({
     .trim()
     .min(1, "Enter your city or public area.")
     .max(120, "Keep your public area to 120 characters or fewer."),
+  preferredMode: z.enum(["worker", "employer"]),
 });
 
 export type OnboardingProfileInput = z.input<typeof onboardingProfileSchema>;

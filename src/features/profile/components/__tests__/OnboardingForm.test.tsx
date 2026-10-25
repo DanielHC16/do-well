@@ -47,6 +47,7 @@ describe("OnboardingForm", () => {
       view.getByLabelText("City or public area"),
       "  Makati City  ",
     );
+    await fireEvent.press(view.getByRole("radio", { name: "Offer work" }));
     await fireEvent.press(view.getByRole("button", { name: "Continue" }));
     await fireEvent.press(view.getByRole("button", { name: "Saving profile" }));
 
@@ -54,6 +55,7 @@ describe("OnboardingForm", () => {
     expect(onSubmit).toHaveBeenCalledWith({
       displayName: "Ada Lovelace",
       homeArea: "Makati City",
+      preferredMode: "employer",
     });
     expect(view.getByRole("button", { name: "Saving profile" })).toBeDisabled();
 
@@ -65,7 +67,16 @@ describe("OnboardingForm", () => {
 
   it("shows a stable RPC failure and allows an idempotent retry", async () => {
     const onSubmit = jest
-      .fn<Promise<void>, [{ displayName: string; homeArea: string }]>()
+      .fn<
+        Promise<void>,
+        [
+          {
+            displayName: string;
+            homeArea: string;
+            preferredMode: "worker" | "employer";
+          },
+        ]
+      >()
       .mockRejectedValueOnce(new Error("sensitive vendor response"))
       .mockResolvedValueOnce(undefined);
     const view = await render(<OnboardingForm onSubmit={onSubmit} />);
@@ -90,6 +101,7 @@ describe("OnboardingForm", () => {
     expect(onSubmit).toHaveBeenNthCalledWith(2, {
       displayName: "Ada",
       homeArea: "Makati",
+      preferredMode: "worker",
     });
   });
 });

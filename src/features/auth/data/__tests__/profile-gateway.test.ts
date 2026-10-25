@@ -41,11 +41,15 @@ describe("profile gateway", () => {
       homeArea: "Makati",
     });
     await gateway.ensureProfile();
-    await gateway.completeOnboarding("  Ada  ", "  Makati  ");
+    await gateway.completeOnboarding("  Ada  ", "  Makati  ", "employer");
 
     expect(port.getOwnProfile).toHaveBeenCalledWith("user-a");
     expect(port.ensureProfile).toHaveBeenCalledTimes(1);
-    expect(port.completeOnboarding).toHaveBeenCalledWith("Ada", "Makati");
+    expect(port.completeOnboarding).toHaveBeenCalledWith(
+      "Ada",
+      "Makati",
+      "employer",
+    );
   });
 
   it("rejects a profile that does not belong to the requested user", async () => {

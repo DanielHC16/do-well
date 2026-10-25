@@ -3,14 +3,23 @@ import { z } from "zod";
 import { getSupabaseClient } from "../../../shared/api/supabase";
 import { createAuthError, mapAuthError } from "../model/auth-errors";
 import { type AuthProfile } from "../model/auth-state";
-import { displayNameSchema, homeAreaSchema } from "../model/auth-schemas";
+import {
+  accountModeSchema,
+  displayNameSchema,
+  homeAreaSchema,
+  type AccountMode,
+} from "../model/auth-schemas";
 
 type ProfileResult = Promise<Readonly<{ data: unknown; error: unknown }>>;
 
 export type ProfilePort = Readonly<{
   getOwnProfile: (userId: string) => ProfileResult;
   ensureProfile: () => ProfileResult;
-  completeOnboarding: (displayName: string, homeArea: string) => ProfileResult;
+  completeOnboarding: (
+    displayName: string,
+    homeArea: string,
+    preferredMode: AccountMode,
+  ) => ProfileResult;
 }>;
 
 const profileSchema = z.object({
@@ -73,14 +82,20 @@ export function createProfileGateway(port: ProfilePort) {
         resolveProfile(await port.ensureProfile()),
       );
     },
-    async completeOnboarding(displayName: string, homeArea: string) {
+    async completeOnboarding(
+      displayName: string,
+      homeArea: string,
+      preferredMode: AccountMode = "worker",
+    ) {
       const normalizedDisplayName = displayNameSchema.parse(displayName);
       const normalizedHomeArea = homeAreaSchema.parse(homeArea);
+      const validatedPreferredMode = accountModeSchema.parse(preferredMode);
       return withProfileBoundary(async () =>
         resolveProfile(
           await port.completeOnboarding(
             normalizedDisplayName,
             normalizedHomeArea,
+            validatedPreferredMode,
           ),
         ),
       );
@@ -98,10 +113,11 @@ export function createSupabaseProfileGateway() {
         .eq("id", userId)
         .maybeSingle(),
     ensureProfile: async () => await client.rpc("ensure_profile"),
-    completeOnboarding: async (displayName, homeArea) =>
+    completeOnboarding: async (displayName, homeArea, preferredMode) =>
       await client.rpc("complete_onboarding", {
         p_display_name: displayName,
         p_home_area: homeArea,
+        p_preferred_mode: preferredMode,
       }),
   });
 }

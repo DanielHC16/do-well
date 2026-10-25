@@ -49,7 +49,11 @@ describe("OnboardingScreen", () => {
     await fireEvent.press(view.getByRole("button", { name: "Continue" }));
 
     await waitFor(() =>
-      expect(completeOnboarding).toHaveBeenCalledWith("Ada", "Makati"),
+      expect(completeOnboarding).toHaveBeenCalledWith(
+        "Ada",
+        "Makati",
+        "worker",
+      ),
     );
   });
 });

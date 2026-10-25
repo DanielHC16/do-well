@@ -155,6 +155,7 @@ describe("AuthProvider", () => {
     expect(dependencies.profiles.completeOnboarding).toHaveBeenCalledWith(
       "Ada",
       "Makati",
+      "worker",
     );
     expect(getOwnProfile).toHaveBeenLastCalledWith("user-a");
     expect(dependencies.profileGate.save).toHaveBeenLastCalledWith(

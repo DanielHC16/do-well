@@ -55,7 +55,12 @@ describe("auth gateway", () => {
     const auth = createAuthPort();
     const gateway = createAuthGateway(auth);
 
-    await gateway.signUp(" Ada@Example.COM ", "SecurePass123", "  Ada  ");
+    await gateway.signUp(
+      " Ada@Example.COM ",
+      "SecurePass123",
+      "  Ada  ",
+      "employer",
+    );
     await gateway.signInWithPassword(" Ada@Example.COM ", "SecurePass123");
     await gateway.resendConfirmation(" Ada@Example.COM ");
     await gateway.requestPasswordReset(" Ada@Example.COM ");
@@ -65,7 +70,7 @@ describe("auth gateway", () => {
       email: "ada@example.com",
       password: "SecurePass123",
       options: {
-        data: { display_name: "Ada" },
+        data: { display_name: "Ada", preferred_mode: "employer" },
         emailRedirectTo: "dowell://auth/callback",
       },
     });

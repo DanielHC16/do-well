@@ -1,7 +1,7 @@
 import * as WebBrowser from "expo-web-browser";
 import { useMemo } from "react";
 
-import { GoogleSignInScreen } from "@/features/auth/components/GoogleSignInScreen";
+import { AccountAccessScreen } from "@/features/auth/components/AccountAccessScreen";
 import { pendingAuthAttemptStore } from "@/features/auth/data/pending-auth-attempts";
 import { useAuth } from "@/features/auth/context/useAuth";
 import { createGoogleSignInService } from "@/features/auth/services/google-sign-in";
@@ -20,5 +20,11 @@ export default function SignInRoute() {
     });
   }, [auth.beginGoogleSignIn, auth.exchangeCode]);
 
-  return <GoogleSignInScreen onSignIn={service.start} />;
+  return (
+    <AccountAccessScreen
+      onGoogleSignIn={service.start}
+      onPasswordSignIn={auth.signInWithPassword}
+      onSignUp={auth.signUp}
+    />
+  );
 }
