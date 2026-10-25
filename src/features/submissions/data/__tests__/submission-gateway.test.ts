@@ -4,6 +4,10 @@ import type { Database } from "@/types/database.generated";
 
 import { createSubmissionGateway } from "../submission-gateway";
 
+jest.mock("expo-crypto", () => ({
+  randomUUID: jest.fn(() => "a3000000-0000-4000-8000-000000000099"),
+}));
+
 jest.mock("@react-native-async-storage/async-storage", () => ({
   getItem: jest.fn(async () => null),
   setItem: jest.fn(async () => undefined),
@@ -92,6 +96,31 @@ describe("submission-gateway", () => {
       p_client_request_id: "a3000000-0000-4000-8000-000000000001",
     });
     expect(result.status).toBe("pending_upload");
+  });
+
+  it("generates a unique native-safe idempotency key when none is supplied", async () => {
+    const mockRpc = jest.fn(async () => ({
+      data: {
+        ...mockSubmissionRow,
+        status: "pending_upload",
+        submitted_at: null,
+      },
+      error: null,
+    }));
+    const gateway = createSubmissionGateway({
+      rpc: mockRpc,
+    } as unknown as SupabaseClient<Database>);
+
+    await gateway.beginSubmission({
+      assignmentId: "a1000000-0000-4000-8000-000000000001",
+    });
+
+    expect(mockRpc).toHaveBeenCalledWith("begin_submission", {
+      p_assignment_id: "a1000000-0000-4000-8000-000000000001",
+      p_client_request_id: "a3000000-0000-4000-8000-000000000099",
+      p_milestone_id: undefined,
+      p_note: undefined,
+    });
   });
 
   it("finalizes submission via finalize_submission RPC", async () => {
@@ -200,10 +229,66 @@ describe("submission-gateway", () => {
       expect.any(ArrayBuffer),
       {
         contentType: "image/jpeg",
-        upsert: true,
+        upsert: false,
       },
     );
     expect(path).toBe("user/asgn/sub/pic.jpg");
+  });
+
+  it("reconciles an ambiguous immutable upload by listing the exact path", async () => {
+    const mockUpload = jest.fn(async () => ({
+      data: null,
+      error: { message: "The resource already exists" },
+    }));
+    const mockList = jest.fn(async () => ({
+      data: [{ name: "pic.jpg" }],
+      error: null,
+    }));
+    const mockClient = {
+      storage: {
+        from: jest.fn(() => ({
+          list: mockList,
+          upload: mockUpload,
+        })),
+      },
+    } as unknown as SupabaseClient<Database>;
+
+    const gateway = createSubmissionGateway(mockClient);
+    const path = await gateway.uploadEvidenceBlob(
+      "user/asgn/sub/pic.jpg",
+      new ArrayBuffer(10),
+      "image/jpeg",
+    );
+
+    expect(mockList).toHaveBeenCalledWith("user/asgn/sub", {
+      limit: 1,
+      search: "pic.jpg",
+    });
+    expect(path).toBe("user/asgn/sub/pic.jpg");
+  });
+
+  it("preserves the upload error when exact-path reconciliation finds nothing", async () => {
+    const mockClient = {
+      storage: {
+        from: jest.fn(() => ({
+          list: jest.fn(async () => ({ data: [], error: null })),
+          upload: jest.fn(async () => ({
+            data: null,
+            error: { message: "Upload interrupted" },
+          })),
+        })),
+      },
+    } as unknown as SupabaseClient<Database>;
+
+    const gateway = createSubmissionGateway(mockClient);
+
+    await expect(
+      gateway.uploadEvidenceBlob(
+        "user/asgn/sub/pic.jpg",
+        new ArrayBuffer(10),
+        "image/jpeg",
+      ),
+    ).rejects.toThrow("Upload interrupted");
   });
 
   it("requests revision via request_submission_revision RPC", async () => {

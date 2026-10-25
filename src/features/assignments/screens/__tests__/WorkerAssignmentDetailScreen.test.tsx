@@ -459,43 +459,6 @@ describe("WorkerAssignmentDetailScreen", () => {
     });
   });
 
-  it("schedules local notification when agreement confirmed", async () => {
-    const gateway = createMockGateway(mockAssignmentDetail);
-    const submissionsGw = createMockSubmissionsGateway();
-    const mockNotifications = {
-      requestPermissions: jest.fn(async () => true),
-      checkPermissions: jest.fn(async () => true),
-      configureChannels: jest.fn(async () => {}),
-      scheduleNotification: jest.fn(async () => "notif-id-2"),
-      cancelAllNotifications: jest.fn(async () => {}),
-    };
-
-    const view = await render(
-      <WorkerAssignmentDetailScreen
-        assignmentId="90000000-0000-4000-8000-000000000001"
-        gateway={gateway}
-        submissionsGateway={submissionsGw}
-        notifications={mockNotifications}
-      />,
-    );
-
-    await waitFor(() => {
-      expect(view.getByText("Accept Agreement")).toBeVisible();
-    });
-
-    await fireEvent.press(view.getByText("Accept Agreement"));
-
-    await waitFor(() => {
-      expect(gateway.confirmAssignment).toHaveBeenCalled();
-      expect(mockNotifications.scheduleNotification).toHaveBeenCalledWith(
-        expect.objectContaining({
-          channelId: "assignment_updates",
-          title: "Agreement Confirmed",
-        }),
-      );
-    });
-  });
-
   it("attaches photo evidence and finalizes multi-step submission", async () => {
     const activeDetail: AssignmentDetail = {
       ...mockAssignmentDetail,
@@ -517,14 +480,7 @@ describe("WorkerAssignmentDetailScreen", () => {
       })),
       captureImageFromCamera: jest.fn(async () => null),
     };
-    const mockNotifications = {
-      requestPermissions: jest.fn(async () => true),
-      checkPermissions: jest.fn(async () => true),
-      configureChannels: jest.fn(async () => {}),
-      scheduleNotification: jest.fn(async () => "notif-id-1"),
-      cancelAllNotifications: jest.fn(async () => {}),
-    };
-    const mockBlob = {} as Blob;
+    const mockBlob = { size: 1048576 } as Blob;
     const mockBlobReader = jest.fn(async () => mockBlob);
 
     const view = await render(
@@ -533,7 +489,6 @@ describe("WorkerAssignmentDetailScreen", () => {
         gateway={gateway}
         submissionsGateway={submissionsGw}
         imageService={mockImageService}
-        notifications={mockNotifications}
         blobReader={mockBlobReader}
       />,
     );
@@ -563,12 +518,6 @@ describe("WorkerAssignmentDetailScreen", () => {
       );
       expect(submissionsGw.uploadEvidenceBlob).toHaveBeenCalled();
       expect(submissionsGw.finalizeSubmission).toHaveBeenCalled();
-      expect(mockNotifications.scheduleNotification).toHaveBeenCalledWith(
-        expect.objectContaining({
-          channelId: "assignment_updates",
-          title: "Work Submitted",
-        }),
-      );
       expect(
         view.getByText("Work successfully submitted for employer review."),
       ).toBeVisible();

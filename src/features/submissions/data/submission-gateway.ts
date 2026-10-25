@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import * as Crypto from "expo-crypto";
 
 import { getSupabaseClient } from "@/shared/api/supabase";
 import type { Database } from "@/types/database.generated";
@@ -55,6 +56,23 @@ function mapSubmissionFileRow(row: SubmissionFileRow): SubmissionFileRecord {
   });
 }
 
+function splitEvidenceObjectPath(objectPath: string): Readonly<{
+  directory: string;
+  fileName: string;
+}> {
+  const separatorIndex = objectPath.lastIndexOf("/");
+  if (separatorIndex <= 0 || separatorIndex === objectPath.length - 1) {
+    throw new Error(
+      "Evidence object path must include a directory and filename.",
+    );
+  }
+
+  return {
+    directory: objectPath.slice(0, separatorIndex),
+    fileName: objectPath.slice(separatorIndex + 1),
+  };
+}
+
 export type SubmissionGateway = Readonly<{
   submitAssignmentWork: (input: SubmitWorkInput) => Promise<SubmissionRecord>;
   beginSubmission: (input: BeginSubmissionInput) => Promise<SubmissionRecord>;
@@ -93,10 +111,7 @@ export function createSubmissionGateway(
   return {
     async submitAssignmentWork(input: SubmitWorkInput) {
       const validated = SubmitWorkInputSchema.parse(input);
-      const clientRequestId =
-        validated.clientRequestId ??
-        globalThis.crypto?.randomUUID?.() ??
-        "00000000-0000-4000-8000-000000000000";
+      const clientRequestId = validated.clientRequestId ?? Crypto.randomUUID();
 
       const { data, error } = await client.rpc("submit_assignment_work", {
         p_assignment_id: validated.assignmentId,
@@ -118,10 +133,7 @@ export function createSubmissionGateway(
 
     async beginSubmission(input: BeginSubmissionInput) {
       const validated = BeginSubmissionInputSchema.parse(input);
-      const clientRequestId =
-        validated.clientRequestId ??
-        globalThis.crypto?.randomUUID?.() ??
-        "00000000-0000-4000-8000-000000000000";
+      const clientRequestId = validated.clientRequestId ?? Crypto.randomUUID();
 
       const { data, error } = await client.rpc("begin_submission", {
         p_assignment_id: validated.assignmentId,
@@ -198,14 +210,31 @@ export function createSubmissionGateway(
       fileBlob: Blob | ArrayBuffer,
       contentType: string,
     ) {
-      const { data, error } = await client.storage
-        .from("submission-evidence")
-        .upload(objectPath, fileBlob, {
-          contentType,
-          upsert: true,
-        });
+      const bucket = client.storage.from("submission-evidence");
+      const { data, error } = await bucket.upload(objectPath, fileBlob, {
+        contentType,
+        upsert: false,
+      });
 
       if (error) {
+        // An immutable upload can reach Storage even when the client loses the
+        // response. Reconcile only the exact reserved object before retrying.
+        const { directory, fileName } = splitEvidenceObjectPath(objectPath);
+        const { data: existingObjects, error: listError } = await bucket.list(
+          directory,
+          {
+            limit: 1,
+            search: fileName,
+          },
+        );
+
+        if (
+          !listError &&
+          existingObjects?.some((object) => object.name === fileName)
+        ) {
+          return objectPath;
+        }
+
         throw new Error(error.message);
       }
 

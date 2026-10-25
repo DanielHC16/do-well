@@ -12,10 +12,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import {
-  notificationService,
-  type NotificationService,
-} from "@/features/notifications";
 import { setupTheme } from "@/features/setup/setupTheme";
 import {
   submissionGateway,
@@ -39,14 +35,12 @@ type EmployerAssignmentDetailScreenProps = Readonly<{
   assignmentId: string;
   gateway?: AssignmentGateway;
   submissionsGateway?: SubmissionGateway;
-  notifications?: NotificationService;
 }>;
 
 export function EmployerAssignmentDetailScreen({
   assignmentId,
   gateway = assignmentGateway,
   submissionsGateway = submissionGateway,
-  notifications = notificationService,
 }: EmployerAssignmentDetailScreenProps) {
   const router = useRouter();
   const [detail, setDetail] = useState<AssignmentDetail | null>(null);
@@ -61,6 +55,8 @@ export function EmployerAssignmentDetailScreen({
   const [loadedSubmissionId, setLoadedSubmissionId] = useState<string | null>(
     null,
   );
+  const [evidenceError, setEvidenceError] = useState<string | null>(null);
+  const [evidenceReload, setEvidenceReload] = useState(0);
   const [busy, setBusy] = useState(true);
   const [actionBusy, setActionBusy] = useState(false);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
@@ -117,31 +113,33 @@ export function EmployerAssignmentDetailScreen({
     if (!latestId) {
       return;
     }
-
     submissionsGateway
       .listSubmissionFiles(latestId)
       .then(async (files) => {
         if (!mounted) return;
         setEvidenceFiles(files);
+        setEvidenceError(null);
         const urlMap: Record<string, string> = {};
         await Promise.all(
           files.map(async (file) => {
-            try {
-              const url = await submissionsGateway.createEvidenceSignedUrl(
-                file.objectPath,
-              );
-              urlMap[file.id] = url;
-            } catch {
-              // Signed URL creation error non-blocking
-            }
+            const url = await submissionsGateway.createEvidenceSignedUrl(
+              file.objectPath,
+            );
+            urlMap[file.id] = url;
           }),
         );
         if (!mounted) return;
         setEvidenceSignedUrls(urlMap);
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (!mounted) return;
         setEvidenceFiles([]);
+        setEvidenceSignedUrls({});
+        setEvidenceError(
+          error instanceof Error
+            ? error.message
+            : "Unable to securely load the attached evidence.",
+        );
       })
       .finally(() => {
         if (!mounted) return;
@@ -151,7 +149,7 @@ export function EmployerAssignmentDetailScreen({
     return () => {
       mounted = false;
     };
-  }, [submissions, submissionsGateway]);
+  }, [evidenceReload, submissions, submissionsGateway]);
 
   async function handleCancelProposal() {
     setActionBusy(true);
@@ -237,19 +235,6 @@ export function EmployerAssignmentDetailScreen({
         })),
       );
       setActionSuccess("Work approved and task agreement completed!");
-
-      await notifications
-        .scheduleNotification({
-          id: `assignment_completed_${assignmentId}`,
-          title: "Assignment Completed",
-          body: `You approved ${detail?.worker?.displayName ?? "the worker"}'s completion. Agreement finalized.`,
-          channelId: "assignment_updates",
-          data: {
-            route: `/(protected)/employer/assignments/${assignmentId}`,
-            assignmentId,
-          },
-        })
-        .catch(() => {});
     } catch (err: unknown) {
       setErrorMessage(
         err instanceof Error ? err.message : "Failed to approve completion.",
@@ -292,19 +277,6 @@ export function EmployerAssignmentDetailScreen({
       setActionSuccess(
         "Revision requested. The worker has been notified to make adjustments.",
       );
-
-      await notifications
-        .scheduleNotification({
-          id: `revision_requested_${assignmentId}`,
-          title: "Revision Requested",
-          body: `Revision requested from ${detail?.worker?.displayName ?? "worker"}.`,
-          channelId: "assignment_updates",
-          data: {
-            route: `/(protected)/employer/assignments/${assignmentId}`,
-            assignmentId,
-          },
-        })
-        .catch(() => {});
     } catch (err: unknown) {
       setErrorMessage(
         err instanceof Error ? err.message : "Failed to request revision.",
@@ -359,6 +331,65 @@ export function EmployerAssignmentDetailScreen({
   const loadingEvidence = Boolean(
     latestSubmission && loadedSubmissionId !== latestSubmission.id,
   );
+  const evidenceContent = loadingEvidence ? (
+    <View style={styles.evidenceLoadingBox}>
+      <ActivityIndicator color={setupTheme.color.accent} size="small" />
+      <Text style={styles.evidenceLoadingText}>
+        Loading attached photo evidence...
+      </Text>
+    </View>
+  ) : evidenceError ? (
+    <View accessibilityLiveRegion="polite" style={styles.evidenceErrorBox}>
+      <Text style={styles.evidenceErrorText}>
+        Evidence could not be verified: {evidenceError}
+      </Text>
+      <Pressable
+        accessibilityLabel="Retry loading photo evidence"
+        accessibilityRole="button"
+        onPress={() => {
+          setLoadedSubmissionId(null);
+          setEvidenceReload((value) => value + 1);
+        }}
+        style={styles.evidenceRetryButton}
+      >
+        <Text style={styles.evidenceRetryButtonText}>Retry evidence</Text>
+      </Pressable>
+    </View>
+  ) : evidenceFiles.length > 0 ? (
+    <View style={styles.evidenceSection}>
+      <Text style={styles.evidenceSectionTitle}>
+        PHOTO EVIDENCE ({evidenceFiles.length})
+      </Text>
+      <View style={styles.evidenceGrid}>
+        {evidenceFiles.map((file) => {
+          const signedUrl = evidenceSignedUrls[file.id];
+          return (
+            <View key={file.id} style={styles.evidenceCard}>
+              {signedUrl ? (
+                <Image
+                  accessibilityLabel={`Attached photo evidence ${file.id}`}
+                  resizeMode="cover"
+                  source={{ uri: signedUrl }}
+                  style={styles.evidenceImage}
+                />
+              ) : (
+                <View style={styles.evidencePlaceholder}>
+                  <ActivityIndicator
+                    color={setupTheme.color.muted}
+                    size="small"
+                  />
+                </View>
+              )}
+              <Text style={styles.evidenceFileMeta}>
+                {(file.sizeBytes / 1024).toFixed(0)} KB ·{" "}
+                {file.mediaType.split("/")[1]?.toUpperCase() ?? "IMG"}
+              </Text>
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  ) : null;
 
   return (
     <SafeAreaView edges={["top", "bottom"]} style={styles.safeArea}>
@@ -471,51 +502,7 @@ export function EmployerAssignmentDetailScreen({
               </View>
             ) : null}
 
-            {loadingEvidence ? (
-              <View style={styles.evidenceLoadingBox}>
-                <ActivityIndicator
-                  color={setupTheme.color.accent}
-                  size="small"
-                />
-                <Text style={styles.evidenceLoadingText}>
-                  Loading attached photo evidence...
-                </Text>
-              </View>
-            ) : evidenceFiles.length > 0 ? (
-              <View style={styles.evidenceSection}>
-                <Text style={styles.evidenceSectionTitle}>
-                  PHOTO EVIDENCE ({evidenceFiles.length})
-                </Text>
-                <View style={styles.evidenceGrid}>
-                  {evidenceFiles.map((file) => {
-                    const signedUrl = evidenceSignedUrls[file.id];
-                    return (
-                      <View key={file.id} style={styles.evidenceCard}>
-                        {signedUrl ? (
-                          <Image
-                            source={{ uri: signedUrl }}
-                            style={styles.evidenceImage}
-                            resizeMode="cover"
-                            accessibilityLabel="Attached photo evidence"
-                          />
-                        ) : (
-                          <View style={styles.evidencePlaceholder}>
-                            <ActivityIndicator
-                              color={setupTheme.color.muted}
-                              size="small"
-                            />
-                          </View>
-                        )}
-                        <Text style={styles.evidenceFileMeta}>
-                          {(file.sizeBytes / 1024).toFixed(0)} KB ·{" "}
-                          {file.mediaType.split("/")[1]?.toUpperCase() ?? "IMG"}
-                        </Text>
-                      </View>
-                    );
-                  })}
-                </View>
-              </View>
-            ) : null}
+            {evidenceContent}
 
             {isRequestingRevision ? (
               <View style={styles.revisionFormBox}>
@@ -556,7 +543,9 @@ export function EmployerAssignmentDetailScreen({
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel="Cancel revision form"
-                    disabled={actionBusy}
+                    disabled={
+                      actionBusy || loadingEvidence || Boolean(evidenceError)
+                    }
                     onPress={() => setIsRequestingRevision(false)}
                     style={styles.cancelRevisionFormButton}
                   >
@@ -569,11 +558,14 @@ export function EmployerAssignmentDetailScreen({
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel="Approve and complete work"
-                  disabled={actionBusy}
+                  disabled={
+                    actionBusy || loadingEvidence || Boolean(evidenceError)
+                  }
                   onPress={handleApproveCompletion}
                   style={[
                     styles.approveButton,
-                    actionBusy && styles.disabledAction,
+                    (actionBusy || loadingEvidence || Boolean(evidenceError)) &&
+                      styles.disabledAction,
                   ]}
                 >
                   {actionBusy ? (
@@ -587,11 +579,14 @@ export function EmployerAssignmentDetailScreen({
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel="Request revision"
-                  disabled={actionBusy}
+                  disabled={
+                    actionBusy || loadingEvidence || Boolean(evidenceError)
+                  }
                   onPress={() => setIsRequestingRevision(true)}
                   style={[
                     styles.requestRevisionButton,
-                    actionBusy && styles.disabledAction,
+                    (actionBusy || loadingEvidence || Boolean(evidenceError)) &&
+                      styles.disabledAction,
                   ]}
                 >
                   <Text style={styles.requestRevisionButtonText}>
@@ -600,6 +595,13 @@ export function EmployerAssignmentDetailScreen({
                 </Pressable>
               </View>
             )}
+          </View>
+        ) : null}
+
+        {!isSubmitted && latestSubmission ? (
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionHeader}>LATEST PHOTO EVIDENCE</Text>
+            {evidenceContent}
           </View>
         ) : null}
 
@@ -627,8 +629,9 @@ export function EmployerAssignmentDetailScreen({
           <View style={styles.completedCard}>
             <Text style={styles.completedCardTitle}>CONTRACT COMPLETED</Text>
             <Text style={styles.completedCardText}>
-              Work has been reviewed, approved, and finalized. Total paid: ₱
-              {assignment.agreedAmount.toLocaleString()}.
+              Work has been reviewed and approved. Agreed amount: ₱
+              {assignment.agreedAmount.toLocaleString()}. Payment is handled
+              outside DO-WELL.
             </Text>
           </View>
         ) : null}
@@ -1466,6 +1469,35 @@ const styles = StyleSheet.create({
   evidenceLoadingText: {
     color: setupTheme.color.muted,
     fontSize: setupTheme.type.caption,
+  },
+  evidenceErrorBox: {
+    backgroundColor: setupTheme.color.dangerSurface,
+    borderColor: setupTheme.color.danger,
+    borderRadius: setupTheme.radius.small,
+    borderWidth: 1,
+    gap: setupTheme.spacing.tight,
+    marginTop: setupTheme.spacing.compact,
+    padding: setupTheme.spacing.compact,
+  },
+  evidenceErrorText: {
+    color: setupTheme.color.danger,
+    fontSize: setupTheme.type.caption,
+    fontWeight: "700",
+  },
+  evidenceRetryButton: {
+    alignItems: "center",
+    backgroundColor: setupTheme.color.surface,
+    borderColor: setupTheme.color.danger,
+    borderRadius: setupTheme.radius.control,
+    borderWidth: 1,
+    justifyContent: "center",
+    minHeight: 44,
+    paddingHorizontal: setupTheme.spacing.compact,
+  },
+  evidenceRetryButtonText: {
+    color: setupTheme.color.danger,
+    fontSize: setupTheme.type.caption,
+    fontWeight: "800",
   },
   evidenceSection: {
     marginTop: setupTheme.spacing.compact,

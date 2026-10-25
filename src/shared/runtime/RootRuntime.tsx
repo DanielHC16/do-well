@@ -2,6 +2,7 @@ import type { PropsWithChildren } from "react";
 
 import { AuthProvider } from "@/features/auth/context/AuthProvider";
 import { DemoProvider } from "@/features/demo/context/DemoProvider";
+import { NotificationResponseObserver } from "@/features/notifications/components/NotificationResponseObserver";
 import { readAppRuntime, type AppRuntime } from "@/shared/config/app-runtime";
 
 type RootRuntimeProps = PropsWithChildren<{
@@ -16,5 +17,10 @@ export function RootRuntime({
     return <DemoProvider>{children}</DemoProvider>;
   }
 
-  return <AuthProvider>{children}</AuthProvider>;
+  return (
+    <AuthProvider>
+      <NotificationResponseObserver />
+      {children}
+    </AuthProvider>
+  );
 }
