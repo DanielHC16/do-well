@@ -6,10 +6,16 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import {
+  applicationGateway,
+  type ApplicationGateway,
+} from "@/features/applications/data/application-gateway";
+import type { ApplicationRecord } from "@/features/applications/model/application-schemas";
 import { GIG_CATEGORY_LABELS } from "@/features/gigs/model/gig-schemas";
 import { setupTheme } from "@/features/setup/setupTheme";
 
@@ -22,27 +28,40 @@ import type { DiscoveryGigCard } from "../model/discovery-schemas";
 type WorkerGigDetailScreenProps = Readonly<{
   gigId: string;
   gateway?: DiscoveryGateway;
+  applications?: ApplicationGateway;
 }>;
 
 export function WorkerGigDetailScreen({
+  applications = applicationGateway,
   gateway = discoveryGateway,
   gigId,
 }: WorkerGigDetailScreenProps) {
   const router = useRouter();
   const [gig, setGig] = useState<DiscoveryGigCard | null>(null);
+  const [application, setApplication] = useState<ApplicationRecord | null>(
+    null,
+  );
   const [busy, setBusy] = useState(true);
+  const [applying, setApplying] = useState(false);
+  const [withdrawing, setWithdrawing] = useState(false);
+  const [applyMessage, setApplyMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
 
-    gateway
-      .getPublicGig(gigId)
-      .then((data) => {
+    Promise.all([
+      gateway.getPublicGig(gigId),
+      applications.getWorkerApplicationForGig(gigId).catch(() => null),
+    ])
+      .then(([gigData, appData]) => {
         if (mounted) {
-          setGig(data);
+          setGig(gigData);
+          setApplication(appData);
           setErrorMessage(
-            data ? null : "Notice not found or no longer available.",
+            gigData ? null : "Notice not found or no longer available.",
           );
         }
       })
@@ -60,7 +79,49 @@ export function WorkerGigDetailScreen({
     return () => {
       mounted = false;
     };
-  }, [gateway, gigId]);
+  }, [applications, gateway, gigId]);
+
+  async function handleApply() {
+    setApplying(true);
+    setActionError(null);
+    setActionSuccess(null);
+    try {
+      const record = await applications.applyToGig({
+        gigId,
+        message: applyMessage.trim().length > 0 ? applyMessage.trim() : null,
+      });
+      setApplication(record);
+      setActionSuccess("Your application was submitted successfully.");
+    } catch (err) {
+      setActionError(
+        err instanceof Error
+          ? err.message
+          : "Failed to submit your application.",
+      );
+    } finally {
+      setApplying(false);
+    }
+  }
+
+  async function handleWithdraw() {
+    if (!application) return;
+    setWithdrawing(true);
+    setActionError(null);
+    setActionSuccess(null);
+    try {
+      const record = await applications.withdrawApplication(application.id);
+      setApplication(record);
+      setActionSuccess("Your application was withdrawn.");
+    } catch (err) {
+      setActionError(
+        err instanceof Error
+          ? err.message
+          : "Failed to withdraw your application.",
+      );
+    } finally {
+      setWithdrawing(false);
+    }
+  }
 
   if (busy) {
     return (
@@ -120,23 +181,26 @@ export function WorkerGigDetailScreen({
           </Text>
 
           <View style={styles.budgetRow}>
-            <Text style={styles.budgetKicker}>OFFERED COMPENSATION</Text>
-            <Text style={styles.budgetAmount}>
-              PHP {gig.budgetAmount.toLocaleString()}
+            <Text style={styles.budgetLabel}>OFFERED COMPENSATION</Text>
+            <Text style={styles.budgetValue}>
+              {gig.currency} {gig.budgetAmount.toLocaleString("en-US")}
             </Text>
           </View>
 
-          {gig.publicArea ? (
-            <View style={styles.areaRow}>
-              <Text style={styles.areaLabel}>NEIGHBORHOOD AREA</Text>
-              <Text style={styles.areaValue}>{gig.publicArea}</Text>
+          {gig.workMode === "onsite" || gig.workMode === "hybrid" ? (
+            <View style={styles.areaSection}>
+              <Text style={styles.areaHeader}>NEIGHBORHOOD AREA</Text>
+              <Text style={styles.areaValue}>
+                {gig.publicArea ?? "Locality specified by employer"}
+                {gig.distanceKm !== null ? ` · ${gig.distanceKm} km away` : ""}
+              </Text>
               <Text style={styles.privacyNote}>
                 Exact address is provided once selected by the employer.
               </Text>
             </View>
           ) : (
-            <View style={styles.areaRow}>
-              <Text style={styles.areaLabel}>WORK LOCATION</Text>
+            <View style={styles.areaSection}>
+              <Text style={styles.areaHeader}>WORK LOCATION</Text>
               <Text style={styles.areaValue}>Remote (Work from anywhere)</Text>
             </View>
           )}
@@ -160,22 +224,134 @@ export function WorkerGigDetailScreen({
           </View>
         </View>
 
-        <View style={styles.applyCard}>
-          <View style={styles.comingSoonStrip}>
-            <Text style={styles.comingSoonKicker}>APPLICATION DISPATCH</Text>
-            <Text style={styles.comingSoonBadge}>COMING IN M07</Text>
+        {actionSuccess ? (
+          <View style={styles.successBanner}>
+            <Text style={styles.successText}>{actionSuccess}</Text>
           </View>
-          <Text style={styles.applyCardText}>
-            Worker applications with qualifications, availability notes, and
-            employer selection will be activated in Milestone M07.
-          </Text>
-          <Pressable
-            accessibilityRole="button"
-            disabled
-            style={[styles.primaryAction, styles.disabledAction]}
-          >
-            <Text style={styles.disabledActionText}>Apply for this Gig</Text>
-          </Pressable>
+        ) : null}
+
+        {actionError ? (
+          <View style={styles.errorCard}>
+            <Text style={styles.errorTitle}>ACTION FAILED</Text>
+            <Text style={styles.errorText}>{actionError}</Text>
+          </View>
+        ) : null}
+
+        <View style={styles.applyCard}>
+          {application && application.status === "pending" ? (
+            <>
+              <View style={styles.appStatusRow}>
+                <Text style={styles.appStatusKicker}>YOUR APPLICATION</Text>
+                <Text style={styles.statusPendingBadge}>PENDING REVIEW</Text>
+              </View>
+              <Text style={styles.applyCardText}>
+                Your application is currently under review by the employer. You
+                will be notified once a selection is made.
+              </Text>
+              {application.message ? (
+                <View style={styles.submittedMessageBox}>
+                  <Text style={styles.submittedMessageLabel}>
+                    YOUR NOTE TO EMPLOYER:
+                  </Text>
+                  <Text style={styles.submittedMessageText}>
+                    {`"${application.message}"`}
+                  </Text>
+                </View>
+              ) : null}
+              <Pressable
+                accessibilityRole="button"
+                disabled={withdrawing}
+                onPress={handleWithdraw}
+                style={[
+                  styles.withdrawButton,
+                  withdrawing && styles.disabledAction,
+                ]}
+              >
+                {withdrawing ? (
+                  <ActivityIndicator color={setupTheme.color.danger} />
+                ) : (
+                  <Text style={styles.withdrawButtonText}>
+                    Withdraw Application
+                  </Text>
+                )}
+              </Pressable>
+            </>
+          ) : application && application.status === "accepted" ? (
+            <>
+              <View style={styles.appStatusRow}>
+                <Text style={styles.appStatusKicker}>YOUR APPLICATION</Text>
+                <Text style={styles.statusAcceptedBadge}>ACCEPTED</Text>
+              </View>
+              <Text style={styles.acceptedMessage}>
+                Congratulations! The employer selected you for this assignment.
+              </Text>
+            </>
+          ) : application && application.status === "rejected" ? (
+            <>
+              <View style={styles.appStatusRow}>
+                <Text style={styles.appStatusKicker}>YOUR APPLICATION</Text>
+                <Text style={styles.statusRejectedBadge}>NOT SELECTED</Text>
+              </View>
+              <Text style={styles.applyCardText}>
+                The employer selected another applicant for this gig. Explore
+                other active listings on the noticeboard!
+              </Text>
+            </>
+          ) : (
+            <>
+              <View style={styles.comingSoonStrip}>
+                <Text style={styles.comingSoonKicker}>APPLY FOR THIS GIG</Text>
+                {application?.status === "withdrawn" ? (
+                  <Text style={styles.statusWithdrawnBadge}>
+                    PREVIOUSLY WITHDRAWN
+                  </Text>
+                ) : null}
+              </View>
+              <Text style={styles.applyCardText}>
+                Submit your qualifications or availability note directly to the
+                employer. Only the employer will see this.
+              </Text>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>
+                  QUALIFICATIONS / AVAILABILITY NOTE (OPTIONAL)
+                </Text>
+                <TextInput
+                  accessibilityLabel="Qualifications or availability note"
+                  editable={!applying}
+                  maxLength={1000}
+                  multiline
+                  numberOfLines={4}
+                  onChangeText={setApplyMessage}
+                  placeholder="e.g. I have 2 years of experience and can start tomorrow morning."
+                  placeholderTextColor={setupTheme.color.muted}
+                  style={styles.messageInput}
+                  value={applyMessage}
+                />
+                <Text style={styles.counterText}>
+                  {applyMessage.length} / 1000 characters
+                </Text>
+              </View>
+
+              <Pressable
+                accessibilityRole="button"
+                disabled={applying}
+                onPress={handleApply}
+                style={[
+                  styles.primaryAction,
+                  applying && styles.disabledAction,
+                ]}
+              >
+                {applying ? (
+                  <ActivityIndicator color={setupTheme.color.surface} />
+                ) : (
+                  <Text style={styles.primaryActionText}>
+                    Submit Application
+                  </Text>
+                )}
+              </Pressable>
+            </>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -252,12 +428,13 @@ const styles = StyleSheet.create({
     borderColor: setupTheme.color.border,
     borderRadius: setupTheme.radius.card,
     borderWidth: 2,
-    gap: setupTheme.spacing.content,
+    gap: setupTheme.spacing.section,
     padding: setupTheme.spacing.section,
   },
   categoryRow: {
+    alignItems: "center",
     flexDirection: "row",
-    gap: setupTheme.spacing.compact,
+    justifyContent: "space-between",
   },
   categoryBadge: {
     backgroundColor: setupTheme.color.highlightSurface,
@@ -265,7 +442,7 @@ const styles = StyleSheet.create({
     borderRadius: setupTheme.radius.status,
     borderWidth: 1,
     color: setupTheme.color.foreground,
-    fontSize: setupTheme.type.caption,
+    fontSize: setupTheme.type.label,
     fontWeight: "800",
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -283,36 +460,37 @@ const styles = StyleSheet.create({
   },
   title: {
     color: setupTheme.color.foreground,
-    fontSize: setupTheme.type.title,
+    fontSize: setupTheme.type.heading,
     fontWeight: "900",
     letterSpacing: -0.5,
-    lineHeight: 36,
+    lineHeight: 28,
   },
   budgetRow: {
-    backgroundColor: setupTheme.color.highlight,
-    borderColor: setupTheme.color.foreground,
+    backgroundColor: setupTheme.color.surfaceMuted,
+    borderColor: setupTheme.color.border,
     borderRadius: setupTheme.radius.control,
-    borderWidth: 2,
+    borderWidth: 1.5,
+    gap: 4,
     padding: setupTheme.spacing.compact,
   },
-  budgetKicker: {
-    color: setupTheme.color.accent,
+  budgetLabel: {
+    color: setupTheme.color.muted,
     fontSize: 10,
-    fontWeight: "900",
+    fontWeight: "800",
     letterSpacing: 0.8,
   },
-  budgetAmount: {
+  budgetValue: {
     color: setupTheme.color.foreground,
     fontSize: setupTheme.type.heading,
     fontWeight: "900",
   },
-  areaRow: {
+  areaSection: {
     gap: 4,
   },
-  areaLabel: {
+  areaHeader: {
     color: setupTheme.color.muted,
-    fontSize: 10,
-    fontWeight: "800",
+    fontSize: setupTheme.type.label,
+    fontWeight: "900",
     letterSpacing: 0.8,
   },
   areaValue: {
@@ -322,15 +500,15 @@ const styles = StyleSheet.create({
   },
   privacyNote: {
     color: setupTheme.color.muted,
-    fontSize: 11,
+    fontSize: setupTheme.type.caption,
     fontStyle: "italic",
   },
   reasonsSection: {
-    gap: 6,
+    gap: setupTheme.spacing.compact,
   },
   reasonsHeader: {
     color: setupTheme.color.muted,
-    fontSize: 10,
+    fontSize: setupTheme.type.label,
     fontWeight: "900",
     letterSpacing: 0.8,
   },
@@ -340,26 +518,26 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   reasonBadge: {
-    backgroundColor: setupTheme.color.surfaceMuted,
-    borderColor: setupTheme.color.borderSoft,
-    borderRadius: 6,
+    backgroundColor: setupTheme.color.readySurface,
+    borderColor: setupTheme.color.ready,
+    borderRadius: setupTheme.radius.status,
     borderWidth: 1,
     paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingVertical: 3,
   },
   reasonText: {
-    color: setupTheme.color.foreground,
+    color: setupTheme.color.ready,
     fontSize: 11,
-    fontWeight: "700",
+    fontWeight: "800",
   },
   descriptionSection: {
     borderTopColor: setupTheme.color.borderSoft,
     borderTopWidth: 1,
     gap: setupTheme.spacing.compact,
-    paddingTop: setupTheme.spacing.compact,
+    paddingTop: setupTheme.spacing.section,
   },
   sectionHeader: {
-    color: setupTheme.color.foreground,
+    color: setupTheme.color.muted,
     fontSize: setupTheme.type.label,
     fontWeight: "900",
     letterSpacing: 0.8,
@@ -367,7 +545,19 @@ const styles = StyleSheet.create({
   descriptionText: {
     color: setupTheme.color.foreground,
     fontSize: setupTheme.type.body,
-    lineHeight: 24,
+    lineHeight: 22,
+  },
+  successBanner: {
+    backgroundColor: setupTheme.color.readySurface,
+    borderColor: setupTheme.color.ready,
+    borderRadius: setupTheme.radius.control,
+    borderWidth: 1.5,
+    padding: setupTheme.spacing.section,
+  },
+  successText: {
+    color: setupTheme.color.ready,
+    fontSize: setupTheme.type.body,
+    fontWeight: "800",
   },
   applyCard: {
     ...setupTheme.shadow.card,
@@ -375,7 +565,7 @@ const styles = StyleSheet.create({
     borderColor: setupTheme.color.border,
     borderRadius: setupTheme.radius.card,
     borderWidth: 2,
-    gap: setupTheme.spacing.compact,
+    gap: setupTheme.spacing.section,
     padding: setupTheme.spacing.section,
   },
   comingSoonStrip: {
@@ -384,8 +574,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   comingSoonKicker: {
-    color: setupTheme.color.accent,
-    fontSize: 10,
+    color: setupTheme.color.muted,
+    fontSize: setupTheme.type.label,
     fontWeight: "900",
     letterSpacing: 0.8,
   },
@@ -400,27 +590,141 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
+  appStatusRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  appStatusKicker: {
+    color: setupTheme.color.foreground,
+    fontSize: setupTheme.type.label,
+    fontWeight: "900",
+    letterSpacing: 0.8,
+  },
+  statusPendingBadge: {
+    backgroundColor: setupTheme.color.highlightSurface,
+    borderColor: setupTheme.color.foreground,
+    borderRadius: setupTheme.radius.status,
+    borderWidth: 1.5,
+    color: setupTheme.color.foreground,
+    fontSize: 11,
+    fontWeight: "900",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  statusAcceptedBadge: {
+    backgroundColor: setupTheme.color.readySurface,
+    borderColor: setupTheme.color.ready,
+    borderRadius: setupTheme.radius.status,
+    borderWidth: 1.5,
+    color: setupTheme.color.ready,
+    fontSize: 11,
+    fontWeight: "900",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  statusRejectedBadge: {
+    backgroundColor: setupTheme.color.surfaceMuted,
+    borderColor: setupTheme.color.border,
+    borderRadius: setupTheme.radius.status,
+    borderWidth: 1,
+    color: setupTheme.color.muted,
+    fontSize: 11,
+    fontWeight: "800",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  statusWithdrawnBadge: {
+    backgroundColor: setupTheme.color.surfaceMuted,
+    borderColor: setupTheme.color.border,
+    borderRadius: setupTheme.radius.status,
+    borderWidth: 1,
+    color: setupTheme.color.muted,
+    fontSize: 10,
+    fontWeight: "800",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
   applyCardText: {
     color: setupTheme.color.muted,
+    fontSize: setupTheme.type.caption,
+    lineHeight: 18,
+  },
+  submittedMessageBox: {
+    backgroundColor: setupTheme.color.surfaceMuted,
+    borderColor: setupTheme.color.borderSoft,
+    borderRadius: setupTheme.radius.control,
+    borderWidth: 1,
+    gap: 4,
+    padding: setupTheme.spacing.compact,
+  },
+  submittedMessageLabel: {
+    color: setupTheme.color.muted,
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 0.6,
+  },
+  submittedMessageText: {
+    color: setupTheme.color.foreground,
+    fontSize: setupTheme.type.caption,
+    fontStyle: "italic",
+  },
+  acceptedMessage: {
+    color: setupTheme.color.ready,
     fontSize: setupTheme.type.body,
-    lineHeight: 20,
+    fontWeight: "800",
+  },
+  inputGroup: {
+    gap: 6,
+  },
+  inputLabel: {
+    color: setupTheme.color.foreground,
+    fontSize: setupTheme.type.label,
+    fontWeight: "800",
+  },
+  messageInput: {
+    backgroundColor: setupTheme.color.surfaceMuted,
+    borderColor: setupTheme.color.border,
+    borderRadius: setupTheme.radius.control,
+    borderWidth: 1.5,
+    color: setupTheme.color.foreground,
+    fontSize: setupTheme.type.body,
+    minHeight: 80,
+    padding: setupTheme.spacing.compact,
+    textAlignVertical: "top",
+  },
+  counterText: {
+    alignSelf: "flex-end",
+    color: setupTheme.color.muted,
+    fontSize: 11,
   },
   primaryAction: {
     alignItems: "center",
-    backgroundColor: setupTheme.color.highlight,
-    borderColor: setupTheme.color.foreground,
+    backgroundColor: setupTheme.color.foreground,
     borderRadius: setupTheme.radius.control,
-    borderWidth: 2,
     justifyContent: "center",
-    minHeight: 48,
+    paddingVertical: setupTheme.spacing.section,
   },
-  disabledAction: {
-    backgroundColor: setupTheme.color.surfaceMuted,
-    borderColor: setupTheme.color.borderSoft,
+  primaryActionText: {
+    color: setupTheme.color.surface,
+    fontSize: setupTheme.type.body,
+    fontWeight: "900",
   },
-  disabledActionText: {
-    color: setupTheme.color.muted,
+  withdrawButton: {
+    alignItems: "center",
+    backgroundColor: setupTheme.color.dangerSurface,
+    borderColor: setupTheme.color.danger,
+    borderRadius: setupTheme.radius.control,
+    borderWidth: 1.5,
+    justifyContent: "center",
+    paddingVertical: setupTheme.spacing.compact,
+  },
+  withdrawButtonText: {
+    color: setupTheme.color.danger,
     fontSize: setupTheme.type.body,
     fontWeight: "800",
+  },
+  disabledAction: {
+    opacity: 0.6,
   },
 });
