@@ -368,6 +368,35 @@ isOneToOne: true
 "calculate_distance_km":
 { Args: { "p_lat1": number,"p_lat2": number,"p_lon1": number,"p_lon2": number }; Returns: number
                            },
+"cancel_proposed_assignment":
+{ Args: { "p_assignment_id": string }; Returns: {
+              "agreed_amount": number,
+"agreed_description": string,
+"agreed_title": string,
+"agreement_version": number,
+"application_id": string,
+"cancelled_at": string | null,
+"client_request_id": string,
+"completed_at": string | null,
+"created_at": string,
+"currency": string,
+"due_at": string | null,
+"employer_confirmed_at": string,
+"employer_id": string,
+"gig_id": string,
+"id": string,
+"started_at": string | null,
+"status": string,
+"updated_at": string,
+"worker_confirmed_at": string | null,
+"worker_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "assignments"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "close_gig":
 { Args: { "p_gig_id": string }; Returns: {
               "application_deadline": string | null,
@@ -413,6 +442,83 @@ isOneToOne: true
         isOneToOne: true
         isSetofReturn: false
       } },
+"confirm_assignment":
+{ Args: { "p_assignment_id": string }; Returns: {
+              "agreed_amount": number,
+"agreed_description": string,
+"agreed_title": string,
+"agreement_version": number,
+"application_id": string,
+"cancelled_at": string | null,
+"client_request_id": string,
+"completed_at": string | null,
+"created_at": string,
+"currency": string,
+"due_at": string | null,
+"employer_confirmed_at": string,
+"employer_id": string,
+"gig_id": string,
+"id": string,
+"started_at": string | null,
+"status": string,
+"updated_at": string,
+"worker_confirmed_at": string | null,
+"worker_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "assignments"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"create_assignment_milestone":
+{ Args: { "p_assignment_id": string,"p_description"?: string,"p_due_at"?: string,"p_title": string }; Returns: {
+              "approved_at": string | null,
+"assignment_id": string,
+"created_at": string,
+"description": string | null,
+"due_at": string | null,
+"id": string,
+"position": number,
+"status": string,
+"title": string,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "milestones"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"decline_assignment":
+{ Args: { "p_assignment_id": string }; Returns: {
+              "agreed_amount": number,
+"agreed_description": string,
+"agreed_title": string,
+"agreement_version": number,
+"application_id": string,
+"cancelled_at": string | null,
+"client_request_id": string,
+"completed_at": string | null,
+"created_at": string,
+"currency": string,
+"due_at": string | null,
+"employer_confirmed_at": string,
+"employer_id": string,
+"gig_id": string,
+"id": string,
+"started_at": string | null,
+"status": string,
+"updated_at": string,
+"worker_confirmed_at": string | null,
+"worker_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "assignments"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "discover_gigs":
 { Args: { "p_category"?: string,"p_limit"?: number,"p_max_distance_km"?: number,"p_offset"?: number,"p_search_query"?: string,"p_work_mode"?: string,"p_worker_lat"?: number,"p_worker_lng"?: number }; Returns: {
               "budget_amount": number,"category": string,"created_at": string,"currency": string,"description": string,"distance_km": number,"employer_id": string,"id": string,"public_area": string,"public_latitude": number,"public_longitude": number,"published_at": string,"reasons": (string)[],"status": string,"title": string,"work_mode": string
@@ -436,6 +542,9 @@ isOneToOne: true
         isOneToOne: true
         isSetofReturn: false
       } },
+"get_assignment_detail":
+{ Args: { "p_assignment_id": string }; Returns: Json
+                           },
 "get_worker_application_for_gig":
 { Args: { "p_gig_id": string }; Returns: {
               "client_request_id": string,
@@ -454,11 +563,55 @@ isOneToOne: true
         isOneToOne: true
         isSetofReturn: false
       } },
+"list_assignment_milestones":
+{ Args: { "p_assignment_id": string }; Returns: {
+              "approved_at": string | null,
+"assignment_id": string,
+"created_at": string,
+"description": string | null,
+"due_at": string | null,
+"id": string,
+"position": number,
+"status": string,
+"title": string,
+"updated_at": string
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "milestones"
+        isOneToOne: false
+        isSetofReturn: true
+      } },
 "list_gig_applicants":
 { Args: { "p_gig_id": string }; Returns: {
               "created_at": string,"decided_at": string,"gig_id": string,"id": string,"message": string,"status": string,"worker_display_name": string,"worker_home_area": string,"worker_id": string
             }[]
                            },
+"list_user_activity":
+{ Args: { "p_limit"?: number,"p_offset"?: number }; Returns: {
+              "assignment_id": string,"created_at": string,"dedupe_key": string,"event_type": string,"gig_id": string,"id": string,"payload": Json,"read_at": string
+            }[]
+                           },
+"mark_activity_read":
+{ Args: { "p_event_id": string }; Returns: {
+              "actor_id": string | null,
+"assignment_id": string | null,
+"created_at": string,
+"dedupe_key": string,
+"event_type": string,
+"gig_id": string | null,
+"id": string,
+"payload": NonNullable<Json>,
+"read_at": string | null,
+"recipient_id": string,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "activity_events"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "publish_gig":
 { Args: { "p_gig_id": string }; Returns: {
               "application_deadline": string | null,
@@ -512,6 +665,25 @@ isOneToOne: true
                           SetofOptions: {
         from: "*"
         to: "assignments"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"start_assignment_milestone":
+{ Args: { "p_milestone_id": string }; Returns: {
+              "approved_at": string | null,
+"assignment_id": string,
+"created_at": string,
+"description": string | null,
+"due_at": string | null,
+"id": string,
+"position": number,
+"status": string,
+"title": string,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "milestones"
         isOneToOne: true
         isSetofReturn: false
       } },
