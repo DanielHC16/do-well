@@ -1,6 +1,8 @@
 import { fireEvent, render, waitFor } from "@testing-library/react-native";
 
 import type { AuthProfile } from "@/features/auth/model/auth-state";
+import type { DiscoveryGateway } from "@/features/discovery/data/discovery-gateway";
+import type { DiscoveryGigCard } from "@/features/discovery/model/discovery-schemas";
 import type { GigGateway } from "@/features/gigs/data/gig-gateway";
 import type { GigRecord } from "@/features/gigs/model/gig-schemas";
 
@@ -30,6 +32,24 @@ jest.mock("@/features/shell/context/useShellMode", () => ({
   }),
 }));
 
+jest.mock("@/features/discovery/data/discovery-gateway", () => ({
+  discoveryGateway: {
+    discoverGigs: jest.fn(async () => []),
+    getPublicGig: jest.fn(async () => null),
+  },
+}));
+
+jest.mock("@/features/gigs/data/gig-gateway", () => ({
+  gigGateway: {
+    createDraft: jest.fn(),
+    updateDraft: jest.fn(),
+    publishGig: jest.fn(),
+    closeGig: jest.fn(),
+    getGigById: jest.fn(),
+    listEmployerGigs: jest.fn(async () => []),
+  },
+}));
+
 const profile: AuthProfile = {
   id: "e0000000-0000-4000-8000-000000000001",
   displayName: "Ari Santos",
@@ -37,7 +57,7 @@ const profile: AuthProfile = {
   onboardingCompletedAt: "2026-10-25T00:00:00.000Z",
 };
 
-const sampleGigs: GigRecord[] = [
+const sampleEmployerGigs: GigRecord[] = [
   {
     id: "a0000000-0000-4000-8000-000000000001",
     employerId: "e0000000-0000-4000-8000-000000000001",
@@ -60,7 +80,28 @@ const sampleGigs: GigRecord[] = [
   },
 ];
 
-function createMockGateway(gigs: GigRecord[] = []): GigGateway {
+const sampleDiscoveryGigs: DiscoveryGigCard[] = [
+  {
+    id: "b0000000-0000-4000-8000-000000000001",
+    employerId: "e0000000-0000-4000-8000-000000000002",
+    title: "Grocery Delivery from Market",
+    description: "Pick up fresh vegetables and fruits from Poblacion market.",
+    category: "delivery",
+    workMode: "onsite",
+    publicArea: "Poblacion, Makati",
+    publicLatitude: 14.56,
+    publicLongitude: 121.03,
+    budgetAmount: 450,
+    currency: "PHP",
+    status: "published",
+    distanceKm: 1.5,
+    publishedAt: "2026-10-25T01:00:00.000Z",
+    createdAt: "2026-10-25T00:00:00.000Z",
+    reasons: ["Within 5 km of you", "Recently posted"],
+  },
+];
+
+function createMockGigGateway(gigs: GigRecord[] = []): GigGateway {
   return {
     createDraft: jest.fn(),
     updateDraft: jest.fn(),
@@ -71,25 +112,99 @@ function createMockGateway(gigs: GigRecord[] = []): GigGateway {
   };
 }
 
+function createMockDiscoveryGateway(
+  gigs: DiscoveryGigCard[] = [],
+): DiscoveryGateway {
+  return {
+    discoverGigs: jest.fn(async () => gigs),
+    getPublicGig: jest.fn(async () => null),
+  };
+}
+
 describe("AuthenticatedHomeScreen", () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it("shows a truthful worker empty state and mode-specific actions", async () => {
+  it("renders worker discovery feed with notice card and reason tags", async () => {
+    const discovery = createMockDiscoveryGateway(sampleDiscoveryGigs);
+
     const view = await render(
-      <AuthenticatedHomeScreen mode="worker" profile={profile} />,
+      <AuthenticatedHomeScreen
+        discovery={discovery}
+        mode="worker"
+        profile={profile}
+      />,
     );
 
-    expect(view.getByText("Good work starts nearby.")).toBeVisible();
-    expect(view.getByText("No live gigs yet")).toBeVisible();
-    expect(
-      view.getByRole("radio", { name: "Show employer workspace" }),
-    ).toBeVisible();
-    expect(view.queryByText("Post a new gig")).toBeNull();
+    await waitFor(() => {
+      expect(view.getByText("NEARBY WORK NOTICEBOARD")).toBeVisible();
+      expect(view.getByText("Grocery Delivery from Market")).toBeVisible();
+      expect(view.getByText("PHP 450")).toBeVisible();
+      expect(view.getByText(/1\.5 km/)).toBeVisible();
+      expect(view.getByText("Within 5 km of you")).toBeVisible();
+      expect(view.getByText("Recently posted")).toBeVisible();
+    });
+  });
+
+  it("filters discovery by work mode (nearby vs remote)", async () => {
+    const discovery = createMockDiscoveryGateway(sampleDiscoveryGigs);
+
+    const view = await render(
+      <AuthenticatedHomeScreen
+        discovery={discovery}
+        mode="worker"
+        profile={profile}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(view.getByText("NEARBY WORK NOTICEBOARD")).toBeVisible();
+    });
+
+    await fireEvent.press(view.getByRole("button", { name: "Remote" }));
+
+    await waitFor(() => {
+      expect(discovery.discoverGigs).toHaveBeenCalledWith(
+        expect.objectContaining({
+          filters: expect.objectContaining({ workMode: "remote" }),
+        }),
+      );
+    });
+  });
+
+  it("navigates to worker gig detail when notice card is pressed", async () => {
+    const discovery = createMockDiscoveryGateway(sampleDiscoveryGigs);
+
+    const view = await render(
+      <AuthenticatedHomeScreen
+        discovery={discovery}
+        mode="worker"
+        profile={profile}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(view.getByText("Grocery Delivery from Market")).toBeVisible();
+    });
+
+    await fireEvent.press(
+      view.getByRole("button", {
+        name: /Grocery Delivery from Market/,
+      }),
+    );
+
+    expect(mockPush).toHaveBeenCalledWith(
+      "/(protected)/worker/gigs/b0000000-0000-4000-8000-000000000001",
+    );
   });
 
   it("switches presentation mode and replaces the workspace route", async () => {
+    const discovery = createMockDiscoveryGateway([]);
     const view = await render(
-      <AuthenticatedHomeScreen mode="worker" profile={profile} />,
+      <AuthenticatedHomeScreen
+        discovery={discovery}
+        mode="worker"
+        profile={profile}
+      />,
     );
 
     await fireEvent.press(
@@ -103,7 +218,7 @@ describe("AuthenticatedHomeScreen", () => {
   });
 
   it("renders employer workspace empty state and links to gig creation", async () => {
-    const gateway = createMockGateway([]);
+    const gateway = createMockGigGateway([]);
     const view = await render(
       <AuthenticatedHomeScreen
         gateway={gateway}
@@ -122,7 +237,7 @@ describe("AuthenticatedHomeScreen", () => {
   });
 
   it("renders employer posted notices and links to detail screen", async () => {
-    const gateway = createMockGateway(sampleGigs);
+    const gateway = createMockGigGateway(sampleEmployerGigs);
     const view = await render(
       <AuthenticatedHomeScreen
         gateway={gateway}

@@ -3,15 +3,27 @@ import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
 
 import type { AuthProfile } from "@/features/auth/model/auth-state";
+import {
+  discoveryGateway,
+  type DiscoveryGateway,
+} from "@/features/discovery/data/discovery-gateway";
+import {
+  DISCOVERY_CATEGORY_OPTIONS,
+  type DiscoveryCategoryFilter,
+  type DiscoveryGigCard,
+  type DiscoveryWorkModeFilter,
+} from "@/features/discovery/model/discovery-schemas";
 import { gigGateway, type GigGateway } from "@/features/gigs/data/gig-gateway";
 import {
   GIG_CATEGORY_LABELS,
+  type GigCategory,
   type GigRecord,
 } from "@/features/gigs/model/gig-schemas";
 import { setupTheme } from "@/features/setup/setupTheme";
@@ -23,17 +35,18 @@ type AuthenticatedHomeScreenProps = Readonly<{
   mode: ShellMode;
   profile: AuthProfile;
   gateway?: GigGateway;
+  discovery?: DiscoveryGateway;
 }>;
 
 const homeContent = {
   worker: {
     title: "Good work starts nearby.",
     subtitle:
-      "Your worker space will collect live neighborhood and remote gigs as marketplace services come online.",
+      "Browse live neighbourhood notices and verified remote tasks in your community.",
     emptyKicker: "OPEN NEAR YOU",
-    emptyTitle: "No live gigs yet",
+    emptyTitle: "No matching notices",
     emptyBody:
-      "The hosted marketplace is connected, but live discovery arrives in the next workflow milestone.",
+      "There are no published notices matching your active filters. Try switching category or work mode.",
   },
   employer: {
     title: "Put useful work in motion.",
@@ -47,6 +60,7 @@ const homeContent = {
 } as const;
 
 export function AuthenticatedHomeScreen({
+  discovery = discoveryGateway,
   gateway = gigGateway,
   mode,
   profile,
@@ -54,8 +68,19 @@ export function AuthenticatedHomeScreen({
   const router = useRouter();
   const copy = homeContent[mode];
 
-  const [gigs, setGigs] = useState<GigRecord[]>([]);
-  const [loadingGigs, setLoadingGigs] = useState(mode === "employer");
+  // Employer state
+  const [employerGigs, setEmployerGigs] = useState<GigRecord[]>([]);
+  const [loadingEmployerGigs, setLoadingEmployerGigs] = useState(
+    mode === "employer",
+  );
+
+  // Worker discovery state
+  const [discoveryGigs, setDiscoveryGigs] = useState<DiscoveryGigCard[]>([]);
+  const [loadingDiscovery, setLoadingDiscovery] = useState(mode === "worker");
+  const [selectedCategory, setSelectedCategory] =
+    useState<DiscoveryCategoryFilter>("all");
+  const [selectedMode, setSelectedMode] =
+    useState<DiscoveryWorkModeFilter>("all");
 
   useEffect(() => {
     if (mode !== "employer" || !profile.id) return;
@@ -64,19 +89,45 @@ export function AuthenticatedHomeScreen({
     gateway
       .listEmployerGigs(profile.id)
       .then((data) => {
-        if (mounted) setGigs(data);
+        if (mounted) setEmployerGigs(data);
       })
       .catch(() => {
-        if (mounted) setGigs([]);
+        if (mounted) setEmployerGigs([]);
       })
       .finally(() => {
-        if (mounted) setLoadingGigs(false);
+        if (mounted) setLoadingEmployerGigs(false);
       });
 
     return () => {
       mounted = false;
     };
   }, [gateway, mode, profile.id]);
+
+  useEffect(() => {
+    if (mode !== "worker") return;
+    let mounted = true;
+
+    discovery
+      .discoverGigs({
+        filters: {
+          category: selectedCategory,
+          workMode: selectedMode,
+        },
+      })
+      .then((data) => {
+        if (mounted) setDiscoveryGigs(data);
+      })
+      .catch(() => {
+        if (mounted) setDiscoveryGigs([]);
+      })
+      .finally(() => {
+        if (mounted) setLoadingDiscovery(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [discovery, mode, selectedCategory, selectedMode]);
 
   return (
     <MarketplaceShell
@@ -93,95 +144,219 @@ export function AuthenticatedHomeScreen({
       </View>
 
       {mode === "employer" ? (
-        <View style={styles.employerHeaderRow}>
-          <Text style={styles.sectionHeader}>YOUR POSTED NOTICES</Text>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => router.push("/(protected)/employer/gigs/new")}
-            style={styles.newGigButton}
-          >
-            <Text style={styles.newGigButtonText}>+ Post a gig</Text>
-          </Pressable>
-        </View>
-      ) : null}
-
-      {mode === "employer" && loadingGigs ? (
-        <View style={styles.loadingRow}>
-          <ActivityIndicator color={setupTheme.color.foreground} />
-          <Text style={styles.loadingText}>Checking your notices...</Text>
-        </View>
-      ) : null}
-
-      {mode === "employer" && !loadingGigs && gigs.length > 0 ? (
-        <View style={styles.gigList}>
-          {gigs.map((item) => (
-            <Pressable
-              accessibilityRole="button"
-              key={item.id}
-              onPress={() =>
-                router.push(`/(protected)/employer/gigs/${item.id}`)
-              }
-              style={styles.gigCard}
-            >
-              <View style={styles.gigBadgeRow}>
-                <Text style={styles.categoryBadge}>
-                  {GIG_CATEGORY_LABELS[item.category] ?? item.category}
-                </Text>
-                <Text
-                  style={[
-                    styles.statusBadge,
-                    item.status === "published"
-                      ? styles.statusPublished
-                      : item.status === "closed"
-                        ? styles.statusClosed
-                        : styles.statusDraft,
-                  ]}
-                >
-                  {item.status.toUpperCase()}
-                </Text>
-              </View>
-
-              <Text style={styles.gigTitle}>{item.title}</Text>
-
-              <View style={styles.gigMetaRow}>
-                <Text style={styles.gigBudget}>
-                  PHP {item.budgetAmount.toLocaleString()}
-                </Text>
-                <Text style={styles.gigArea}>
-                  {item.publicArea ?? item.workMode.toUpperCase()}
-                </Text>
-              </View>
-            </Pressable>
-          ))}
-        </View>
-      ) : null}
-
-      {mode === "worker" ||
-      (mode === "employer" && !loadingGigs && gigs.length === 0) ? (
-        <View style={marketplaceStyles.card}>
-          <Text style={marketplaceStyles.cardKicker}>{copy.emptyKicker}</Text>
-          <Text style={marketplaceStyles.cardTitle}>{copy.emptyTitle}</Text>
-          <Text style={marketplaceStyles.body}>{copy.emptyBody}</Text>
-          {mode === "employer" ? (
+        <>
+          <View style={styles.employerHeaderRow}>
+            <Text style={styles.sectionHeader}>YOUR POSTED NOTICES</Text>
             <Pressable
               accessibilityRole="button"
               onPress={() => router.push("/(protected)/employer/gigs/new")}
-              style={marketplaceStyles.primaryButton}
+              style={styles.newGigButton}
             >
-              <Text style={marketplaceStyles.primaryButtonText}>
-                Post a new gig
-              </Text>
+              <Text style={styles.newGigButtonText}>+ Post a gig</Text>
             </Pressable>
-          ) : (
-            <View
-              accessibilityLabel={`${copy.emptyTitle} is not available yet`}
-              accessibilityRole="summary"
-              style={marketplaceStyles.mutedButton}
-            >
-              <Text style={marketplaceStyles.mutedButtonText}>Coming next</Text>
+          </View>
+
+          {loadingEmployerGigs ? (
+            <View style={styles.loadingRow}>
+              <ActivityIndicator color={setupTheme.color.foreground} />
+              <Text style={styles.loadingText}>Checking your notices...</Text>
             </View>
-          )}
-        </View>
+          ) : null}
+
+          {!loadingEmployerGigs && employerGigs.length > 0 ? (
+            <View style={styles.gigList}>
+              {employerGigs.map((item) => (
+                <Pressable
+                  accessibilityRole="button"
+                  key={item.id}
+                  onPress={() =>
+                    router.push(`/(protected)/employer/gigs/${item.id}`)
+                  }
+                  style={styles.gigCard}
+                >
+                  <View style={styles.gigBadgeRow}>
+                    <Text style={styles.categoryBadge}>
+                      {GIG_CATEGORY_LABELS[item.category] ?? item.category}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.statusBadge,
+                        item.status === "published"
+                          ? styles.statusPublished
+                          : item.status === "closed"
+                            ? styles.statusClosed
+                            : styles.statusDraft,
+                      ]}
+                    >
+                      {item.status.toUpperCase()}
+                    </Text>
+                  </View>
+
+                  <Text style={styles.gigTitle}>{item.title}</Text>
+
+                  <View style={styles.gigMetaRow}>
+                    <Text style={styles.gigBudget}>
+                      PHP {item.budgetAmount.toLocaleString()}
+                    </Text>
+                    <Text style={styles.gigArea}>
+                      {item.publicArea ?? item.workMode.toUpperCase()}
+                    </Text>
+                  </View>
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
+
+          {!loadingEmployerGigs && employerGigs.length === 0 ? (
+            <View style={marketplaceStyles.card}>
+              <Text style={marketplaceStyles.cardKicker}>
+                {copy.emptyKicker}
+              </Text>
+              <Text style={marketplaceStyles.cardTitle}>{copy.emptyTitle}</Text>
+              <Text style={marketplaceStyles.body}>{copy.emptyBody}</Text>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => router.push("/(protected)/employer/gigs/new")}
+                style={marketplaceStyles.primaryButton}
+              >
+                <Text style={marketplaceStyles.primaryButtonText}>
+                  Post a new gig
+                </Text>
+              </Pressable>
+            </View>
+          ) : null}
+        </>
+      ) : null}
+
+      {mode === "worker" ? (
+        <>
+          <Text style={styles.sectionHeader}>NEARBY WORK NOTICEBOARD</Text>
+          <View style={styles.filterSection}>
+            <View style={styles.modeFilterRow}>
+              {(["all", "onsite", "remote"] as const).map((m) => (
+                <Pressable
+                  accessibilityRole="button"
+                  key={m}
+                  onPress={() => setSelectedMode(m)}
+                  style={[
+                    styles.modeFilterButton,
+                    selectedMode === m && styles.modeFilterButtonActive,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.modeFilterText,
+                      selectedMode === m && styles.modeFilterTextActive,
+                    ]}
+                  >
+                    {m === "all"
+                      ? "All Modes"
+                      : m === "onsite"
+                        ? "Nearby"
+                        : "Remote"}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.categoryScroll}
+            >
+              {DISCOVERY_CATEGORY_OPTIONS.map((cat) => {
+                const label =
+                  cat === "all"
+                    ? "All Categories"
+                    : (GIG_CATEGORY_LABELS[cat as GigCategory] ?? cat);
+                const isSelected = selectedCategory === cat;
+                return (
+                  <Pressable
+                    accessibilityRole="button"
+                    key={cat}
+                    onPress={() => setSelectedCategory(cat)}
+                    style={[
+                      styles.categoryPill,
+                      isSelected && styles.categoryPillActive,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.categoryPillText,
+                        isSelected && styles.categoryPillTextActive,
+                      ]}
+                    >
+                      {label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
+
+          {loadingDiscovery ? (
+            <View style={styles.loadingRow}>
+              <ActivityIndicator color={setupTheme.color.foreground} />
+              <Text style={styles.loadingText}>Searching notices...</Text>
+            </View>
+          ) : null}
+
+          {!loadingDiscovery && discoveryGigs.length > 0 ? (
+            <View style={styles.gigList}>
+              {discoveryGigs.map((item) => (
+                <Pressable
+                  accessibilityRole="button"
+                  key={item.id}
+                  onPress={() =>
+                    router.push(`/(protected)/worker/gigs/${item.id}`)
+                  }
+                  style={styles.gigCard}
+                >
+                  <View style={styles.gigBadgeRow}>
+                    <Text style={styles.categoryBadge}>
+                      {GIG_CATEGORY_LABELS[item.category] ?? item.category}
+                    </Text>
+                    <Text style={styles.workModeChip}>
+                      {item.workMode.toUpperCase()}
+                    </Text>
+                  </View>
+
+                  <Text style={styles.gigTitle}>{item.title}</Text>
+
+                  <View style={styles.gigMetaRow}>
+                    <Text style={styles.gigBudget}>
+                      PHP {item.budgetAmount.toLocaleString()}
+                    </Text>
+                    <Text style={styles.gigArea}>
+                      {item.publicArea ?? "Remote"}
+                      {item.distanceKm ? ` · ${item.distanceKm} km` : ""}
+                    </Text>
+                  </View>
+
+                  {item.reasons.length > 0 ? (
+                    <View style={styles.reasonsRow}>
+                      {item.reasons.map((reason) => (
+                        <View key={reason} style={styles.reasonChip}>
+                          <Text style={styles.reasonChipText}>{reason}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  ) : null}
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
+
+          {!loadingDiscovery && discoveryGigs.length === 0 ? (
+            <View style={marketplaceStyles.card}>
+              <Text style={marketplaceStyles.cardKicker}>
+                {copy.emptyKicker}
+              </Text>
+              <Text style={marketplaceStyles.cardTitle}>{copy.emptyTitle}</Text>
+              <Text style={marketplaceStyles.body}>{copy.emptyBody}</Text>
+            </View>
+          ) : null}
+        </>
       ) : null}
 
       <View style={styles.safetyNote}>
@@ -224,6 +399,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
+    marginTop: setupTheme.spacing.compact,
   },
   sectionHeader: {
     color: setupTheme.color.foreground,
@@ -234,26 +410,84 @@ const styles = StyleSheet.create({
   newGigButton: {
     backgroundColor: setupTheme.color.highlight,
     borderColor: setupTheme.color.foreground,
-    borderRadius: setupTheme.radius.control,
+    borderRadius: setupTheme.radius.status,
     borderWidth: 2,
-    paddingHorizontal: setupTheme.spacing.section,
-    paddingVertical: setupTheme.spacing.compact,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
   newGigButtonText: {
     color: setupTheme.color.foreground,
     fontSize: setupTheme.type.caption,
     fontWeight: "900",
   },
+  filterSection: {
+    gap: setupTheme.spacing.compact,
+    marginTop: setupTheme.spacing.compact,
+  },
+  modeFilterRow: {
+    flexDirection: "row",
+    gap: setupTheme.spacing.compact,
+  },
+  modeFilterButton: {
+    backgroundColor: setupTheme.color.surface,
+    borderColor: setupTheme.color.border,
+    borderRadius: setupTheme.radius.status,
+    borderWidth: 1.5,
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: "center",
+  },
+  modeFilterButtonActive: {
+    backgroundColor: setupTheme.color.highlight,
+    borderColor: setupTheme.color.foreground,
+    borderWidth: 2,
+  },
+  modeFilterText: {
+    color: setupTheme.color.muted,
+    fontSize: setupTheme.type.caption,
+    fontWeight: "800",
+  },
+  modeFilterTextActive: {
+    color: setupTheme.color.foreground,
+    fontWeight: "900",
+  },
+  categoryScroll: {
+    gap: 8,
+    paddingVertical: 4,
+  },
+  categoryPill: {
+    backgroundColor: setupTheme.color.surface,
+    borderColor: setupTheme.color.border,
+    borderRadius: setupTheme.radius.status,
+    borderWidth: 1.5,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  categoryPillActive: {
+    backgroundColor: setupTheme.color.highlightSurface,
+    borderColor: setupTheme.color.foreground,
+    borderWidth: 2,
+  },
+  categoryPillText: {
+    color: setupTheme.color.muted,
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  categoryPillTextActive: {
+    color: setupTheme.color.foreground,
+    fontWeight: "900",
+  },
   loadingRow: {
     alignItems: "center",
     flexDirection: "row",
     gap: setupTheme.spacing.compact,
-    paddingVertical: setupTheme.spacing.compact,
+    justifyContent: "center",
+    paddingVertical: setupTheme.spacing.section,
   },
   loadingText: {
     color: setupTheme.color.muted,
-    fontSize: setupTheme.type.caption,
-    fontWeight: "700",
+    fontSize: setupTheme.type.body,
+    fontWeight: "600",
   },
   gigList: {
     gap: setupTheme.spacing.compact,
@@ -265,7 +499,7 @@ const styles = StyleSheet.create({
     borderRadius: setupTheme.radius.card,
     borderWidth: 2,
     gap: setupTheme.spacing.compact,
-    padding: setupTheme.spacing.section,
+    padding: setupTheme.spacing.content,
   },
   gigBadgeRow: {
     alignItems: "center",
@@ -273,42 +507,55 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   categoryBadge: {
-    backgroundColor: setupTheme.color.surfaceMuted,
-    borderColor: setupTheme.color.border,
+    backgroundColor: setupTheme.color.highlightSurface,
+    borderColor: setupTheme.color.foreground,
     borderRadius: setupTheme.radius.status,
     borderWidth: 1,
     color: setupTheme.color.foreground,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: "800",
     paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingVertical: 3,
   },
   statusBadge: {
     borderRadius: setupTheme.radius.status,
     borderWidth: 1,
     fontSize: 10,
     fontWeight: "900",
-    paddingHorizontal: 8,
+    letterSpacing: 0.6,
+    paddingHorizontal: 6,
     paddingVertical: 2,
   },
   statusDraft: {
-    backgroundColor: setupTheme.color.highlightSurface,
-    borderColor: setupTheme.color.foreground,
-    color: setupTheme.color.foreground,
-  },
-  statusPublished: {
-    backgroundColor: setupTheme.color.readySurface,
-    borderColor: setupTheme.color.ready,
-    color: setupTheme.color.ready,
-  },
-  statusClosed: {
     backgroundColor: setupTheme.color.surfaceMuted,
     borderColor: setupTheme.color.border,
     color: setupTheme.color.muted,
   },
+  statusPublished: {
+    backgroundColor: setupTheme.color.highlightSurface,
+    borderColor: setupTheme.color.foreground,
+    color: setupTheme.color.foreground,
+  },
+  statusClosed: {
+    backgroundColor: setupTheme.color.dangerSurface,
+    borderColor: setupTheme.color.danger,
+    color: setupTheme.color.danger,
+  },
+  workModeChip: {
+    backgroundColor: setupTheme.color.surfaceMuted,
+    borderColor: setupTheme.color.border,
+    borderRadius: setupTheme.radius.status,
+    borderWidth: 1,
+    color: setupTheme.color.muted,
+    fontSize: 10,
+    fontWeight: "800",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
   gigTitle: {
     color: setupTheme.color.foreground,
     fontSize: setupTheme.type.heading,
+    lineHeight: 26,
     fontWeight: "900",
   },
   gigMetaRow: {
@@ -326,23 +573,44 @@ const styles = StyleSheet.create({
     fontSize: setupTheme.type.caption,
     fontWeight: "700",
   },
+  reasonsRow: {
+    borderTopColor: setupTheme.color.borderSoft,
+    borderTopWidth: 1,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    paddingTop: 6,
+  },
+  reasonChip: {
+    backgroundColor: setupTheme.color.surfaceMuted,
+    borderColor: setupTheme.color.borderSoft,
+    borderRadius: 4,
+    borderWidth: 1,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  reasonChipText: {
+    color: setupTheme.color.foreground,
+    fontSize: 10,
+    fontWeight: "700",
+  },
   safetyNote: {
-    backgroundColor: setupTheme.color.readySurface,
-    borderColor: setupTheme.color.ready,
+    backgroundColor: setupTheme.color.surfaceMuted,
+    borderColor: setupTheme.color.borderSoft,
     borderRadius: setupTheme.radius.control,
     borderWidth: 1,
-    gap: setupTheme.spacing.compact,
-    padding: setupTheme.spacing.section,
+    gap: setupTheme.spacing.tight,
+    padding: setupTheme.spacing.compact,
   },
   safetyKicker: {
-    color: setupTheme.color.ready,
-    fontSize: setupTheme.type.label,
+    color: setupTheme.color.accent,
+    fontSize: 10,
     fontWeight: "900",
     letterSpacing: 0.8,
   },
   safetyText: {
-    color: setupTheme.color.foreground,
-    fontSize: setupTheme.type.body,
-    lineHeight: 24,
+    color: setupTheme.color.muted,
+    fontSize: setupTheme.type.caption,
+    lineHeight: 18,
   },
 });

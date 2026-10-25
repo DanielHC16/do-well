@@ -11,6 +11,7 @@ import EmployerNewGigRoute from "../employer/gigs/new";
 import ProtectedIndexRoute from "../index";
 import ProfileRoute from "../profile";
 import WorkerHomeScreen from "../worker";
+import WorkerGigDetailRoute from "../worker/gigs/[gigId]";
 
 const mockReplace = jest.fn();
 const mockPush = jest.fn();
@@ -39,6 +40,30 @@ jest.mock("@/features/auth/context/useAuth", () => ({
 
 jest.mock("@/features/shell/context/useShellMode", () => ({
   useShellMode: jest.fn(),
+}));
+
+jest.mock("@/features/discovery/data/discovery-gateway", () => ({
+  discoveryGateway: {
+    discoverGigs: jest.fn(async () => []),
+    getPublicGig: jest.fn(async () => ({
+      id: "test-gig-id",
+      employerId: "employer-1",
+      title: "Worker Route Gig",
+      description: "Route test gig description for worker view.",
+      category: "errands",
+      workMode: "onsite",
+      publicArea: "Quezon City",
+      publicLatitude: 14.65,
+      publicLongitude: 121.05,
+      budgetAmount: 500,
+      currency: "PHP",
+      status: "published",
+      distanceKm: 3.2,
+      publishedAt: "2026-10-25T01:00:00.000Z",
+      createdAt: "2026-10-25T00:00:00.000Z",
+      reasons: ["Within 5 km of you"],
+    })),
+  },
 }));
 
 jest.mock("@/features/gigs/data/gig-gateway", () => ({
@@ -163,6 +188,14 @@ describe("Protected route components", () => {
     await waitFor(() => {
       expect(screen.getByText("Test Route Gig")).toBeVisible();
       expect(screen.getByText("STATUS: DRAFT")).toBeVisible();
+    });
+  });
+
+  it("WorkerGigDetailRoute renders worker gig details screen", async () => {
+    await render(<WorkerGigDetailRoute />);
+    await waitFor(() => {
+      expect(screen.getByText("Worker Route Gig")).toBeVisible();
+      expect(screen.getByText("STATUS: PUBLISHED")).toBeVisible();
     });
   });
 

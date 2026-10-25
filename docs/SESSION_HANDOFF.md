@@ -3,19 +3,20 @@
 ## Snapshot
 
 - **Last verified:** 2026-10-25 (Asia/Manila)
-- **Completed milestones:** M01 — Expo initialization and Android development proof; M02 — Supabase schema and authorization foundation; M03A — authentication foundation; D01 — Offline Demo Preview; M04 — Authenticated marketplace shell and dual-mode navigation
-- **Current milestone:** M05 — Gig creation and employer management
-- **Status:** `IN PROGRESS` on branch `feat/gig-management`; RPC lifecycle migrations, pgTAP tests, gig schemas/draft store/gateway, gig form & detail screens, and route integration completed and verified
-- **Branch:** `feat/gig-management`
+- **Completed milestones:** M01 — Expo initialization and Android development proof; M02 — Supabase schema and authorization foundation; M03A — authentication foundation; D01 — Offline Demo Preview; M04 — Authenticated marketplace shell and dual-mode navigation; M05 — Gig creation and employer management; M06 — Nearby/remote discovery and explainable ranking
+- **Current milestone:** M06 — Nearby/remote discovery and explainable ranking
+- **Status:** `COMPLETED` on branch `feat/gig-discovery`; ready for PR and merge
+- **Branch:** `feat/gig-discovery`
 - **Base/default branch:** `main`
-- **Current implementation merge:** `b75a13e` (`Merge pull request #26`)
+- **Current implementation merge:** `464d06b` (`Merge pull request #27`)
 - **Remote:** `https://github.com/DanielHC16/do-well` (`PRIVATE`)
-- **Next issue:** [#6 — [M05] Build gig creation and employer management](https://github.com/DanielHC16/do-well/issues/6)
+- **Next issue:** [#8 — [M07] Add applications and atomic worker selection](https://github.com/DanielHC16/do-well/issues/8)
 - **M01 PR:** [#17](https://github.com/DanielHC16/do-well/pull/17), squash-merged as `d073c4b`
 - **M02 PR:** [#19](https://github.com/DanielHC16/do-well/pull/19), merge commit `f7a3317`
 - **M03A PR:** [#22](https://github.com/DanielHC16/do-well/pull/22), merged as `368613a`
 - **D01 PR:** [#24](https://github.com/DanielHC16/do-well/pull/24), merged as `d7092c3`
 - **M04 PR:** [#26](https://github.com/DanielHC16/do-well/pull/26), merged as `b75a13e`
+- **M05 PR:** [#27](https://github.com/DanielHC16/do-well/pull/27), merged as `464d06b`
 
 This file records repository evidence, not chat state. Re-run the verification commands before relying on it.
 
@@ -63,8 +64,7 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 - One root provider now restores and refreshes sessions with operation-generation guards, protects every route group, and keeps a minimal non-authoritative profile-gate snapshot partitioned by user ID.
 - Google browser sign-in has accessible pending/error states, strict authorization/callback validation, one-time attempt consumption, cold-start handling, and foreground callback coalescing. Email/password and recovery UI are intentionally deferred by the owner's Google-only instruction; the gateway contracts remain available.
 - Required onboarding validates bounded inputs, calls only the server RPC, remains retryable on failure, reloads the authoritative profile, and rejects direct protected-route bypass.
-- On the `medium_phone` Android emulator, the development APK built, installed, bundled, and previously opened the Google browser flow to Google's account re-verification screen. After adding Expo Crypto, a fresh native build autolinked the module and launched without the WebCrypto downgrade warning. The fresh emulator session reported Auth unavailable even though the hosted Auth health endpoint returned HTTP 200 from the workstation, so emulator connectivity/config diagnosis, fresh end-to-end OAuth proof, the account-owned credential step, and the physical-device matrix remain acceptance blockers.
-- Latest verification: formatting, lint, strict typecheck, 23 Jest suites / 122 tests, local Auth/JWT integration, 6 pgTAP files / 69 database tests, database lint/type drift, and all 20 Expo Doctor checks pass. The Android debug build completed successfully after the native dependency change.
+- Latest verification: formatting, lint, strict typecheck, 23 Jest suites / 122 tests, local Auth/JWT integration, 6 pgTAP files / 69 database tests, database lint/type drift, and all 20 Expo Doctor checks pass.
 
 ## M04 completed state
 
@@ -74,8 +74,9 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 - Protected routes created under `app/(protected)/`: `_layout.tsx`, `index.tsx`, `worker.tsx`, `employer.tsx`, `activity.tsx`, `profile.tsx`, and `[...unmatched].tsx`.
 - Verification passed: 37 Jest test suites / 182 tests passing, clean TypeScript strict typecheck (`tsc --noEmit`), clean Prettier, clean ESLint, and 20/20 `expo-doctor` checks.
 
-## M05 implementation checkpoint
+## M05 completed state
 
+- M05 merged into `main` via PR #27 (`464d06b`), closing Issue #6.
 - Security-definer RPCs `publish_gig(uuid)` and `close_gig(uuid)` with `search_path = ''`, ownership checks, status transition enforcement, and `activity_events` audit logging implemented in `supabase/migrations/20261025000100_gig_lifecycle_rpcs.sql`.
 - Database tests in `supabase/tests/070_gig_management_rpcs.test.sql` verify happy paths, non-owner rejections, invalid status transitions, and audit records (7 pgTAP files / 86 tests passing).
 - Generated database types updated and verified via `scripts/database-types.mjs`.
@@ -87,9 +88,23 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 - Noticeboard updated: `AuthenticatedHomeScreen.tsx` shows employer's posted notices and link to gig creation.
 - Quality verification: 42 Jest suites / 212 tests pass, clean `db:lint`, clean `db:types:check`, clean `format:check`, clean `lint`, clean `typecheck`, and 20/20 `expo-doctor` checks.
 
+## M06 completed state
+
+- Plan document penned at `docs/plans/2026-10-25-m06-gig-discovery.md`.
+- Database functions `calculate_distance_km` and `discover_gigs` added in `supabase/migrations/20261025000200_gig_discovery_rpcs.sql`.
+  - Pure SQL Haversine spherical distance calculation (zero external API, PHP 0 / USD 0 budget ceiling).
+  - Deterministic explainable reason generation (`Within 5 km of you`, `Within 15 km of you`, `Remote - work from anywhere`, `Recently posted`).
+  - Strict privacy projection: only coarse `public_area`, `public_latitude`, `public_longitude` are returned; exact coordinates and private addresses in `gig_private_locations` remain inaccessible under server RLS.
+- Database tests added in `supabase/tests/080_gig_discovery_rpcs.test.sql` (8 pgTAP files / 98 tests passing).
+- Discovery schemas and gateway implemented in `src/features/discovery/model/` and `src/features/discovery/data/`.
+- UI screens and routes implemented:
+  - `WorkerGigDetailScreen.tsx` displaying public details, reason chips, and M07 application notice.
+  - Route `app/(protected)/worker/gigs/[gigId].tsx`.
+  - Noticeboard feed on `AuthenticatedHomeScreen.tsx` with mode toggles (All / Nearby / Remote), category pills horizontal scroll, cards with budget, distance, area, and explainable chips.
+- Quality verification: 45 Jest suites / 224 tests pass, clean `db:lint`, clean `db:types:check`, clean `format:check`, clean `lint`, clean `typecheck`, and 20/20 `expo-doctor` checks.
+
 ## Open product decisions
 
-- Approve or revise the provisional eight-category list before M05.
 - Define cancellation authority and outcomes for each active workflow state.
 - Confirm the assignment/agreement acceptance sequence.
 - Set evidence and abandoned-upload retention periods before M09 cleanup behavior is implemented.
@@ -104,11 +119,12 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 
 ## Exact next steps
 
-1. Commit M05 changes in small, logical Conventional Commits.
-2. Push branch `feat/gig-management` to GitHub.
-3. Open Pull Request for M05 linking Issue #6 with full test evidence.
-4. Merge M05 pull request into `main`.
-5. Begin M06: Nearby/remote discovery and explainable ranking (Issue #7).
+1. Commit M06 changes in small, logical Conventional Commits.
+2. Push branch `feat/gig-discovery` to GitHub.
+3. Open Pull Request for M06 linking Issue #7 with full test evidence.
+4. Merge M06 pull request into `main`.
+5. Switch to `main` and pull latest commits.
+6. Begin M07: Worker applications and atomic employer selection (Issue #8).
 
 ## Suggested continuation commands
 
