@@ -3,18 +3,19 @@
 ## Snapshot
 
 - **Last verified:** 2026-10-25 (Asia/Manila)
-- **Completed milestones:** M01 — Expo initialization and Android development proof; M02 — Supabase schema and authorization foundation; M03A — authentication foundation; D01 — Offline Demo Preview
-- **Current milestone:** M04 — Authenticated marketplace shell and dual-mode navigation
-- **Status:** `IN PROGRESS` on branch `feat/app-shell`; shell components, mode store, context boundaries, protected routes, and unit/guard tests implemented and verified
-- **Branch:** `feat/app-shell`
+- **Completed milestones:** M01 — Expo initialization and Android development proof; M02 — Supabase schema and authorization foundation; M03A — authentication foundation; D01 — Offline Demo Preview; M04 — Authenticated marketplace shell and dual-mode navigation
+- **Current milestone:** M05 — Gig creation and employer management
+- **Status:** `IN PROGRESS` on branch `feat/gig-management`; RPC lifecycle migrations, pgTAP tests, gig schemas/draft store/gateway, gig form & detail screens, and route integration completed and verified
+- **Branch:** `feat/gig-management`
 - **Base/default branch:** `main`
-- **Current implementation merge:** `d7092c3` (`Merge pull request #24`)
+- **Current implementation merge:** `b75a13e` (`Merge pull request #26`)
 - **Remote:** `https://github.com/DanielHC16/do-well` (`PRIVATE`)
-- **Next issue:** [#5 — M04 Add authenticated shell and dual-mode navigation](https://github.com/DanielHC16/do-well/issues/5)
+- **Next issue:** [#6 — [M05] Build gig creation and employer management](https://github.com/DanielHC16/do-well/issues/6)
 - **M01 PR:** [#17](https://github.com/DanielHC16/do-well/pull/17), squash-merged as `d073c4b`
 - **M02 PR:** [#19](https://github.com/DanielHC16/do-well/pull/19), merge commit `f7a3317`
 - **M03A PR:** [#22](https://github.com/DanielHC16/do-well/pull/22), merged as `368613a`
 - **D01 PR:** [#24](https://github.com/DanielHC16/do-well/pull/24), merged as `d7092c3`
+- **M04 PR:** [#26](https://github.com/DanielHC16/do-well/pull/26), merged as `b75a13e`
 
 This file records repository evidence, not chat state. Re-run the verification commands before relying on it.
 
@@ -65,12 +66,26 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 - On the `medium_phone` Android emulator, the development APK built, installed, bundled, and previously opened the Google browser flow to Google's account re-verification screen. After adding Expo Crypto, a fresh native build autolinked the module and launched without the WebCrypto downgrade warning. The fresh emulator session reported Auth unavailable even though the hosted Auth health endpoint returned HTTP 200 from the workstation, so emulator connectivity/config diagnosis, fresh end-to-end OAuth proof, the account-owned credential step, and the physical-device matrix remain acceptance blockers.
 - Latest verification: formatting, lint, strict typecheck, 23 Jest suites / 122 tests, local Auth/JWT integration, 6 pgTAP files / 69 database tests, database lint/type drift, and all 20 Expo Doctor checks pass. The Android debug build completed successfully after the native dependency change.
 
-## M04 implementation state
+## M04 completed state
 
+- M04 merged into `main` via PR #26 (`b75a13e`).
 - Shell mode schema, AsyncStorage per-user mode persistence, context provider, and retry boundaries implemented in `src/features/shell/`.
 - Noticeboard marketplace shell with top bar brand strip, dual-mode switcher (`worker` vs `employer`), and bottom navigation tab list (`Home`, `Activity`, `Profile`).
 - Protected routes created under `app/(protected)/`: `_layout.tsx`, `index.tsx`, `worker.tsx`, `employer.tsx`, `activity.tsx`, `profile.tsx`, and `[...unmatched].tsx`.
 - Verification passed: 37 Jest test suites / 182 tests passing, clean TypeScript strict typecheck (`tsc --noEmit`), clean Prettier, clean ESLint, and 20/20 `expo-doctor` checks.
+
+## M05 implementation checkpoint
+
+- Security-definer RPCs `publish_gig(uuid)` and `close_gig(uuid)` with `search_path = ''`, ownership checks, status transition enforcement, and `activity_events` audit logging implemented in `supabase/migrations/20261025000100_gig_lifecycle_rpcs.sql`.
+- Database tests in `supabase/tests/070_gig_management_rpcs.test.sql` verify happy paths, non-owner rejections, invalid status transitions, and audit records (7 pgTAP files / 86 tests passing).
+- Generated database types updated and verified via `scripts/database-types.mjs`.
+- Domain validation in `src/features/gigs/model/gig-schemas.ts` covers 8 categories, 3 work modes, budget rules, and area constraints.
+- Local draft persistence in `src/features/gigs/data/gig-draft-store.ts` via AsyncStorage.
+- Gateway service in `src/features/gigs/data/gig-gateway.ts` handles draft CRUD, RPC execution, and type-safe row mapping.
+- Screens implemented: `GigFormScreen.tsx` with draft loading and AI brief disclaimer (deferred to M10), and `EmployerGigDetailScreen.tsx` with publish and close actions.
+- Navigation routes wired: `app/(protected)/employer/gigs/new.tsx` and `app/(protected)/employer/gigs/[gigId].tsx`.
+- Noticeboard updated: `AuthenticatedHomeScreen.tsx` shows employer's posted notices and link to gig creation.
+- Quality verification: 42 Jest suites / 212 tests pass, clean `db:lint`, clean `db:types:check`, clean `format:check`, clean `lint`, clean `typecheck`, and 20/20 `expo-doctor` checks.
 
 ## Open product decisions
 
@@ -89,10 +104,11 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 
 ## Exact next steps
 
-1. Review and commit M04 changes using Conventional Commits.
-2. Open Pull Request for M04 linking Issue #5 with verification and test evidence.
-3. Merge M04 after approval.
-4. Begin M05: Gig creation and employer management with category allowlist.
+1. Commit M05 changes in small, logical Conventional Commits.
+2. Push branch `feat/gig-management` to GitHub.
+3. Open Pull Request for M05 linking Issue #6 with full test evidence.
+4. Merge M05 pull request into `main`.
+5. Begin M06: Nearby/remote discovery and explainable ranking (Issue #7).
 
 ## Suggested continuation commands
 

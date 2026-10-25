@@ -61,8 +61,8 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 | M03A      | Authentication and profile foundation                                     | **COMPLETED**   | [#4](https://github.com/DanielHC16/do-well/issues/4)   |
 | M03B      | Hosted auth and physical-device acceptance                                | **DEFERRED**    | [#4](https://github.com/DanielHC16/do-well/issues/4)   |
 | D01       | Offline Demo Preview: complete local gig lifecycle                        | **COMPLETED**   | [#23](https://github.com/DanielHC16/do-well/issues/23)  |
-| M04       | Shared shell and worker/employer navigation                               | **IN PROGRESS** | [#5](https://github.com/DanielHC16/do-well/issues/5)   |
-| M05       | Gig creation and employer management                                      | **NOT STARTED** | [#6](https://github.com/DanielHC16/do-well/issues/6)   |
+| M04       | Shared shell and worker/employer navigation                               | **COMPLETED**   | [#5](https://github.com/DanielHC16/do-well/issues/5)   |
+| M05       | Gig creation and employer management                                      | **IN PROGRESS** | [#6](https://github.com/DanielHC16/do-well/issues/6)   |
 | M06       | Nearby/remote discovery and explainable filtering                         | **NOT STARTED** | [#7](https://github.com/DanielHC16/do-well/issues/7)   |
 | M07       | Worker applications and employer selection                                | **NOT STARTED** | [#8](https://github.com/DanielHC16/do-well/issues/8)   |
 | M08       | Agreements, milestones, activity, state transitions                       | **NOT STARTED** | [#9](https://github.com/DanielHC16/do-well/issues/9)   |
