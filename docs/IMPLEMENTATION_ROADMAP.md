@@ -62,8 +62,8 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 | M03B      | Hosted auth and physical-device acceptance                                | **DEFERRED**    | [#4](https://github.com/DanielHC16/do-well/issues/4)   |
 | D01       | Offline Demo Preview: complete local gig lifecycle                        | **COMPLETED**   | [#23](https://github.com/DanielHC16/do-well/issues/23)  |
 | M04       | Shared shell and worker/employer navigation                               | **COMPLETED**   | [#5](https://github.com/DanielHC16/do-well/issues/5)   |
-| M05       | Gig creation and employer management                                      | **IN PROGRESS** | [#6](https://github.com/DanielHC16/do-well/issues/6)   |
-| M06       | Nearby/remote discovery and explainable filtering                         | **NOT STARTED** | [#7](https://github.com/DanielHC16/do-well/issues/7)   |
+| M05       | Gig creation and employer management                                      | **COMPLETED**   | [#6](https://github.com/DanielHC16/do-well/issues/6)   |
+| M06       | Nearby/remote discovery and explainable filtering                         | **COMPLETED**   | [#7](https://github.com/DanielHC16/do-well/issues/7)   |
 | M07       | Worker applications and employer selection                                | **NOT STARTED** | [#8](https://github.com/DanielHC16/do-well/issues/8)   |
 | M08       | Agreements, milestones, activity, state transitions                       | **NOT STARTED** | [#9](https://github.com/DanielHC16/do-well/issues/9)   |
 | M09       | Submission, evidence metadata, revision and approval                      | **NOT STARTED** | [#10](https://github.com/DanielHC16/do-well/issues/10) |
@@ -162,7 +162,7 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 
 ## M05 — Build gig creation and employer management
 
-**Status:** `NOT STARTED`
+**Status:** `COMPLETED` after review and merge of [PR #27](https://github.com/DanielHC16/do-well/pull/27) (`464d06b`) on 2026-10-25.
 
 - **Goal:** let employers draft, validate, publish, edit, close, and review one-worker gigs.
 - **Dependencies:** M04; M02 gig schema/RLS; approved category and compensation rules.
@@ -177,7 +177,7 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 
 ## M06 — Deliver nearby/remote discovery and explainable ranking
 
-**Status:** `NOT STARTED`
+**Status:** `COMPLETED` on `feat/gig-discovery`; ready for PR and merge.
 
 - **Goal:** help workers find published gigs with transparent list filtering that does not require a map.
 - **Dependencies:** M05; worker preference foundation from M02; pilot radius decision before final acceptance. Location permission itself is implemented in M11, so M06 uses stored/manual locality/coordinates.
