@@ -4,6 +4,7 @@
 **Repository:** `DanielHC16/do-well` (private)  
 **Default branch:** `main`  
 **Audited commit:** `b5ace38` (latest `main`)
+**Current execution branch:** `chore/section-11-verification` (`71146ef` plus pending handoff evidence)
 **Current phase:** Productization implementation: zero-secret CI workflow, server-owned admin capabilities, Settings, functional moderation console, dual Google/email authentication, idempotent operator provisioning, and end-to-end multi-principal HTTP workflow suite implemented and verified across 92 Jest test suites (538 tests), 2 HTTP integration suites, and 13 database test suites (253 pgTAP tests).
 
 This is the first document a new developer or AI agent should read. It records the difference between what exists in source code, what has been locally verified, and what is actually available in the hosted environment. Do not infer live readiness from old milestone labels.
@@ -71,6 +72,8 @@ The Section 11 execution attempt on 2026-10-26 produced the following current ev
 - `npm run test:auth:integration` — blocked by the same unavailable local Supabase environment.
 - Hosted migration inspection and dry-run — blocked because `.supabase` project linkage is absent and `.env.local` is not present.
 - Hosted migration apply and operator provisioning — **not run**; no hosted mutation was attempted without verified operator credentials.
+- Android device preparation — the existing Android SDK and configured `Pixel` AVD were used; the emulator booted as `emulator-5554`.
+- Native APK installation — blocked by Windows CMake/Ninja path-length failures in React Native codegen. CMake 3.31.6 was installed into the local SDK and an arm64 release build was retried from progressively shorter temporary paths, but the generated native build still failed before producing an installable APK. No tracked source was changed by these attempts.
 
 The previously recorded historical verification below remains valid for the commit on which it was run; it must not be interpreted as fresh hosted-environment evidence.
 
@@ -350,6 +353,7 @@ The exact technical sequence for the next agent is:
 4. **Physical Device Build & Release**:
    - Run `npx expo export --platform android`.
    - Build and verify production APK on Android physical device/emulator per `docs/COMPETITION_BUILD.md`.
+   - If the Windows native build hits the React Native CMake path-length limit, use a real short checkout path (not a junction) or build on a host with Windows long-path support enabled; the current emulator is available but has no installed app yet.
 
 ## 12. Security and operations reminders
 

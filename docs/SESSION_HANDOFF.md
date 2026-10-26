@@ -256,7 +256,7 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 
 - Database migration parity and function overloading resolved in `supabase/migrations/20261026000100_admin_roles_and_reporting.sql`.
 - Private Storage policy `submission_evidence_insert_worker` hardened to support both raw test fixtures and Supabase Storage API direct HTTP uploads (`metadata ->> 'size'` and `metadata ->> 'contentLength'`).
-- Operator demo provisioning CLI tool implemented at `scripts/provision-demo-environment.cjs` and `scripts/provision-demo-environment.mjs`, accompanied by 11 unit tests in `scripts/__tests__/provision-demo-environment.test.js`. Supports `--dry-run`, `--apply`, `--target local|hosted`, and custom account configurations while strictly respecting server constraints and writing sanitized summaries to `.codex-artifacts/demo-accounts.json`.
+- Operator demo provisioning CLI tool implemented at `scripts/provision-demo-environment.cjs` and `scripts/provision-demo-environment.mjs`, accompanied by 11 unit tests in `scripts/__tests__/provision-demo-environment.test.js`. Supports `--dry-run`, `--apply`, `--local`, `--hosted`, and custom account configurations while strictly respecting server constraints and writing sanitized summaries to `.codex-artifacts/demo-accounts.json`.
 - Operator hosted deployment manual authored at `docs/HOSTED_DEMO_SETUP.md`.
 - Comprehensive multi-principal production workflow integration test implemented at `tests/integration/production-workflow-http.test.ts`. Executes the complete 14-step journey over real HTTP REST and RPC boundaries (signup, onboarding, gig creation, discovery, application, selection, agreement, milestone, storage upload, finalization, approval, report creation, and admin resolution) with non-admin security negative checks and clean teardown.
 - Verification passed: 92 Jest test suites / 538 tests passing, 2 integration test suites passing, 13 pgTAP database test suites / 253 tests passing, zero format, lint, or typecheck errors, 20/20 Expo Doctor checks, and clean Android Hermes bytecode export.
@@ -289,7 +289,8 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 - `npx expo export --platform android` passed with telemetry disabled and produced the 4.9MB Hermes bundle.
 - `npm run db:test` and `npm run test:auth:integration` were blocked because Docker is not installed/running and the disposable local Supabase database is unreachable.
 - `npx supabase migration list` and `npx supabase db push --dry-run` were blocked because the repository is not linked to a Supabase project.
-- Hosted migration apply and `provision-demo-environment.mjs --target hosted` were intentionally not run: `.env.local` is absent and no verified hosted operator credentials or admin email are available.
+- Hosted migration apply and `provision-demo-environment.mjs --hosted` were intentionally not run: `.env.local` is absent and no verified hosted operator credentials or admin email are available.
+- Android preparation: the local SDK already contains configured `Pixel` and `Pixel_2` AVDs; `Pixel` booted successfully as `emulator-5554`. Native APK installation remains blocked by Windows CMake/Ninja path-length failures during React Native codegen, despite installing CMake 3.31.6 and retrying an arm64 release build from a real short-path copy.
 
 The next operator must restore Docker, provide ignored hosted configuration, link the authorized project, capture the required backup, then repeat the dry-run, migration apply, and provisioning sequence in `docs/HOSTED_DEMO_SETUP.md`.
 
