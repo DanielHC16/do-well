@@ -3,7 +3,7 @@
 **Last audited:** 2026-10-26 (Asia/Manila)  
 **Repository:** `DanielHC16/do-well` (private)  
 **Default branch:** `main`  
-**Audited commit:** `98614ca` (docs sync after PR #42 merge)  
+**Audited commit:** `b5ace38` (latest `main`)
 **Current phase:** Productization implementation: zero-secret CI workflow, server-owned admin capabilities, Settings, functional moderation console, dual Google/email authentication, idempotent operator provisioning, and end-to-end multi-principal HTTP workflow suite implemented and verified across 92 Jest test suites (538 tests), 2 HTTP integration suites, and 13 database test suites (253 pgTAP tests).
 
 This is the first document a new developer or AI agent should read. It records the difference between what exists in source code, what has been locally verified, and what is actually available in the hosted environment. Do not infer live readiness from old milestone labels.
@@ -57,6 +57,22 @@ Repository rules take precedence over this summary if they are stricter.
 | Offline demo | Explicit, isolated synthetic runtime exists | Old runbook treats it as the primary story and contains UI/feature inaccuracies | Retain only as a labelled fallback and rewrite the runbook |
 
 ## 4. Fresh verification evidence
+
+The Section 11 execution attempt on 2026-10-26 produced the following current evidence:
+
+- `npm ci` completed successfully and restored the locked dependencies.
+- `npm run test:run` — 92 suites, 538 tests passing.
+- `npm run format:check` — clean.
+- `npm run lint` — clean.
+- `npm run typecheck` — clean.
+- `npx expo-doctor` — 20/20 checks passed.
+- `npx expo export --platform android` — passed with `CI=1` and `EXPO_NO_TELEMETRY=1`; Hermes bundle generated (4.9MB).
+- `npm run db:test` — blocked because Docker is unavailable and local Postgres at `127.0.0.1:55322` is not reachable.
+- `npm run test:auth:integration` — blocked by the same unavailable local Supabase environment.
+- Hosted migration inspection and dry-run — blocked because `.supabase` project linkage is absent and `.env.local` is not present.
+- Hosted migration apply and operator provisioning — **not run**; no hosted mutation was attempted without verified operator credentials.
+
+The previously recorded historical verification below remains valid for the commit on which it was run; it must not be interpreted as fresh hosted-environment evidence.
 
 The following commands passed on 2026-10-26 on `main` (`98614ca`):
 
@@ -311,7 +327,8 @@ The M15-M20 implementation baseline is merged into `main` with 92 passing Jest t
 The exact technical sequence for the next agent is:
 
 1. **Hosted Migration Parity**:
-   - Ensure local Supabase credentials in `.env.local` are active.
+   - Restore Docker Desktop and create the ignored `.env.local` with active hosted operator credentials.
+   - Link the repository to the authorized Supabase project before running migration commands.
    - Follow `docs/HOSTED_DEMO_SETUP.md` to capture a timestamped backup of hosted schema before pushing.
    - Apply pending migrations `20261025000100` through `20261026000100` to hosted Supabase.
    - Verify RPC availability (`get_my_capabilities`, `set_preferred_mode`, `submit_report`, `list_admin_reports`, `decide_admin_report`).
@@ -359,4 +376,3 @@ The exact technical sequence for the next agent is:
 - Previous operational handoff: `docs/SESSION_HANDOFF.md`
 - Current demo script requiring correction: `docs/DEMO_RUNBOOK.md`
 - Dependency/security audit: `docs/reports/2026-10-25-dependency-audit-disposition.md`
-

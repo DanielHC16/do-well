@@ -9,6 +9,7 @@
 - **Branch:** `feat/database-and-provisioning-m20`
 - **Base/default branch:** `main`
 - **Current implementation merge:** `2632a21` (`Merge pull request #42`)
+- **Current verification attempt:** `2026-10-26` on `main` at `b5ace38`; Jest, formatting, lint, typecheck, Expo Doctor, and Android Hermes export passed. Local database/HTTP integration checks were blocked by unavailable Docker, and hosted migration/provisioning was not attempted because `.env.local` and Supabase project linkage were absent.
 - **Remote:** `https://github.com/DanielHC16/do-well` (`PRIVATE`)
 - **M01 PR:** [#17](https://github.com/DanielHC16/do-well/pull/17), squash-merged as `d073c4b`
 - **M02 PR:** [#19](https://github.com/DanielHC16/do-well/pull/19), merge commit `f7a3317`
@@ -278,6 +279,19 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 2. Compile and package the standalone Android release APK using `docs/COMPETITION_BUILD.md`.
 3. Validate APK installation and launch on physical Android device (Infinix X6840 or competition test device).
 4. Maintain M03B hosted OAuth acceptance deferred until operator-managed credentials and live physical device tests are scheduled.
+
+## 2026-10-26 Section 11 execution attempt
+
+- `npm ci` restored the locked dependencies.
+- `npm run test:run` passed: 92 suites / 538 tests.
+- `npm run format:check`, `npm run lint`, and `npm run typecheck` passed.
+- `npx expo-doctor` passed 20/20 checks.
+- `npx expo export --platform android` passed with telemetry disabled and produced the 4.9MB Hermes bundle.
+- `npm run db:test` and `npm run test:auth:integration` were blocked because Docker is not installed/running and the disposable local Supabase database is unreachable.
+- `npx supabase migration list` and `npx supabase db push --dry-run` were blocked because the repository is not linked to a Supabase project.
+- Hosted migration apply and `provision-demo-environment.mjs --target hosted` were intentionally not run: `.env.local` is absent and no verified hosted operator credentials or admin email are available.
+
+The next operator must restore Docker, provide ignored hosted configuration, link the authorized project, capture the required backup, then repeat the dry-run, migration apply, and provisioning sequence in `docs/HOSTED_DEMO_SETUP.md`.
 
 ## Suggested continuation commands
 

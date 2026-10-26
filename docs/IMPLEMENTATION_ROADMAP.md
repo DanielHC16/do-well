@@ -341,4 +341,4 @@ Before changing any row to `COMPLETED`:
 
 ## Current milestone and blockers
 
-All implementation roadmap milestones (M00 through M14, D01, and M20) are COMPLETED and fully verified. 92 Jest suites / 538 tests pass, 2 HTTP integration test suites pass, 13 pgTAP database test suites / 253 tests pass, Expo Doctor passes 20/20 checks, static Android Hermes bundle export is verified (4.9MB), and authoritative judging, build, disaster recovery, and operator provisioning runbooks are published. M03B hosted OAuth/physical-device acceptance remains deferred.
+The implementation baseline for M00 through M14, D01, and M20 remains completed. The 2026-10-26 Section 11 verification attempt freshly passed 92 Jest suites / 538 tests, formatting, lint, strict typecheck, Expo Doctor 20/20, and Android Hermes export (4.9MB). Local pgTAP and HTTP integration checks are currently blocked because Docker is unavailable. Hosted migration parity and operator provisioning remain pending because `.env.local` and Supabase project linkage are absent; no hosted mutation was attempted. M03B hosted OAuth/physical-device acceptance also remains deferred.
