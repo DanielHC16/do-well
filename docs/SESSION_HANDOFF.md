@@ -289,7 +289,10 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 - `npx expo export --platform android` passed with telemetry disabled and produced the 4.9MB Hermes bundle.
 - `npm run db:test` and `npm run test:auth:integration` were blocked because Docker is not installed/running and the disposable local Supabase database is unreachable.
 - `npx supabase migration list` and `npx supabase db push --dry-run` were blocked because the repository is not linked to a Supabase project.
-- Hosted migration apply and `provision-demo-environment.mjs --hosted` were intentionally not run: `.env.local` is absent and no verified hosted operator credentials or admin email are available.
+- Hosted project linkage was restored from ignored `.env.local`. The dry-run identified eight pending migrations, and `npx supabase db push` applied all eight migrations through `20261026000100_admin_roles_and_reporting.sql`; a follow-up migration list confirmed full local/remote parity.
+- `supabase db dump --linked` could not capture the requested backup because the CLI requires Docker, which is unavailable.
+- `node scripts/provision-demo-environment.mjs --hosted --dry-run` completed with the configured secret supplied under the script's required process-local `SUPABASE_SERVICE_ROLE_KEY` name. It reported no admin email configured and a missing counterpart worker with `create_and_onboard` as the planned action; no changes were applied.
+- Hosted operator apply remains pending until the owner/admin email is explicitly configured. Do not infer it from unrelated credentials.
 - Android preparation: the local SDK already contains configured `Pixel` and `Pixel_2` AVDs; `Pixel` booted successfully as `emulator-5554`. Native APK installation remains blocked by Windows CMake/Ninja path-length failures during React Native codegen, despite installing CMake 3.31.6 and retrying an arm64 release build from a real short-path copy.
 
 The next operator must restore Docker, provide ignored hosted configuration, link the authorized project, capture the required backup, then repeat the dry-run, migration apply, and provisioning sequence in `docs/HOSTED_DEMO_SETUP.md`.

@@ -4,7 +4,7 @@
 **Repository:** `DanielHC16/do-well` (private)  
 **Default branch:** `main`  
 **Audited commit:** `b5ace38` (latest `main`)
-**Current execution branch:** `chore/section-11-verification` (`71146ef` plus pending handoff evidence)
+**Current execution branch:** `main` (`a9725e0` plus hosted parity evidence)
 **Current phase:** Productization implementation: zero-secret CI workflow, server-owned admin capabilities, Settings, functional moderation console, dual Google/email authentication, idempotent operator provisioning, and end-to-end multi-principal HTTP workflow suite implemented and verified across 92 Jest test suites (538 tests), 2 HTTP integration suites, and 13 database test suites (253 pgTAP tests).
 
 This is the first document a new developer or AI agent should read. It records the difference between what exists in source code, what has been locally verified, and what is actually available in the hosted environment. Do not infer live readiness from old milestone labels.
@@ -70,8 +70,11 @@ The Section 11 execution attempt on 2026-10-26 produced the following current ev
 - `npx expo export --platform android` — passed with `CI=1` and `EXPO_NO_TELEMETRY=1`; Hermes bundle generated (4.9MB).
 - `npm run db:test` — blocked because Docker is unavailable and local Postgres at `127.0.0.1:55322` is not reachable.
 - `npm run test:auth:integration` — blocked by the same unavailable local Supabase environment.
-- Hosted migration inspection and dry-run — blocked because `.supabase` project linkage is absent and `.env.local` is not present.
-- Hosted migration apply and operator provisioning — **not run**; no hosted mutation was attempted without verified operator credentials.
+- Hosted migration inspection and dry-run — completed after linking the project; the dry-run identified eight pending migrations.
+- Hosted migration apply — completed successfully for `20261025000100` through `20261026000100`; a subsequent migration list confirmed local/remote parity.
+- Hosted schema backup — blocked because `supabase db dump --linked` requires Docker, which is unavailable on this machine.
+- Operator provisioning dry-run — completed against hosted Supabase using the configured secret under the script's required process-local `SUPABASE_SERVICE_ROLE_KEY` name. No changes were applied. The counterpart worker was reported as `not_found`/`create_and_onboard`; the admin was `none specified` because `DEMO_ADMIN_EMAIL` is not configured.
+- Hosted operator apply — not run; an owner/admin email must be explicitly configured before granting server-side administrator authority.
 - Android device preparation — the existing Android SDK and configured `Pixel` AVD were used; the emulator booted as `emulator-5554`.
 - Native APK installation — blocked by Windows CMake/Ninja path-length failures in React Native codegen. CMake 3.31.6 was installed into the local SDK and an arm64 release build was retried from progressively shorter temporary paths, but the generated native build still failed before producing an installable APK. No tracked source was changed by these attempts.
 
@@ -90,7 +93,7 @@ The following commands passed on 2026-10-26 on `main` (`98614ca`):
 - `npx expo-doctor` — 20/20 checks passed
 - `npx expo export --platform android` — Hermes bytecode bundle generated without errors (4.9MB)
 
-Read-only hosted inspection also established:
+Read-only hosted inspection before the parity apply established:
 
 - migrations `20261022000100` through `20261023000100` are applied remotely;
 - migrations `20261025000100` through `20261026000100` are not applied remotely;
@@ -98,6 +101,8 @@ Read-only hosted inspection also established:
 - that profile currently prefers the worker workspace;
 - no administrator role exists to grant to that account; and
 - hosted business tables are empty.
+
+Hosted parity was subsequently applied on 2026-10-26. The hosted database now reports all twelve local migrations as applied.
 
 Do not put the owner email into mobile authorization logic. Resolve the stable Auth user ID during an operator-only bootstrap step and store the role server-side.
 
