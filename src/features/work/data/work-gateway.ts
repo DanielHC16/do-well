@@ -5,6 +5,7 @@ import { AssignmentStatusSchema } from "@/features/assignments/model/assignment-
 import { GigStatusSchema } from "@/features/gigs/model/gig-schemas";
 import type { ShellMode } from "@/features/shell/model/shell-mode";
 import { getSupabaseClient } from "@/shared/api/supabase";
+import { toLoadError } from "@/shared/api/load-error";
 import { withTimeout } from "@/shared/api/network-timeout";
 
 export type WorkSection = "applications" | "listings" | "active" | "completed";
@@ -116,8 +117,9 @@ export function createWorkGateway(port: WorkPort) {
             dueAt: row.due_at,
             kind: "assignment",
           }));
-      } catch {
-        throw new Error("We couldn't load your work. Try again.");
+      } catch (cause) {
+        // Same user-facing copy; the kind lets screens tell offline from denied.
+        throw toLoadError(cause, "We couldn't load your work. Try again.");
       }
     },
   };

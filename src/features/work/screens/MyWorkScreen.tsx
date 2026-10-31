@@ -1,30 +1,29 @@
 import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useRef, useState } from "react";
-import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-} from "react-native";
-import { Text } from "@/shared/ui/Typography";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FlatList, RefreshControl, StyleSheet, View } from "react-native";
 
-import { setupTheme } from "@/features/setup/setupTheme";
 import {
-  MarketplaceShell,
-  marketplaceStyles,
-} from "@/features/shell/components/MarketplaceShell";
-import type { ShellMode } from "@/features/shell/model/shell-mode";
-import {
-  AppButton,
-  AppText,
+  BADGES,
   EmptyState,
   ErrorState,
-  LoadingSkeleton,
-  StatusBadge,
-} from "@/shared/ui";
-import { AppIcon } from "@/shared/ui/AppIcon";
+  ProgressHeroCard,
+  SecondaryButton,
+  SegmentedPills,
+  Skeleton,
+  TaskCard,
+  Txt,
+  badgeFor,
+  type Badge,
+} from "@/components/ui";
+import { useConnectivity } from "@/features/connectivity/context/ConnectivityProvider";
+import { MarketplaceShell } from "@/features/shell/components/MarketplaceShell";
+import type { ShellMode } from "@/features/shell/model/shell-mode";
+import { classifyLoadError, type LoadErrorKind } from "@/shared/api/load-error";
+import { formatTime, formatUpdatedAt, isDueSoon } from "@/shared/format/format";
+import type { CacheStore } from "@/shared/persistence/cache-store";
+import { palette, radius, size, space, status } from "@/theme";
+
+import { createCachedWorkReader, lazyCacheStore } from "../data/work-cache";
 import {
   WORK_PAGE_SIZE,
   workGateway,
@@ -32,53 +31,228 @@ import {
   type WorkItem,
   type WorkSection,
 } from "../data/work-gateway";
+import {
+  loadAssignmentInsight,
+  milestoneProgress,
+  useAssignmentInsight,
+  weekMilestoneSummary,
+  type InsightSource,
+  type WeekSummary,
+} from "../data/work-insights";
+
+type Props = Readonly<{
+  userId: string;
+  mode: ShellMode;
+  initialSection?: WorkSection;
+  gateway?: Pick<WorkGateway, "list">;
+  cache?: CacheStore;
+  insights?: InsightSource;
+}>;
+
+const SEGMENTS: Record<
+  ShellMode,
+  readonly Readonly<{ value: WorkSection; label: string }>[]
+> = {
+  worker: [
+    { value: "applications", label: "Applications" },
+    { value: "active", label: "Active" },
+    { value: "completed", label: "Completed" },
+  ],
+  employer: [
+    { value: "listings", label: "Posted" },
+    { value: "active", label: "In progress" },
+    { value: "completed", label: "Completed" },
+  ],
+};
+
+const EMPTY: Record<
+  WorkSection,
+  Readonly<{ title: string; message: string }>
+> = {
+  applications: {
+    title: "No applications yet",
+    message: "Apply to a gig and track it here.",
+  },
+  listings: {
+    title: "No posted gigs yet",
+    message: "Post a gig and follow applicants here.",
+  },
+  active: {
+    title: "No active work yet",
+    message: "Selected gigs and their milestones show up here.",
+  },
+  completed: {
+    title: "No completed work yet",
+    message: "Approved work appears here.",
+  },
+};
+
+function itemBadges(item: WorkItem): Badge[] {
+  const domain =
+    item.kind === "application"
+      ? "application"
+      : item.kind === "listing"
+        ? "gig"
+        : "assignment";
+  const badges: Badge[] = [badgeFor(domain, item.status)];
+  const finished = ["completed", "closed", "cancelled", "withdrawn"].includes(
+    item.status,
+  );
+  if (!finished && item.dueAt) {
+    if (new Date(item.dueAt).getTime() < Date.now())
+      badges.push(BADGES.overdue);
+    else if (isDueSoon(item.dueAt)) badges.push(BADGES.dueSoon);
+  }
+  return badges;
+}
+
+const WorkCard = memo(function WorkCard({
+  item,
+  mode,
+  userId,
+  refreshKey,
+  insights,
+  onOpen,
+}: Readonly<{
+  item: WorkItem;
+  mode: ShellMode;
+  userId: string;
+  refreshKey: number;
+  insights?: InsightSource;
+  onOpen: (item: WorkItem) => void;
+}>) {
+  const insight = useAssignmentInsight(
+    item.kind === "assignment" ? item.id : null,
+    mode,
+    userId,
+    refreshKey,
+    insights,
+  );
+  const progress = insight
+    ? milestoneProgress(insight.milestones, item.status)
+    : item.status === "completed"
+      ? milestoneProgress([], "completed")
+      : null;
+  return (
+    <TaskCard
+      title={item.title}
+      badges={itemBadges(item)}
+      amount={item.amount}
+      dueAt={item.dueAt}
+      progress={progress?.value ?? null}
+      progressLabel={progress?.label}
+      people={insight?.counterpart ? [insight.counterpart] : []}
+      onPress={() => onOpen(item)}
+    />
+  );
+});
+
+/** This week's milestones across the employer's active assignments. */
+function useWeekSummary(
+  enabled: boolean,
+  userId: string,
+  refreshKey: number,
+  read: (offset: number) => Promise<WorkItem[]>,
+  insights?: InsightSource,
+): WeekSummary | null {
+  const [summary, setSummary] = useState<WeekSummary | null>(null);
+  useEffect(() => {
+    if (!enabled) return;
+    let active = true;
+    void read(0)
+      .then((assignments) =>
+        Promise.all(
+          assignments.map((assignment) =>
+            loadAssignmentInsight(assignment.id, "employer", userId, insights),
+          ),
+        ),
+      )
+      .then((all) => {
+        if (active)
+          setSummary(
+            weekMilestoneSummary(all.flatMap((insight) => insight.milestones)),
+          );
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [enabled, userId, refreshKey, read, insights]);
+  return summary;
+}
 
 export function MyWorkScreen({
   userId,
   mode,
+  initialSection,
   gateway = workGateway,
-}: Readonly<{ userId: string; mode: ShellMode; gateway?: WorkGateway }>) {
+  cache = lazyCacheStore,
+  insights,
+}: Props) {
   const router = useRouter();
-  const firstSection = mode === "worker" ? "applications" : "listings";
-  const [section, setSection] = useState<WorkSection>(firstSection);
+  const { reportRequestOutcome } = useConnectivity();
+  const segments = SEGMENTS[mode];
+  const [section, setSection] = useState<WorkSection>(
+    segments.some((segment) => segment.value === initialSection)
+      ? (initialSection as WorkSection)
+      : segments[0].value,
+  );
+  const reader = useMemo(
+    () => createCachedWorkReader(gateway, cache),
+    [gateway, cache],
+  );
   const [items, setItems] = useState<WorkItem[]>([]);
   const [nextOffset, setNextOffset] = useState(0);
   const generation = useRef(0);
   const [busy, setBusy] = useState(true);
-  const [error, setError] = useState(false);
+  const [errorKind, setErrorKind] = useState<LoadErrorKind | null>(null);
   const [hasMore, setHasMore] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [pulling, setPulling] = useState(false);
+  const [updatedAt, setUpdatedAt] = useState<string | null>(null);
+  const [savedAt, setSavedAt] = useState<string | null>(null);
 
   const load = useCallback(
     (offset: number) => {
       const request = ++generation.current;
       setBusy(true);
-      setError(false);
+      setErrorKind(null);
       if (offset === 0) setItems([]);
-      void gateway
-        .list(userId, mode, section, offset)
-        .then((rows) => {
+      void reader(userId, mode, section, offset)
+        .then((page) => {
           if (request !== generation.current) return;
           setItems((previous) =>
             offset === 0
-              ? rows
+              ? page.items
               : [
                   ...previous,
-                  ...rows.filter(
+                  ...page.items.filter(
                     (row) => !previous.some((item) => item.id === row.id),
                   ),
                 ],
           );
           setNextOffset(offset + WORK_PAGE_SIZE);
-          setHasMore(rows.length === WORK_PAGE_SIZE);
+          setHasMore(!page.cachedAt && page.items.length === WORK_PAGE_SIZE);
+          setSavedAt(page.cachedAt);
+          if (page.cachedAt) reportRequestOutcome("offline");
+          else {
+            setUpdatedAt(new Date().toISOString());
+            reportRequestOutcome("ok");
+          }
         })
-        .catch(() => {
-          if (request === generation.current) setError(true);
+        .catch((cause: unknown) => {
+          if (request !== generation.current) return;
+          const kind = classifyLoadError(cause);
+          reportRequestOutcome(kind);
+          setErrorKind(kind);
         })
         .finally(() => {
-          if (request === generation.current) setBusy(false);
+          if (request !== generation.current) return;
+          setBusy(false);
+          setPulling(false);
         });
     },
-    [gateway, mode, section, userId],
+    [mode, reader, reportRequestOutcome, section, userId],
   );
 
   // Returning from a detail screen reloads the first page so statuses remain authoritative.
@@ -91,192 +265,144 @@ export function MyWorkScreen({
     }, [load]),
   );
 
+  const readActive = useCallback(
+    (offset: number) =>
+      reader(userId, "employer", "active", offset).then((page) => page.items),
+    [reader, userId],
+  );
+  const week = useWeekSummary(
+    mode === "employer",
+    userId,
+    refreshKey,
+    readActive,
+    insights,
+  );
+
   function chooseSection(next: WorkSection) {
     if (next === section) return;
     setItems([]);
     setBusy(true);
-    setError(false);
+    setErrorKind(null);
     setSection(next);
   }
-  function reload() {
+
+  function refresh() {
+    setPulling(true);
+    setRefreshKey((value) => value + 1);
     load(0);
   }
-  function open(item: WorkItem) {
-    if (item.kind === "assignment")
-      router.push(`/(protected)/${mode}/assignments/${item.id}`);
-    else router.push(`/(protected)/${mode}/gigs/${item.gigId}`);
-  }
-  const tabs: { key: WorkSection; label: string }[] = [
-    {
-      key: firstSection,
-      label: mode === "worker" ? "Applications" : "My listings",
+
+  const open = useCallback(
+    (item: WorkItem) => {
+      if (item.kind === "assignment")
+        router.push(`/(protected)/${mode}/assignments/${item.id}`);
+      else router.push(`/(protected)/${mode}/gigs/${item.gigId}`);
     },
-    { key: "active", label: "Active work" },
-    { key: "completed", label: "Completed" },
-  ];
-  const emptyTitle =
-    section === "applications"
-      ? "No applications yet"
-      : section === "listings"
-        ? "No listings yet"
-        : section === "completed"
-          ? "No completed work yet"
-          : "No active work yet";
+    [mode, router],
+  );
+
+  const weekCard =
+    mode === "employer" ? (
+      <ProgressHeroCard
+        title="This week"
+        subtitle={
+          week === null
+            ? "Checking milestones…"
+            : week.total === 0
+              ? "No milestones due this week"
+              : `${week.approved} of ${week.total} milestones approved`
+        }
+        progress={week && week.total ? week.approved / week.total : 0}
+        progressLabel={
+          week && week.total
+            ? `${week.approved} of ${week.total} milestones due this week approved`
+            : "No milestones due this week"
+        }
+        stats={[
+          { value: week ? String(week.total) : "–", label: "Due this week" },
+          { value: week ? String(week.toReview) : "–", label: "To review" },
+          { value: week ? String(week.approved) : "–", label: "Approved" },
+        ]}
+      />
+    ) : null;
+
+  const freshness = savedAt ? (
+    <View
+      accessible
+      accessibilityLabel={`Showing work saved at ${formatTime(savedAt) ?? "an earlier time"}. You may be offline.`}
+      style={styles.stale}
+    >
+      <View style={styles.staleDot} />
+      <Txt variant="micro" style={{ color: status.warning.fg }}>
+        Saved {formatTime(savedAt) ?? "earlier"} · offline
+      </Txt>
+    </View>
+  ) : updatedAt && !busy ? (
+    <Txt variant="micro" tone="secondary">
+      {formatUpdatedAt(updatedAt)}
+    </Txt>
+  ) : null;
 
   return (
     <MarketplaceShell
       activeSection="work"
-      compactHeader
       title="My work"
-      subtitle="Your applications, active gigs, and completed work."
       scrollable={false}
-      listContent={(heading) => (
+      listContent={(notices) => (
         <FlatList
+          testID="work-list"
           data={items}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={pulling}
+              onRefresh={refresh}
+              colors={[palette.purple]}
+              progressBackgroundColor={palette.surface}
+            />
+          }
           ListHeaderComponent={
             <View style={styles.header}>
-              {heading}
-              <ScrollView
-                testID="work-section-tabs"
-                horizontal
-                persistentScrollbar
-                showsHorizontalScrollIndicator
-                keyboardShouldPersistTaps="handled"
-                style={styles.tabStrip}
-                contentContainerStyle={styles.tabs}
-              >
-                {tabs.map((tab) => (
-                  <Pressable
-                    key={tab.key}
-                    accessibilityRole="button"
-                    accessibilityLabel={tab.label}
-                    accessibilityState={{ selected: section === tab.key }}
-                    onPress={() => chooseSection(tab.key)}
-                    style={[
-                      styles.sectionTab,
-                      section === tab.key && styles.sectionTabSelected,
-                    ]}
-                  >
-                    <Text
-                      numberOfLines={1}
-                      style={[
-                        styles.sectionTabText,
-                        section === tab.key && styles.sectionTabTextSelected,
-                      ]}
-                    >
-                      {tab.label}
-                    </Text>
-                  </Pressable>
-                ))}
-              </ScrollView>
-              <View style={styles.listSummary}>
-                <AppText
-                  tone="muted"
-                  variant="caption"
-                  style={styles.summaryText}
-                >
-                  {busy && items.length === 0
-                    ? `Loading ${workSectionNouns[section][1]}…`
-                    : error && items.length === 0
-                      ? "This work view is unavailable"
-                      : loadedWorkSummary(section, items.length)}
-                </AppText>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Refresh work"
-                  disabled={busy}
-                  accessibilityState={{ disabled: busy, busy }}
-                  onPress={reload}
-                  style={styles.refreshButton}
-                >
-                  {busy ? (
-                    <ActivityIndicator color={setupTheme.color.primary} />
-                  ) : (
-                    <AppIcon name="refresh" size={20} />
-                  )}
-                </Pressable>
-              </View>
+              {notices}
+              {weekCard}
+              <SegmentedPills
+                accessibilityLabel="Work sections"
+                value={section}
+                onChange={chooseSection}
+                segments={segments}
+              />
+              {freshness ? (
+                <View style={styles.captionRow}>{freshness}</View>
+              ) : null}
             </View>
           }
           renderItem={({ item }) => (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={workItemLabel(item)}
-              accessibilityHint={
-                item.kind === "assignment"
-                  ? "Opens agreement and milestones."
-                  : "Opens gig details."
-              }
-              onPress={() => open(item)}
-              style={[
-                marketplaceStyles.card,
-                styles.workCard,
-                item.status === "completed" && styles.completedCard,
-              ]}
-            >
-              <View style={styles.cardHeading}>
-                <View style={styles.workTile}>
-                  <AppIcon
-                    name={
-                      item.kind === "assignment"
-                        ? "briefcase"
-                        : item.kind === "application"
-                          ? "file"
-                          : "layers"
-                    }
-                    size={20}
-                  />
-                </View>
-                <AppText style={styles.workTitle}>{item.title}</AppText>
-                <AppIcon name="chevronRight" size={18} />
-              </View>
-              <View style={styles.metadataRow}>
-                <StatusBadge
-                  label={statusLabel(item.status)}
-                  tone={
-                    item.status === "completed" || item.status === "accepted"
-                      ? "success"
-                      : "neutral"
-                  }
-                />
-                {item.amount !== null ? (
-                  <AppText style={styles.compensation}>
-                    {new Intl.NumberFormat("en-PH", {
-                      style: "currency",
-                      currency: "PHP",
-                      maximumFractionDigits: 2,
-                    }).format(item.amount)}
-                  </AppText>
-                ) : null}
-                {item.dueAt ? (
-                  <View style={styles.deadline}>
-                    <AppIcon
-                      name="clock"
-                      size={16}
-                      color={setupTheme.color.muted}
-                    />
-                    <AppText tone="muted" variant="caption">
-                      Due {new Date(item.dueAt).toLocaleDateString("en-PH")}
-                    </AppText>
-                  </View>
-                ) : null}
-              </View>
-            </Pressable>
+            <WorkCard
+              item={item}
+              mode={mode}
+              userId={userId}
+              refreshKey={refreshKey}
+              insights={insights}
+              onOpen={open}
+            />
           )}
           ListEmptyComponent={
-            !busy && !error ? (
+            busy ? (
+              <Skeleton label="Loading your work" count={3} />
+            ) : errorKind ? (
+              <ErrorState
+                kind={errorKind}
+                message="We couldn't load your work. Try again."
+                onRetry={() => load(0)}
+              />
+            ) : (
               <EmptyState
-                kind="work"
-                title={emptyTitle}
-                message={
-                  section === "completed"
-                    ? "Approved work appears here."
-                    : mode === "worker"
-                      ? "Browse gigs to get started."
-                      : "Post a gig to find help."
-                }
+                compact
+                icon={section === "completed" ? "check" : "briefcase"}
+                title={EMPTY[section].title}
+                message={EMPTY[section].message}
                 actionLabel={mode === "worker" ? "Discover gigs" : "Post a gig"}
                 onAction={() =>
                   router.push(
@@ -286,26 +412,27 @@ export function MyWorkScreen({
                   )
                 }
               />
-            ) : undefined
+            )
           }
           ListFooterComponent={
-            <View style={styles.header}>
-              {busy ? <LoadingSkeleton label="Loading your work…" /> : null}
-              {error ? (
-                <ErrorState
-                  message="We couldn't load your work. Try again."
-                  onRetry={() => load(items.length === 0 ? 0 : nextOffset)}
-                />
-              ) : null}
-              {!busy && !error && hasMore ? (
-                <AppButton
-                  label="Load more work"
-                  icon="arrowRight"
-                  onPress={() => load(nextOffset)}
-                  variant="secondary"
-                />
-              ) : null}
-            </View>
+            items.length > 0 ? (
+              <View style={styles.header}>
+                {busy ? <Skeleton label="Loading more work" count={1} /> : null}
+                {errorKind ? (
+                  <ErrorState
+                    kind={errorKind}
+                    message="We couldn't load more work. Your list is still here."
+                    onRetry={() => load(nextOffset)}
+                  />
+                ) : null}
+                {!busy && !errorKind && hasMore ? (
+                  <SecondaryButton
+                    label="Load more work"
+                    onPress={() => load(nextOffset)}
+                  />
+                ) : null}
+              </View>
+            ) : undefined
           }
         />
       )}
@@ -313,144 +440,33 @@ export function MyWorkScreen({
   );
 }
 
-const workSectionNouns: Record<WorkSection, readonly [string, string]> = {
-  applications: ["application", "applications"],
-  listings: ["listing", "listings"],
-  active: ["active assignment", "active assignments"],
-  completed: ["completed assignment", "completed assignments"],
-};
-
-function loadedWorkSummary(section: WorkSection, count: number) {
-  return `${count} ${workSectionNouns[section][count === 1 ? 0 : 1]} loaded`;
-}
-
-function statusLabel(status: string) {
-  return status
-    .replace(/_/g, " ")
-    .replace(/^./, (letter) => letter.toUpperCase());
-}
-
-function workItemLabel(item: WorkItem) {
-  const compensation =
-    item.amount === null
-      ? ""
-      : new Intl.NumberFormat("en-PH", {
-          style: "currency",
-          currency: "PHP",
-        }).format(item.amount);
-  const deadline = item.dueAt
-    ? `Due ${new Date(item.dueAt).toLocaleDateString("en-PH")}`
-    : "";
-  return [
-    `Open ${item.title}`,
-    statusLabel(item.status),
-    compensation,
-    deadline,
-  ]
-    .filter(Boolean)
-    .join(". ");
-}
 const styles = StyleSheet.create({
-  compensation: {
-    color: setupTheme.color.primary,
-    fontSize: setupTheme.type.body,
-    fontWeight: "600",
-  },
-  workCard: {
-    gap: setupTheme.spacing.compact,
-    padding: setupTheme.spacing.compact + setupTheme.spacing.tight,
-  },
-  completedCard: {
-    borderLeftColor: setupTheme.color.ready,
-    borderLeftWidth: 3,
-  },
-  workTitle: {
-    flex: 1,
-    fontSize: setupTheme.type.cardTitle,
-    lineHeight: 22,
-    fontWeight: "600",
-  },
-  listSummary: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: setupTheme.spacing.compact,
-  },
-  summaryText: { flex: 1 },
-  refreshButton: {
-    minHeight: setupTheme.size.touchTarget,
-    minWidth: setupTheme.size.touchTarget,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: setupTheme.radius.control,
-    backgroundColor: setupTheme.color.accentSurface,
-  },
-  cardHeading: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: setupTheme.spacing.compact,
-  },
-  workTile: {
-    minWidth: setupTheme.size.avatar,
-    minHeight: setupTheme.size.avatar,
-    padding: setupTheme.spacing.compact,
-    borderRadius: setupTheme.radius.control,
-    backgroundColor: setupTheme.color.accentSurface,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  metadataRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: setupTheme.spacing.compact,
-  },
-  deadline: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: setupTheme.spacing.tight,
-  },
   content: {
     alignSelf: "center",
     width: "100%",
-    maxWidth: setupTheme.size.contentMax,
-    padding: setupTheme.spacing.section,
-    gap: setupTheme.spacing.compact,
-    paddingBottom: setupTheme.spacing.generous,
+    maxWidth: size.contentMax,
+    paddingHorizontal: size.screenPadding,
+    paddingTop: space.lg,
+    paddingBottom: space.xxl,
+    gap: space.sm,
   },
-  header: { gap: setupTheme.spacing.compact },
-  tabs: {
+  header: { gap: space.md, marginBottom: space.xxs },
+  captionRow: { flexDirection: "row", justifyContent: "flex-end" },
+  stale: {
     flexDirection: "row",
-    flexGrow: 1,
-    gap: setupTheme.spacing.tight,
-    padding: setupTheme.spacing.tight,
-    paddingBottom: setupTheme.spacing.compact,
-  },
-  tabStrip: {
-    flexGrow: 0,
-    backgroundColor: setupTheme.color.accentSurface,
-    borderRadius: setupTheme.radius.control,
-  },
-  sectionTab: {
-    flexShrink: 0,
-    minWidth: setupTheme.size.touchTarget,
-    minHeight: setupTheme.size.touchTarget,
-    padding: setupTheme.spacing.compact,
     alignItems: "center",
-    justifyContent: "center",
-    borderRadius: setupTheme.radius.small,
+    gap: space.xxs,
+    paddingHorizontal: space.xs,
+    paddingVertical: 2,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: status.warning.border,
+    backgroundColor: status.warning.bg,
   },
-  sectionTabSelected: { backgroundColor: setupTheme.color.surface },
-  sectionTabText: {
-    color: setupTheme.color.muted,
-    fontSize: setupTheme.type.body,
-    textAlign: "center",
-    fontWeight: "500",
-  },
-  sectionTabTextSelected: {
-    color: setupTheme.color.primary,
-    fontWeight: "600",
+  staleDot: {
+    width: size.dot,
+    height: size.dot,
+    borderRadius: radius.pill,
+    backgroundColor: status.warning.base,
   },
 });
