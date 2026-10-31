@@ -1,23 +1,32 @@
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  useWindowDimensions,
-  View,
-} from "react-native";
+import { FlatList, RefreshControl, StyleSheet, View } from "react-native";
 
+import {
+  BottomSheet,
+  EmptyState,
+  ErrorState,
+  FilterPill,
+  GigCard,
+  IconButton,
+  PressableScale,
+  PrimaryButton,
+  SecondaryButton,
+  Skeleton,
+  StatGrid,
+  StatTile,
+  Txt,
+  badgeFor,
+} from "@/components/ui";
 import type { AuthProfile } from "@/features/auth/model/auth-state";
-import { StaleDataBadge } from "@/features/connectivity/components/StaleDataBadge";
+import { useConnectivity } from "@/features/connectivity/context/ConnectivityProvider";
 import {
   discoveryGateway,
   type DiscoveryGateway,
 } from "@/features/discovery/data/discovery-gateway";
 import {
   DISCOVERY_CATEGORY_OPTIONS,
+  DISCOVERY_DISTANCE_OPTIONS,
   DiscoveryFiltersSchema,
   type DiscoveryCategoryFilter,
   type DiscoveryGigCard,
@@ -26,31 +35,32 @@ import {
 import { gigGateway, type GigGateway } from "@/features/gigs/data/gig-gateway";
 import {
   GIG_CATEGORY_LABELS,
-  type GigCategory,
   type GigRecord,
 } from "@/features/gigs/model/gig-schemas";
 import {
   type ActiveLocation,
   type LocalityOption,
-  LocationBar,
   type LocationPermissionState,
   LocationSelectorModal,
   locationService,
   type LocationService,
 } from "@/features/location";
-import { setupTheme } from "@/features/setup/setupTheme";
-import { Text, TextInput } from "@/shared/ui/Typography";
+import { classifyLoadError, type LoadErrorKind } from "@/shared/api/load-error";
 import {
-  AppButton,
-  EmptyState,
-  ErrorState,
-  FilterChip,
-  StatusBadge,
-} from "@/shared/ui";
-import { AppIcon, type AppIconName } from "@/shared/ui/AppIcon";
+  formatShortDate,
+  formatTime,
+  formatUpdatedAt,
+} from "@/shared/format/format";
+import { AppIcon } from "@/shared/ui/AppIcon";
+import { TextInput, type TextInputHandle } from "@/shared/ui/Typography";
+import { palette, radius, size, space, status, type } from "@/theme";
 
+import { useHomeStats, type HomeStatsSources } from "../data/home-stats";
 import type { ShellMode } from "../model/shell-mode";
 import { MarketplaceShell } from "./MarketplaceShell";
+
+/** One-shot request from the shell's center button ("near" / "remote"). */
+export type HomeIntent = Readonly<{ kind: "near" | "remote"; at: string }>;
 
 type AuthenticatedHomeScreenProps = Readonly<{
   mode: ShellMode;
@@ -58,6 +68,8 @@ type AuthenticatedHomeScreenProps = Readonly<{
   gateway?: GigGateway;
   discovery?: DiscoveryGateway;
   location?: LocationService;
+  stats?: HomeStatsSources;
+  intent?: HomeIntent | null;
 }>;
 
 const noLocation: ActiveLocation = {
@@ -69,32 +81,44 @@ const noLocation: ActiveLocation = {
   timestamp: null,
 };
 const PAGE_SIZE = 20;
-const categoryIcon: Readonly<Record<GigCategory, AppIconName>> = {
-  errands: "briefcase",
-  delivery: "truck",
-  cleaning: "cleaning",
-  events: "event",
-  admin: "file",
-  tutoring: "book",
-  digital: "digital",
-  other: "layers",
-};
+const MODE_OPTIONS = [
+  { value: "all", label: "All", icon: "layers" },
+  { value: "onsite", label: "On-site", icon: "pin" },
+  { value: "remote", label: "Remote", icon: "remote" },
+] as const;
+
+function gigCountTitle(
+  count: number,
+  more: boolean,
+  remoteOnly: boolean,
+  near: boolean,
+): string {
+  const amount = `${count}${more ? "+" : ""}`;
+  const noun = remoteOnly ? "remote gig" : "gig";
+  const plural = count === 1 && !more ? noun : `${noun}s`;
+  return `${amount} ${plural}${near && !remoteOnly ? " near you" : ""}`;
+}
 
 export function AuthenticatedHomeScreen({
   discovery = discoveryGateway,
   gateway = gigGateway,
   location = locationService,
+  stats: statSources,
+  intent = null,
   mode,
   profile,
 }: AuthenticatedHomeScreenProps) {
   const router = useRouter();
-  const { width, fontScale } = useWindowDimensions();
-  const stackEmployerAction =
-    mode === "employer" && (width < 380 || fontScale > 1.2);
+  const { reportRequestOutcome } = useConnectivity();
+  const searchRef = useRef<TextInputHandle>(null);
   const [gigs, setGigs] = useState<(GigRecord | DiscoveryGigCard)[]>([]);
+  const [employerGigs, setEmployerGigs] = useState<GigRecord[] | null>(null);
   const [settledRequest, setSettledRequest] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [errorKind, setErrorKind] = useState<LoadErrorKind>("server");
   const [retry, setRetry] = useState(0);
+  const [pulling, setPulling] = useState(false);
+  const [updatedAt, setUpdatedAt] = useState<string | null>(null);
   const generation = useRef(0);
   const morePending = useRef(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -114,10 +138,12 @@ export function AuthenticatedHomeScreen({
     useState<ActiveLocation>(noLocation);
   const [radiusKm, setRadiusKm] = useState<number | null>(null);
   const [locationModalVisible, setLocationModalVisible] = useState(false);
+  const [filtersVisible, setFiltersVisible] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [permissionState, setPermissionState] =
     useState<LocationPermissionState>("undetermined");
+  const [handledIntent, setHandledIntent] = useState<string | null>(null);
   const requestKey = JSON.stringify({
     mode,
     userId: profile.id,
@@ -130,6 +156,21 @@ export function AuthenticatedHomeScreen({
     retry,
   });
   const busy = settledRequest !== requestKey;
+  const tiles = useHomeStats(
+    profile.id,
+    mode,
+    employerGigs,
+    retry,
+    statSources,
+  );
+
+  // Apply a center-button intent once per tap (adjusting state during render).
+  const intentKey = intent ? `${intent.kind}:${intent.at}` : null;
+  if (mode === "worker" && intentKey && intentKey !== handledIntent) {
+    setHandledIntent(intentKey);
+    if (intent?.kind === "remote") setSelectedMode("remote");
+    else setLocationModalVisible(true);
+  }
 
   async function handleSelectGps() {
     setIsLocating(true);
@@ -187,6 +228,14 @@ export function AuthenticatedHomeScreen({
       setSearchQuery(parsed.data.searchQuery);
       setRetry((value) => value + 1);
     }
+  }
+
+  function resetFilters() {
+    setSearchInput("");
+    setSearchQuery("");
+    setSelectedCategory("all");
+    setSelectedMode("all");
+    setRadiusKm(null);
   }
 
   async function loadMore() {
@@ -265,20 +314,29 @@ export function AuthenticatedHomeScreen({
         if (!current) return;
         setError(null);
         setGigs(result.gigs);
+        if (mode === "employer") setEmployerGigs(result.gigs as GigRecord[]);
         setHasMore(mode === "worker" && result.gigs.length === PAGE_SIZE);
         setSnapshot(result.isFromCache ? { cachedAt: result.cachedAt } : null);
-      })
-      .catch(() => {
-        if (current) {
-          setGigs([]);
-          setSnapshot(null);
-          setHasMore(false);
-          setError(
-            mode === "employer"
-              ? "We couldn't load your listings. Check your connection and try again."
-              : "We couldn't load gigs. Check your connection and try again.",
-          );
+        if (!result.isFromCache) {
+          setUpdatedAt(new Date().toISOString());
+          reportRequestOutcome("ok");
+        } else {
+          reportRequestOutcome("offline");
         }
+      })
+      .catch((cause: unknown) => {
+        if (!current) return;
+        const kind = classifyLoadError(cause);
+        reportRequestOutcome(kind);
+        setGigs([]);
+        setSnapshot(null);
+        setHasMore(false);
+        setErrorKind(kind);
+        setError(
+          mode === "employer"
+            ? "We couldn't load your listings. Check your connection and try again."
+            : "We couldn't load gigs. Check your connection and try again.",
+        );
       })
       .finally(() => {
         if (current) {
@@ -286,6 +344,7 @@ export function AuthenticatedHomeScreen({
           setLoadingMore(false);
           setMoreError(null);
           setNextOffset(PAGE_SIZE);
+          setPulling(false);
         }
       });
     return () => {
@@ -305,6 +364,7 @@ export function AuthenticatedHomeScreen({
     searchQuery,
     selectedCategory,
     selectedMode,
+    reportRequestOutcome,
   ]);
 
   const visibleGigs =
@@ -316,185 +376,149 @@ export function AuthenticatedHomeScreen({
         )
       : gigs;
 
-  const header = (workspace: ReactNode) => (
-    <View style={styles.header}>
-      <View
-        style={[
-          styles.welcomeStrip,
-          stackEmployerAction && styles.welcomeStack,
-        ]}
-      >
-        <View
-          style={[
-            styles.welcomeText,
-            stackEmployerAction && styles.stackedWelcomeText,
-          ]}
-        >
-          <Text accessibilityRole="header" style={styles.welcomeName}>
-            {mode === "worker" ? "Discover gigs" : "Manage gigs"}
-          </Text>
-        </View>
-        {mode === "employer" ? (
-          <AppButton
-            label="Post a gig"
-            icon="plus"
-            onPress={() => router.push("/(protected)/employer/gigs/new")}
-          />
+  const locationSet = activeLocation.source !== "none";
+  const filtersActive =
+    selectedCategory !== "all" || (radiusKm !== null && locationSet);
+
+  const headerTiles = (
+    <StatGrid>
+      {tiles.map((tile) => (
+        <StatTile
+          key={tile.key}
+          value={tile.value}
+          label={tile.label}
+          onPress={
+            tile.section
+              ? () =>
+                  router.push({
+                    pathname: "/(protected)/work",
+                    params: { section: tile.section ?? "" },
+                  })
+              : undefined
+          }
+        />
+      ))}
+    </StatGrid>
+  );
+
+  const freshness = snapshot ? (
+    <View
+      accessible
+      accessibilityLabel={`Showing saved results from ${formatTime(snapshot.cachedAt) ?? "earlier"}. You may be offline.`}
+      style={[styles.caption, styles.captionStale]}
+    >
+      <View style={styles.staleDot} />
+      <Txt variant="micro" style={{ color: status.warning.fg }}>
+        Saved {formatTime(snapshot.cachedAt) ?? "earlier"} · offline
+      </Txt>
+    </View>
+  ) : updatedAt && !busy ? (
+    <Txt variant="micro" tone="secondary">
+      {formatUpdatedAt(updatedAt)}
+    </Txt>
+  ) : null;
+
+  const listHeader = (notices: ReactNode) => (
+    <View style={styles.stack}>
+      {notices}
+      <View style={styles.search}>
+        <AppIcon name="search" size={size.icon} color={palette.textSecondary} />
+        <TextInput
+          ref={searchRef}
+          accessibilityLabel="Search gigs"
+          autoCapitalize="none"
+          maxLength={100}
+          onChangeText={setSearchInput}
+          onSubmitEditing={submitSearch}
+          placeholder={
+            mode === "worker" ? "Search jobs or skills" : "Search your gigs"
+          }
+          placeholderTextColor={palette.textSecondary}
+          returnKeyType="search"
+          submitBehavior="blurAndSubmit"
+          style={styles.searchInput}
+          value={searchInput}
+        />
+        {mode === "worker" ? (
+          <View>
+            <IconButton
+              icon="filter"
+              variant="muted"
+              accessibilityLabel="Filters"
+              onPress={() => setFiltersVisible(true)}
+            />
+            {filtersActive ? (
+              <View style={styles.filterDot} pointerEvents="none" />
+            ) : null}
+          </View>
         ) : null}
       </View>
-      {workspace}
-      {mode === "employer" ? (
+      {mode === "worker" ? (
         <>
-          {!busy && !error ? (
-            <View style={styles.listingOverview}>
-              {(["published", "draft", "closed"] as const).map((status) => {
-                const count = gigs.filter(
-                  (gig) => gig.status === status,
-                ).length;
-                return (
-                  <View
-                    key={status}
-                    accessible
-                    accessibilityLabel={`${count} ${status} ${count === 1 ? "listing" : "listings"}`}
-                    style={styles.overviewItem}
-                  >
-                    <View style={styles.overviewValue}>
-                      <AppIcon
-                        name={
-                          status === "published"
-                            ? "briefcase"
-                            : status === "draft"
-                              ? "file"
-                              : "check"
-                        }
-                        size={18}
-                        color={setupTheme.color.secondary}
-                      />
-                      <Text style={styles.overviewCount}>{count}</Text>
-                    </View>
-                    <Text style={styles.overviewLabel}>
-                      {status === "published"
-                        ? "Published"
-                        : status === "draft"
-                          ? "Drafts"
-                          : "Closed"}
-                    </Text>
-                  </View>
-                );
-              })}
-            </View>
-          ) : null}
+          <View style={styles.pills}>
+            {MODE_OPTIONS.map((option) => (
+              <FilterPill
+                key={option.value}
+                grow
+                icon={option.icon}
+                label={option.label}
+                selected={selectedMode === option.value}
+                onPress={() => setSelectedMode(option.value)}
+              />
+            ))}
+          </View>
+          <View style={styles.chipsRow}>
+            <PressableScale
+              accessibilityRole="button"
+              accessibilityLabel="Location and radius filter"
+              accessibilityHint={
+                locationSet
+                  ? `Area: ${activeLocation.label}. Opens area options.`
+                  : "Choose your area or use your location"
+              }
+              onPress={() => setLocationModalVisible(true)}
+              style={styles.locationChip}
+            >
+              <AppIcon
+                name="pin"
+                size={size.iconSmall}
+                color={palette.purple}
+              />
+              <Txt variant="caption" numberOfLines={1} style={styles.chipText}>
+                {locationSet ? activeLocation.label : "Any area"}
+                {locationSet && radiusKm ? ` · ${radiusKm} km` : ""}
+              </Txt>
+              <Txt variant="caption" style={styles.chipAction}>
+                · {locationSet ? "Change" : "Set area"}
+              </Txt>
+            </PressableScale>
+            {selectedCategory !== "all" ? (
+              <FilterPill
+                selected
+                label={GIG_CATEGORY_LABELS[selectedCategory]}
+                trailingIcon="close"
+                accessibilityLabel={`Clear ${GIG_CATEGORY_LABELS[selectedCategory]} filter`}
+                onPress={() => setSelectedCategory("all")}
+              />
+            ) : null}
+          </View>
         </>
       ) : null}
-      <View style={styles.filterZone}>
-        <View style={styles.searchRow}>
-          <AppIcon name="search" size={18} color={setupTheme.color.muted} />
-          <TextInput
-            accessibilityLabel="Search gigs"
-            autoCapitalize="none"
-            maxLength={100}
-            onChangeText={setSearchInput}
-            onSubmitEditing={submitSearch}
-            placeholder={
-              mode === "worker"
-                ? "Search jobs or descriptions"
-                : "Search your listings"
-            }
-            placeholderTextColor={setupTheme.color.muted}
-            returnKeyType="search"
-            style={styles.searchInput}
-            value={searchInput}
-          />
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Search"
-            onPress={submitSearch}
-            style={styles.searchSubmit}
-          >
-            <AppIcon
-              name="arrowRight"
-              size={20}
-              color={setupTheme.color.onPrimary}
-            />
-          </Pressable>
-        </View>
-        {mode === "worker" ? (
-          <>
-            <ScrollView
-              horizontal
-              accessibilityLabel="Work mode and category filters"
-              accessibilityHint="Swipe horizontally to browse all supported gig categories."
-              keyboardShouldPersistTaps="handled"
-              showsHorizontalScrollIndicator
-              persistentScrollbar
-              contentContainerStyle={styles.filterScroll}
-            >
-              {(["all", "onsite", "remote"] as const).map((option) => (
-                <FilterChip
-                  key={option}
-                  icon={
-                    option === "onsite"
-                      ? "pin"
-                      : option === "remote"
-                        ? "remote"
-                        : "layers"
-                  }
-                  label={
-                    option === "all"
-                      ? "All Modes"
-                      : option === "onsite"
-                        ? "On-site"
-                        : "Remote"
-                  }
-                  onPress={() => setSelectedMode(option)}
-                  selected={selectedMode === option}
-                />
-              ))}
-              <View style={styles.filterDivider} />
-              {DISCOVERY_CATEGORY_OPTIONS.map((category) => (
-                <FilterChip
-                  key={category}
-                  icon={category === "all" ? "layers" : categoryIcon[category]}
-                  label={
-                    category === "all"
-                      ? "All Categories"
-                      : GIG_CATEGORY_LABELS[category]
-                  }
-                  onPress={() => setSelectedCategory(category)}
-                  selected={selectedCategory === category}
-                />
-              ))}
-            </ScrollView>
-          </>
-        ) : null}
-      </View>
       <View style={styles.sectionRow}>
-        <Text accessibilityRole="header" style={styles.sectionHeader}>
-          {mode === "worker" ? "Available gigs" : "Your listings"}
-        </Text>
-        {mode === "worker" ? (
-          <LocationBar
-            compact
-            activeLocation={activeLocation}
-            onPress={() => setLocationModalVisible(true)}
-            radiusKm={radiusKm}
-          />
-        ) : null}
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Refresh gigs"
-          onPress={() => setRetry((value) => value + 1)}
-          style={styles.refreshButton}
-        >
-          <AppIcon name="refresh" size={16} color={setupTheme.color.primary} />
-          {mode === "employer" ? (
-            <Text style={styles.refreshText}>Refresh</Text>
-          ) : null}
-        </Pressable>
+        <Txt variant="h2" accessibilityRole="header" style={styles.flex}>
+          {mode === "employer"
+            ? "Your gigs"
+            : busy
+              ? "Finding gigs…"
+              : gigCountTitle(
+                  visibleGigs.length,
+                  hasMore,
+                  selectedMode === "remote",
+                  locationSet,
+                )}
+        </Txt>
+        {freshness}
       </View>
-      {!busy && snapshot ? (
-        <StaleDataBadge cachedAt={snapshot.cachedAt} />
-      ) : null}
     </View>
   );
 
@@ -502,72 +526,92 @@ export function AuthenticatedHomeScreen({
     <MarketplaceShell
       greeting={`Hi, ${profile.displayName.split(" ")[0]}`}
       activeSection="home"
-      dashboard
       scrollable={false}
-      title={
-        mode === "worker" ? "Good work starts here." : "Your employer workspace"
+      title="Home"
+      headerContent={headerTiles}
+      heroScrolls
+      onSearch={
+        mode === "worker" ? () => searchRef.current?.focus() : undefined
       }
-      subtitle={
-        mode === "worker"
-          ? "Flexible paid gigs, around you and online."
-          : "Post a gig, review applicants, and keep work moving."
-      }
-      listContent={(heading) => (
+      listContent={(notices, hero) => (
         <FlatList<GigRecord | DiscoveryGigCard>
           contentContainerStyle={styles.listContent}
           data={busy || error ? [] : visibleGigs}
           keyExtractor={(item) => item.id}
           keyboardShouldPersistTaps="handled"
-          ListHeaderComponent={header(heading)}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={pulling}
+              onRefresh={() => {
+                setPulling(true);
+                setRetry((value) => value + 1);
+              }}
+              colors={[palette.purple]}
+              progressBackgroundColor={palette.surface}
+            />
+          }
+          ListHeaderComponent={
+            <View style={styles.headerStack}>
+              {hero}
+              <View style={styles.gutter}>{listHeader(notices)}</View>
+            </View>
+          }
           ListEmptyComponent={
-            busy ? (
-              <View accessibilityLiveRegion="polite" style={styles.loadingRow}>
-                <ActivityIndicator color={setupTheme.color.accent} />
-                <Text style={styles.helper}>
-                  {mode === "worker"
-                    ? "Searching notices..."
-                    : "Checking your notices..."}
-                </Text>
-              </View>
-            ) : error ? (
-              <ErrorState
-                message={error}
-                onRetry={() => setRetry((value) => value + 1)}
-              />
-            ) : (
-              <EmptyState
-                kind={mode === "employer" ? "employer" : "discovery"}
-                title={
-                  mode === "employer" && !searchQuery
-                    ? "No listings yet"
-                    : "No gigs found"
-                }
-                message={
-                  mode === "employer" && !searchQuery
-                    ? "Post a gig to find the right help."
-                    : "Try another search or filter."
-                }
-                actionLabel={
-                  mode === "employer" && !searchQuery
-                    ? "Create gig"
-                    : "Reset filters"
-                }
-                onAction={() => {
-                  if (mode === "employer" && !searchQuery)
-                    router.push("/(protected)/employer/gigs/new");
-                  else {
-                    setSearchInput("");
-                    setSearchQuery("");
-                    setSelectedCategory("all");
-                    setSelectedMode("all");
-                    setRadiusKm(null);
+            <View style={styles.gutter}>
+              {busy ? (
+                <Skeleton
+                  label={
+                    mode === "worker" ? "Finding gigs" : "Loading your gigs"
                   }
-                }}
-              />
-            )
+                  count={3}
+                />
+              ) : error ? (
+                <ErrorState
+                  kind={errorKind}
+                  message={error}
+                  onRetry={() => setRetry((value) => value + 1)}
+                />
+              ) : mode === "employer" && !searchQuery ? (
+                <EmptyState
+                  compact
+                  icon="plus"
+                  title="Post your first gig"
+                  message="Describe the task and we'll help you shape the brief."
+                  actionLabel="Post a gig"
+                  onAction={() => router.push("/(protected)/employer/gigs/new")}
+                />
+              ) : (
+                <EmptyState
+                  compact
+                  icon="search"
+                  title={
+                    mode === "employer"
+                      ? "No matching gigs"
+                      : "No gigs here yet"
+                  }
+                  message={
+                    mode === "employer"
+                      ? "Try another search."
+                      : "Try other filters, or look at remote work."
+                  }
+                  actionLabel="Reset filters"
+                  onAction={resetFilters}
+                  secondaryLabel={
+                    mode === "worker" && selectedMode !== "remote"
+                      ? "Browse remote"
+                      : undefined
+                  }
+                  onSecondary={() => {
+                    resetFilters();
+                    setSelectedMode("remote");
+                  }}
+                />
+              )}
+            </View>
           }
           ListFooterComponent={
-            <View style={styles.header}>
+            <View style={[styles.stack, styles.gutter]}>
               {!busy && moreError ? (
                 <ErrorState
                   message={moreError}
@@ -575,114 +619,38 @@ export function AuthenticatedHomeScreen({
                 />
               ) : null}
               {hasMore && !busy && !error ? (
-                <AppButton
+                <SecondaryButton
                   label="Load more gigs"
                   loading={loadingMore}
                   onPress={() => void loadMore()}
-                  variant="secondary"
                 />
               ) : null}
             </View>
           }
           renderItem={({ item }) => (
-            <Pressable
-              accessibilityRole="button"
-              onPress={() =>
-                router.push(
-                  mode === "employer"
-                    ? `/(protected)/employer/gigs/${item.id}`
-                    : `/(protected)/worker/gigs/${item.id}`,
-                )
-              }
-              style={styles.gigCard}
-            >
-              <View style={styles.gigBadgeRow}>
-                <View style={styles.categoryHeading}>
-                  <View style={styles.categoryTile}>
-                    <AppIcon
-                      name={categoryIcon[item.category]}
-                      size={22}
-                      color={setupTheme.color.secondary}
-                    />
-                  </View>
-                  <Text style={styles.categoryBadge}>
-                    {GIG_CATEGORY_LABELS[item.category]}
-                  </Text>
-                </View>
-                <StatusBadge
-                  label={
+            <View style={styles.gutter}>
+              <GigCard
+                title={item.title}
+                amount={item.budgetAmount}
+                workMode={item.workMode}
+                area={item.publicArea}
+                distanceKm={"distanceKm" in item ? item.distanceKm : null}
+                schedule={
+                  item.dueAt ? `Due ${formatShortDate(item.dueAt)}` : null
+                }
+                reasons={"reasons" in item ? item.reasons : []}
+                status={
+                  mode === "employer" ? badgeFor("gig", item.status) : undefined
+                }
+                onPress={() =>
+                  router.push(
                     mode === "employer"
-                      ? item.status
-                          .replace(/_/g, " ")
-                          .replace(/^./, (letter) => letter.toUpperCase())
-                      : item.workMode === "remote"
-                        ? "Remote"
-                        : item.workMode === "hybrid"
-                          ? "Hybrid"
-                          : "On-site"
-                  }
-                  tone={
-                    mode === "employer" && item.status === "published"
-                      ? "success"
-                      : "neutral"
-                  }
-                />
-              </View>
-              <Text style={styles.gigTitle}>{item.title}</Text>
-              <Text numberOfLines={2} style={styles.description}>
-                {item.description}
-              </Text>
-              <View style={styles.gigMetaRow}>
-                <View style={styles.payMeta}>
-                  <AppIcon name="coins" size={18} />
-                  <Text style={styles.gigBudget}>
-                    ₱{item.budgetAmount.toLocaleString("en-PH")}
-                  </Text>
-                </View>
-                <View style={styles.locationMeta}>
-                  <AppIcon
-                    name={item.workMode === "remote" ? "remote" : "pin"}
-                    size={16}
-                    color={setupTheme.color.muted}
-                  />
-                  <Text style={styles.gigArea}>
-                    {item.workMode === "remote"
-                      ? "Remote"
-                      : (item.publicArea ?? "Area not specified")}
-                    {"distanceKm" in item && item.distanceKm !== null
-                      ? ` · ${item.distanceKm.toFixed(1)} km`
-                      : ""}
-                  </Text>
-                </View>
-              </View>
-              {item.dueAt ? (
-                <View style={styles.scheduleMeta}>
-                  <AppIcon
-                    name="clock"
-                    size={16}
-                    color={setupTheme.color.muted}
-                  />
-                  <Text style={styles.gigArea}>
-                    Due {new Date(item.dueAt).toLocaleDateString("en-PH")}
-                  </Text>
-                </View>
-              ) : null}
-              {"reasons" in item && item.reasons.length > 0 ? (
-                <View style={styles.reasonsRow}>
-                  {item.reasons.map((reason) => (
-                    <Text key={reason} style={styles.reasonChip}>
-                      {reason}
-                    </Text>
-                  ))}
-                </View>
-              ) : null}
-              {mode === "employer" ? (
-                <View style={styles.manageListing}>
-                  <Text style={styles.manageLabel}>Manage listing</Text>
-                  <AppIcon name="chevronRight" size={18} />
-                </View>
-              ) : null}
-            </Pressable>
+                      ? `/(protected)/employer/gigs/${item.id}`
+                      : `/(protected)/worker/gigs/${item.id}`,
+                  )
+                }
+              />
+            </View>
           )}
         />
       )}
@@ -704,257 +672,155 @@ export function AuthenticatedHomeScreen({
         radiusKm={radiusKm}
         visible={locationModalVisible}
       />
+      <BottomSheet
+        visible={filtersVisible}
+        title="Filters"
+        onClose={() => setFiltersVisible(false)}
+        footer={
+          <View style={styles.sheetActions}>
+            <View style={styles.flex}>
+              <SecondaryButton
+                label="Reset"
+                onPress={() => {
+                  setSelectedCategory("all");
+                  setRadiusKm(null);
+                }}
+              />
+            </View>
+            <View style={styles.flex}>
+              <PrimaryButton
+                label="Show gigs"
+                onPress={() => setFiltersVisible(false)}
+              />
+            </View>
+          </View>
+        }
+      >
+        <Txt variant="title">Category</Txt>
+        <View style={styles.wrap}>
+          {DISCOVERY_CATEGORY_OPTIONS.map((category) => (
+            <FilterPill
+              key={category}
+              label={
+                category === "all"
+                  ? "Any category"
+                  : GIG_CATEGORY_LABELS[category]
+              }
+              selected={selectedCategory === category}
+              onPress={() => setSelectedCategory(category)}
+            />
+          ))}
+        </View>
+        <Txt variant="title">Distance</Txt>
+        {locationSet ? (
+          <View style={styles.wrap}>
+            {DISCOVERY_DISTANCE_OPTIONS.map((option) => (
+              <FilterPill
+                key={option.label}
+                label={option.label}
+                selected={radiusKm === option.value}
+                onPress={() => setRadiusKm(option.value)}
+              />
+            ))}
+          </View>
+        ) : (
+          <Txt variant="caption" tone="secondary">
+            Set your area first to filter by distance. Remote gigs never need a
+            location.
+          </Txt>
+        )}
+        {/* TODO(data): ₱ range, schedule and skills filters need gateway support. */}
+      </BottomSheet>
     </MarketplaceShell>
   );
 }
 
 const styles = StyleSheet.create({
-  listContent: {
-    padding: setupTheme.spacing.section,
-    gap: setupTheme.spacing.compact,
-    paddingBottom: setupTheme.spacing.generous,
+  listContent: { paddingBottom: space.xxl, gap: space.sm },
+  headerStack: { gap: space.lg },
+  gutter: {
+    paddingHorizontal: size.screenPadding,
+    width: "100%",
+    maxWidth: size.contentMax,
+    alignSelf: "center",
   },
-  header: { gap: setupTheme.spacing.compact },
-  welcomeStrip: {
+  stack: { gap: space.sm },
+  flex: { flex: 1 },
+  search: {
     flexDirection: "row",
     alignItems: "center",
-    gap: setupTheme.spacing.compact,
-  },
-  welcomeText: { flex: 1, gap: setupTheme.spacing.tight },
-  welcomeStack: { flexDirection: "column", alignItems: "stretch" },
-  stackedWelcomeText: { flex: 0 },
-  welcomeName: {
-    color: setupTheme.color.foreground,
-    fontSize: setupTheme.type.heading,
-    lineHeight: setupTheme.type.heading * 1.3,
-    fontWeight: "600",
-  },
-  filterZone: {
-    backgroundColor: setupTheme.color.surface,
-    borderRadius: setupTheme.radius.control,
-    borderColor: setupTheme.color.border,
+    gap: space.xs,
+    minHeight: size.primaryButton,
+    paddingLeft: space.md,
+    paddingRight: space.xxs + 2,
+    borderRadius: radius.input,
     borderWidth: 1,
-    padding: setupTheme.spacing.tight,
-    gap: setupTheme.spacing.tight,
-  },
-  filterScroll: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: setupTheme.spacing.compact,
-  },
-  filterDivider: {
-    width: 1,
-    height: setupTheme.spacing.content,
-    backgroundColor: setupTheme.color.border,
-    marginHorizontal: setupTheme.spacing.tight,
-  },
-  listingOverview: {
-    flexDirection: "row",
-    gap: setupTheme.spacing.compact,
-    marginVertical: setupTheme.spacing.tight,
-  },
-  overviewItem: {
-    flex: 1,
-    alignItems: "center",
-    gap: setupTheme.spacing.tight,
-    padding: setupTheme.spacing.compact,
-    backgroundColor: setupTheme.color.surface,
-    borderRadius: setupTheme.radius.control,
-    borderColor: setupTheme.color.border,
-    borderWidth: 1,
-  },
-  overviewValue: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: setupTheme.spacing.compact,
-  },
-  overviewCount: {
-    color: setupTheme.color.primary,
-    fontSize: setupTheme.type.heading,
-    fontWeight: "600",
-  },
-  overviewLabel: {
-    color: setupTheme.color.muted,
-    fontSize: setupTheme.type.caption,
-  },
-  searchRow: {
-    flexDirection: "row",
-    gap: setupTheme.spacing.compact,
-    alignItems: "center",
-    borderRadius: setupTheme.radius.control,
-    backgroundColor: setupTheme.color.surface,
-    paddingLeft: setupTheme.spacing.section,
-    paddingRight: setupTheme.spacing.tight,
-  },
-  searchSubmit: {
-    width: setupTheme.size.touchTarget,
-    height: setupTheme.size.touchTarget,
-    borderRadius: setupTheme.radius.small,
-    backgroundColor: setupTheme.color.primary,
-    alignItems: "center",
-    justifyContent: "center",
+    borderColor: palette.border,
+    backgroundColor: palette.surface,
   },
   searchInput: {
+    ...type.body,
     flex: 1,
     minWidth: 0,
-    minHeight: setupTheme.size.touchTarget,
-    paddingVertical: setupTheme.spacing.compact,
-    color: setupTheme.color.foreground,
-    fontSize: setupTheme.type.body,
+    color: palette.text,
+    paddingVertical: space.sm,
   },
+  filterDot: {
+    position: "absolute",
+    top: space.xs,
+    right: space.xs,
+    width: size.dot + 2,
+    height: size.dot + 2,
+    borderRadius: radius.pill,
+    backgroundColor: palette.purple,
+  },
+  pills: { flexDirection: "row", gap: space.xs },
+  chipsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: space.xs,
+  },
+  locationChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: space.xxs,
+    minHeight: size.touchTarget - space.xs,
+    maxWidth: "100%",
+    paddingHorizontal: space.sm,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: palette.border,
+    backgroundColor: palette.surface,
+  },
+  chipText: { color: palette.text, fontWeight: "500", flexShrink: 1 },
+  chipAction: { color: palette.purple, fontWeight: "600" },
   sectionRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: setupTheme.spacing.tight,
+    flexWrap: "wrap",
+    gap: space.xs,
+    marginTop: space.xs,
   },
-  sectionHeader: {
-    flex: 1,
-    color: setupTheme.color.foreground,
-    fontSize: setupTheme.type.cardTitle,
-    fontWeight: "600",
-  },
-  refreshButton: {
+  caption: {
     flexDirection: "row",
     alignItems: "center",
-    gap: setupTheme.spacing.tight,
-    minHeight: 48,
-    minWidth: setupTheme.size.touchTarget,
-    justifyContent: "center",
-    paddingHorizontal: setupTheme.spacing.compact,
+    gap: space.xxs,
+    paddingHorizontal: space.xs,
+    paddingVertical: 2,
+    borderRadius: radius.pill,
   },
-  refreshText: {
-    color: setupTheme.color.accent,
-    fontSize: setupTheme.type.caption,
-    fontWeight: "500",
-  },
-  helper: {
-    color: setupTheme.color.muted,
-    fontSize: setupTheme.type.caption,
-    lineHeight: 20,
-  },
-  loadingRow: {
-    flexDirection: "row",
-    gap: setupTheme.spacing.compact,
-    justifyContent: "center",
-    padding: setupTheme.spacing.section,
-  },
-  gigCard: {
-    ...setupTheme.shadow.card,
-    backgroundColor: setupTheme.color.surface,
-    borderColor: setupTheme.color.border,
-    borderRadius: setupTheme.radius.card,
+  captionStale: {
+    backgroundColor: status.warning.bg,
     borderWidth: 1,
-    gap: setupTheme.spacing.compact,
-    padding: setupTheme.spacing.section,
+    borderColor: status.warning.border,
   },
-  gigBadgeRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: setupTheme.spacing.compact,
+  staleDot: {
+    width: size.dot,
+    height: size.dot,
+    borderRadius: radius.pill,
+    backgroundColor: status.warning.base,
   },
-  categoryBadge: {
-    color: setupTheme.color.accent,
-    fontSize: setupTheme.type.caption,
-    fontWeight: "500",
-    flexShrink: 1,
-  },
-  gigTitle: {
-    color: setupTheme.color.foreground,
-    fontSize: setupTheme.type.cardTitle,
-    fontWeight: "600",
-    lineHeight: setupTheme.type.cardTitle * 1.4,
-  },
-  description: {
-    color: setupTheme.color.muted,
-    fontSize: setupTheme.type.body,
-    lineHeight: setupTheme.type.body * 1.5,
-  },
-  gigMetaRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: setupTheme.spacing.compact,
-  },
-  gigBudget: {
-    color: setupTheme.color.secondary,
-    fontSize: setupTheme.type.body,
-    fontWeight: "600",
-  },
-  gigArea: {
-    color: setupTheme.color.muted,
-    fontSize: setupTheme.type.caption,
-    flexShrink: 1,
-  },
-  categoryHeading: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: setupTheme.spacing.compact,
-    flex: 1,
-    minWidth: 0,
-  },
-  categoryTile: {
-    minWidth: 36,
-    minHeight: 36,
-    padding: setupTheme.spacing.compact,
-    borderRadius: setupTheme.radius.control,
-    backgroundColor: setupTheme.color.accentSurface,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  payMeta: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: setupTheme.spacing.compact,
-  },
-  locationMeta: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: setupTheme.spacing.tight,
-    flexShrink: 1,
-  },
-  scheduleMeta: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: setupTheme.spacing.tight,
-  },
-  reasonsRow: {
-    paddingTop: setupTheme.spacing.compact,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: setupTheme.spacing.compact,
-  },
-  manageListing: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingTop: setupTheme.spacing.compact,
-    borderTopColor: setupTheme.color.border,
-    borderTopWidth: 1,
-    gap: setupTheme.spacing.compact,
-  },
-  manageLabel: {
-    color: setupTheme.color.primary,
-    fontSize: setupTheme.type.caption,
-    fontWeight: "500",
-    flexShrink: 1,
-  },
-  reasonChip: {
-    backgroundColor: setupTheme.color.readySurface,
-    color: setupTheme.color.ready,
-    borderRadius: setupTheme.radius.small,
-    paddingHorizontal: setupTheme.spacing.compact,
-    paddingVertical: setupTheme.spacing.tight,
-    fontSize: setupTheme.type.caption,
-  },
-  footer: {
-    color: setupTheme.color.muted,
-    fontSize: setupTheme.type.caption,
-    lineHeight: 20,
-    textAlign: "center",
-    paddingVertical: setupTheme.spacing.section,
-  },
+  wrap: { flexDirection: "row", flexWrap: "wrap", gap: space.xs },
+  sheetActions: { flexDirection: "row", gap: space.xs },
 });

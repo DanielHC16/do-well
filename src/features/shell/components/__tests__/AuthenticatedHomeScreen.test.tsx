@@ -4,7 +4,10 @@ import type { AuthProfile } from "@/features/auth/model/auth-state";
 import type { DiscoveryGateway } from "@/features/discovery/data/discovery-gateway";
 import type { DiscoveryGigCard } from "@/features/discovery/model/discovery-schemas";
 import type { GigGateway } from "@/features/gigs/data/gig-gateway";
+import type { ApplicantSummary } from "@/features/applications/model/application-schemas";
 import type { GigRecord } from "@/features/gigs/model/gig-schemas";
+import type { HomeStatsSources } from "@/features/shell/data/home-stats";
+import type { WorkItem } from "@/features/work/data/work-gateway";
 import type { LocationService } from "@/features/location";
 
 import { AuthenticatedHomeScreen } from "../AuthenticatedHomeScreen";
@@ -23,9 +26,10 @@ jest.mock("expo-router", () => ({
   useRouter: () => ({ push: mockPush, replace: mockReplace }),
 }));
 
+let mockShellMode: "worker" | "employer" = "worker";
 jest.mock("@/features/shell/context/useShellMode", () => ({
   useShellMode: () => ({
-    mode: "worker",
+    mode: mockShellMode,
     busy: false,
     error: null,
     switchMode: mockSwitchMode,
@@ -127,6 +131,25 @@ function createMockDiscoveryGateway(
   };
 }
 
+function createMockStats(
+  overrides: Partial<{
+    work: WorkItem[];
+    applicants: ApplicantSummary["status"][];
+  }> = {},
+): HomeStatsSources {
+  return {
+    pageSize: 20,
+    work: { list: jest.fn(async () => overrides.work ?? []) },
+    applicants: {
+      listGigApplicants: jest.fn(async () =>
+        (overrides.applicants ?? []).map(
+          (status) => ({ status }) as ApplicantSummary,
+        ),
+      ),
+    },
+  };
+}
+
 function createMockLocationService(
   overrides: Partial<LocationService> = {},
 ): LocationService {
@@ -145,7 +168,10 @@ function createMockLocationService(
 }
 
 describe("AuthenticatedHomeScreen", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockShellMode = "worker";
+  });
 
   it("keeps discovery loading distinct from an empty result", async () => {
     const discovery = createMockDiscoveryGateway();
@@ -159,13 +185,15 @@ describe("AuthenticatedHomeScreen", () => {
         profile={profile}
       />,
     );
-    expect(view.getByText("Searching notices...")).toBeVisible();
-    expect(view.queryByText("No gigs found")).toBeNull();
-    expect(view.getByRole("header", { name: "Discover gigs" })).toBeVisible();
+    expect(view.getByLabelText("Finding gigs")).toBeBusy();
+    expect(view.queryByText("No gigs here yet")).toBeNull();
+    expect(view.getAllByRole("header", { name: "Discover gigs" })).toHaveLength(
+      1,
+    );
     expect(view.queryByText("Flexible gigs nearby and online.")).toBeNull();
   });
 
-  it("shows employer listing counts from loaded rows and keeps worker discovery controls out of the dashboard", async () => {
+  it("shows real employer counts in the header tiles and keeps worker discovery controls out", async () => {
     const gateway = createMockGigGateway([
       sampleEmployerGigs[0],
       {
@@ -174,19 +202,27 @@ describe("AuthenticatedHomeScreen", () => {
         status: "draft",
       },
     ]);
+    mockShellMode = "employer";
+    const stats = createMockStats({ applicants: ["pending", "rejected"] });
     const view = await render(
       <AuthenticatedHomeScreen
         gateway={gateway}
         mode="employer"
         profile={profile}
+        stats={stats}
       />,
     );
     await waitFor(() =>
-      expect(view.getByLabelText("1 published listing")).toBeVisible(),
+      expect(
+        view.getByRole("button", { name: "1 Active posts" }),
+      ).toBeVisible(),
     );
-    expect(view.getByLabelText("1 draft listing")).toBeVisible();
-    expect(view.getByLabelText("0 closed listings")).toBeVisible();
-    expect(view.getByRole("header", { name: "Manage gigs" })).toBeVisible();
+    expect(view.getByRole("button", { name: "1 Applicants" })).toBeVisible();
+    expect(view.getByRole("button", { name: "0 In progress" })).toBeVisible();
+    expect(stats.applicants.listGigApplicants).toHaveBeenCalledWith(
+      sampleEmployerGigs[0].id,
+    );
+    expect(view.getByRole("header", { name: "Your workspace" })).toBeVisible();
     expect(view.queryByLabelText("Location and radius filter")).toBeNull();
     expect(view.queryByRole("button", { name: "Remote" })).toBeNull();
   });
@@ -251,7 +287,7 @@ describe("AuthenticatedHomeScreen", () => {
       view.getByLabelText("Search gigs"),
       "  delivery  ",
     );
-    await fireEvent.press(view.getByRole("button", { name: "Search" }));
+    await fireEvent(view.getByLabelText("Search gigs"), "submitEditing");
     await waitFor(() =>
       expect(discovery.discoverGigsWithMetadata).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -323,12 +359,13 @@ describe("AuthenticatedHomeScreen", () => {
     );
 
     await waitFor(() => {
-      expect(view.getByText("Available gigs")).toBeVisible();
+      expect(view.getByRole("header", { name: "1 gig" })).toBeVisible();
       expect(view.getByText("Grocery Delivery from Market")).toBeVisible();
       expect(view.getByText("₱450")).toBeVisible();
       expect(view.getByText(/1\.5 km/)).toBeVisible();
-      expect(view.getByText("Within 5 km of you")).toBeVisible();
-      expect(view.getByText("Recently posted")).toBeVisible();
+      expect(
+        view.getByText("Why this fits: Within 5 km of you · Recently posted"),
+      ).toBeVisible();
     });
   });
 
@@ -344,10 +381,12 @@ describe("AuthenticatedHomeScreen", () => {
     );
 
     await waitFor(() => {
-      expect(view.getByText("Available gigs")).toBeVisible();
+      expect(view.getByRole("header", { name: "1 gig" })).toBeVisible();
     });
 
     expect(view.queryByRole("button", { name: "Nearby" })).toBeNull();
+    // No area chosen: the heading must not claim proximity.
+    expect(view.queryByText(/near you/)).toBeNull();
     await fireEvent.press(view.getByRole("button", { name: "On-site" }));
     await waitFor(() =>
       expect(discovery.discoverGigsWithMetadata).toHaveBeenCalledWith(
@@ -397,6 +436,97 @@ describe("AuthenticatedHomeScreen", () => {
     );
   });
 
+  it("shows worker tiles from real reads and a true zero for shortlisted", async () => {
+    const stats = createMockStats();
+    const view = await render(
+      <AuthenticatedHomeScreen
+        discovery={createMockDiscoveryGateway([])}
+        mode="worker"
+        profile={profile}
+        stats={stats}
+      />,
+    );
+    await waitFor(() =>
+      expect(view.getByRole("button", { name: "0 Applied" })).toBeEnabled(),
+    );
+    expect(view.getByRole("button", { name: "0 Shortlisted" })).toBeDisabled();
+    await fireEvent.press(view.getByRole("button", { name: "0 Applied" }));
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: "/(protected)/work",
+      params: { section: "applications" },
+    });
+  });
+
+  it("offers reset and remote browsing from a compact empty state", async () => {
+    const discovery = createMockDiscoveryGateway([]);
+    const view = await render(
+      <AuthenticatedHomeScreen
+        discovery={discovery}
+        mode="worker"
+        profile={profile}
+        stats={createMockStats()}
+      />,
+    );
+    await waitFor(() =>
+      expect(view.getByText("No gigs here yet")).toBeVisible(),
+    );
+    await fireEvent.press(view.getByRole("button", { name: "Browse remote" }));
+    await waitFor(() =>
+      expect(discovery.discoverGigsWithMetadata).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          filters: expect.objectContaining({ workMode: "remote" }),
+        }),
+        profile.id,
+      ),
+    );
+  });
+
+  it("applies the center-button remote intent once", async () => {
+    const discovery = createMockDiscoveryGateway([]);
+    await render(
+      <AuthenticatedHomeScreen
+        discovery={discovery}
+        mode="worker"
+        profile={profile}
+        stats={createMockStats()}
+        intent={{ kind: "remote", at: "1" }}
+      />,
+    );
+    await waitFor(() =>
+      expect(discovery.discoverGigsWithMetadata).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          filters: expect.objectContaining({ workMode: "remote" }),
+        }),
+        profile.id,
+      ),
+    );
+  });
+
+  it("filters by category from the filter sheet", async () => {
+    const discovery = createMockDiscoveryGateway(sampleDiscoveryGigs);
+    const view = await render(
+      <AuthenticatedHomeScreen
+        discovery={discovery}
+        mode="worker"
+        profile={profile}
+        stats={createMockStats()}
+      />,
+    );
+    await fireEvent.press(view.getByRole("button", { name: "Filters" }));
+    await fireEvent.press(view.getByRole("button", { name: "Local Delivery" }));
+    await waitFor(() =>
+      expect(discovery.discoverGigsWithMetadata).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          filters: expect.objectContaining({ category: "delivery" }),
+        }),
+        profile.id,
+      ),
+    );
+    expect(
+      view.getByText(/Set your area first to filter by distance/),
+    ).toBeVisible();
+  });
+
   it("switches presentation mode and replaces the workspace route", async () => {
     const discovery = createMockDiscoveryGateway([]);
     const view = await render(
@@ -428,11 +558,12 @@ describe("AuthenticatedHomeScreen", () => {
     );
 
     await waitFor(() => {
-      expect(view.getByText("No listings yet")).toBeVisible();
-      expect(view.getByText("Post a gig")).toBeVisible();
+      expect(view.getByText("Post your first gig")).toBeVisible();
     });
 
-    await fireEvent.press(view.getByRole("button", { name: "Post a gig" }));
+    // Both the empty-state action and the center button open the builder.
+    const actions = view.getAllByRole("button", { name: "Post a gig" });
+    await fireEvent.press(actions[0]);
     expect(mockPush).toHaveBeenCalledWith("/(protected)/employer/gigs/new");
   });
 
@@ -449,7 +580,7 @@ describe("AuthenticatedHomeScreen", () => {
     await waitFor(() => {
       expect(view.getByText("Neighborhood House Cleaning")).toBeVisible();
       expect(view.getByText("₱1,200")).toBeVisible();
-      expect(view.getAllByText("Published")[0]).toBeVisible();
+      expect(view.getByLabelText("Status: Open")).toBeVisible();
     });
 
     await fireEvent.press(
