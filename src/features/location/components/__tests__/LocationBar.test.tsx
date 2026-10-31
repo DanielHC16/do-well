@@ -20,9 +20,14 @@ describe("LocationBar", () => {
       />,
     );
 
-    expect(view.getByText("GPS FIX")).toBeTruthy();
+    expect(view.queryByText("GPS FIX")).toBeNull();
     expect(view.getByText("Current location (~15m)")).toBeTruthy();
-    expect(view.getByText("Filtering: Within 10 km")).toBeTruthy();
+    expect(view.getByText("Within 10 km")).toBeTruthy();
+    expect(
+      view.getByRole("button", { name: "Location and radius filter" }),
+    ).toHaveAccessibilityValue({
+      text: "Current location (~15m), Within 10 km",
+    });
 
     await fireEvent.press(view.getByRole("button"));
     expect(onPress).toHaveBeenCalledTimes(1);
@@ -45,9 +50,11 @@ describe("LocationBar", () => {
       />,
     );
 
-    expect(view.getByText("MANUAL LOCALITY")).toBeTruthy();
     expect(view.getByText("Makati CBD")).toBeTruthy();
-    expect(view.getByText("Filtering: Any distance")).toBeTruthy();
+    expect(view.getByText("Any distance")).toBeTruthy();
+    expect(
+      view.getByRole("button", { name: "Location and radius filter" }),
+    ).toHaveAccessibilityValue({ text: "Makati CBD, Any distance" });
   });
 
   it("renders when location is not set", async () => {
@@ -67,7 +74,7 @@ describe("LocationBar", () => {
       />,
     );
 
-    expect(view.getByText("NOT SET")).toBeTruthy();
-    expect(view.getByText("Set location for nearby gigs")).toBeTruthy();
+    expect(view.getByText("Choose an area")).toBeTruthy();
+    expect(view.getByText("Optional · Remote gigs available")).toBeTruthy();
   });
 });

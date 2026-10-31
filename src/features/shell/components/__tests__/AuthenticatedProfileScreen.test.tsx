@@ -7,8 +7,14 @@ import { AuthenticatedProfileScreen } from "../AuthenticatedProfileScreen";
 const mockPush = jest.fn();
 const mockReplace = jest.fn();
 
+jest.mock("@/shared/api/supabase", () => ({ getSupabaseClient: jest.fn() }));
+
 jest.mock("expo-router", () => ({
   useRouter: () => ({ push: mockPush, replace: mockReplace }),
+  useFocusEffect: (effect: () => void | (() => void)) => {
+    const React = jest.requireActual<typeof import("react")>("react");
+    React.useEffect(effect, [effect]);
+  },
 }));
 
 jest.mock("@/features/shell/context/useShellMode", () => ({
@@ -30,6 +36,30 @@ const profile: AuthProfile = {
 
 describe("AuthenticatedProfileScreen", () => {
   beforeEach(() => jest.clearAllMocks());
+
+  it("loads the current biography on focus without requiring an edit", async () => {
+    const gateway = {
+      read: jest.fn(async () => ({
+        id: profile.id,
+        displayName: profile.displayName,
+        homeArea: "Makati",
+        bio: "Student designer",
+      })),
+      save: jest.fn(),
+    };
+    const view = await render(
+      <AuthenticatedProfileScreen
+        busy={false}
+        onSignOut={jest.fn()}
+        profile={profile}
+        editorGateway={gateway}
+      />,
+    );
+    await waitFor(() =>
+      expect(view.getByText("Student designer")).toBeVisible(),
+    );
+    expect(gateway.read).toHaveBeenCalledWith(profile.id);
+  });
 
   it("renders profile details and dispatches sign out when requested", async () => {
     const onSignOut = jest.fn(async () => undefined);
@@ -63,5 +93,31 @@ describe("AuthenticatedProfileScreen", () => {
     expect(view.getByText("Signing out...")).toBeVisible();
     const button = view.getByRole("button", { name: "Signing out" });
     expect(button.props.accessibilityState.disabled).toBe(true);
+  });
+
+  it("opens settings and reports a failed profile read honestly", async () => {
+    const gateway = {
+      read: jest.fn(async () => {
+        throw new Error("private");
+      }),
+      save: jest.fn(),
+    };
+    const view = await render(
+      <AuthenticatedProfileScreen
+        busy={false}
+        onSignOut={jest.fn()}
+        profile={profile}
+        editorGateway={gateway}
+      />,
+    );
+    await fireEvent.press(view.getByRole("button", { name: "Settings" }));
+    expect(mockPush).toHaveBeenCalledWith("/(protected)/settings");
+    await fireEvent.press(view.getByRole("button", { name: "Edit profile" }));
+    await waitFor(() =>
+      expect(view.getByRole("alert")).toHaveTextContent(
+        /couldn't load your profile/,
+      ),
+    );
+    expect(view.queryByText("Profile updated")).toBeNull();
   });
 });

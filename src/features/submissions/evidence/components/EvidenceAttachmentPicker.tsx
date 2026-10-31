@@ -1,10 +1,10 @@
+import { Text } from "@/shared/ui/Typography";
 import { useState } from "react";
 import {
   ActivityIndicator,
   Image,
   Pressable,
   StyleSheet,
-  Text,
   View,
 } from "react-native";
 
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   },
   actionButtonText: {
     color: setupTheme.color.foreground,
-    fontFamily: "Inter_600SemiBold",
+    fontWeight: "600",
     fontSize: setupTheme.type.caption,
   },
   actionRow: {
@@ -202,17 +202,17 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: setupTheme.color.danger,
-    fontFamily: "Inter_500Medium",
+    fontWeight: "500",
     fontSize: 12,
   },
   fileName: {
     color: setupTheme.color.foreground,
-    fontFamily: "Inter_600SemiBold",
+    fontWeight: "600",
     fontSize: setupTheme.type.caption,
   },
   fileSize: {
     color: setupTheme.color.muted,
-    fontFamily: "Inter_400Regular",
+    fontWeight: "400",
     fontSize: 11,
     marginTop: 2,
   },
@@ -254,17 +254,17 @@ const styles = StyleSheet.create({
   },
   removeButtonText: {
     color: setupTheme.color.danger,
-    fontFamily: "Inter_600SemiBold",
+    fontWeight: "600",
     fontSize: 11,
   },
   subtitle: {
     color: setupTheme.color.muted,
-    fontFamily: "Inter_400Regular",
+    fontWeight: "400",
     fontSize: 11,
   },
   title: {
     color: setupTheme.color.foreground,
-    fontFamily: "Inter_700Bold",
+    fontWeight: "700",
     fontSize: 11,
     letterSpacing: 0.6,
   },

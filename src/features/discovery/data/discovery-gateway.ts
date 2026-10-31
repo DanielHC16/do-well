@@ -60,6 +60,29 @@ export type DiscoveryGateway = Readonly<{
   ) => Promise<DiscoveryGigCard | null>;
 }>;
 
+function isNetworkFailure(failure: unknown): boolean {
+  if (
+    typeof failure !== "object" ||
+    failure === null ||
+    !("message" in failure) ||
+    typeof failure.message !== "string"
+  )
+    return false;
+  if (
+    "code" in failure &&
+    typeof failure.code === "string" &&
+    failure.code.length > 0
+  )
+    return false;
+  return (
+    /network request failed|failed to fetch|fetch failed|networkerror|network error|timed? ?out|timeout/i.test(
+      failure.message,
+    ) ||
+    ("name" in failure &&
+      (failure.name === "AbortError" || failure.name === "TimeoutError"))
+  );
+}
+
 export function createDiscoveryGateway(
   client: SupabaseClient<Database>,
   cache: CacheStore = cacheStore,
@@ -70,7 +93,6 @@ export function createDiscoveryGateway(
       userId?: string,
     ): Promise<DiscoverGigsResult> {
       const safeUser = userId || "anonymous";
-      const cacheKey = `discovery:feed:${JSON.stringify(params.filters ?? {})}`;
       const {
         filters = {},
         workerLatitude = null,
@@ -91,6 +113,17 @@ export function createDiscoveryGateway(
         filters.searchQuery && filters.searchQuery.trim().length > 0
           ? filters.searchQuery.trim()
           : undefined;
+      // A saved page is valid only for the same effective query and location.
+      const cacheKey = `discovery:feed:${JSON.stringify({
+        category,
+        workMode,
+        searchQuery,
+        maxDistanceKm: filters.maxDistanceKm ?? null,
+        workerLatitude,
+        workerLongitude,
+        limit,
+        offset,
+      })}`;
 
       try {
         const { data, error } = await client.rpc("discover_gigs", {
@@ -147,26 +180,30 @@ export function createDiscoveryGateway(
       gigId: string,
       userId?: string,
     ): Promise<DiscoveryGigCard | null> {
-      const safeUser = userId || "anonymous";
       const cacheKey = `gig:detail:${gigId}`;
 
       try {
         const { data, error } = await client
           .from("gigs")
-          .select()
+          .select("*, employer:profiles!gigs_employer_id_fkey(display_name)")
           .eq("id", gigId)
-          .eq("status", "published")
           .maybeSingle();
 
-        if (error) {
-          throw new Error(error.message);
-        }
+        if (error) throw error;
 
         if (!data) return null;
+
+        const employerName =
+          DiscoveryGigCardSchema.shape.employerDisplayName.safeParse(
+            data.employer?.display_name,
+          );
 
         const mapped = DiscoveryGigCardSchema.parse({
           id: data.id,
           employerId: data.employer_id,
+          employerDisplayName: employerName.success
+            ? (employerName.data ?? null)
+            : null,
           title: data.title,
           description: data.description,
           category: data.category,
@@ -184,12 +221,14 @@ export function createDiscoveryGateway(
           distanceKm: null,
           publishedAt: data.published_at,
           createdAt: data.created_at,
+          dueAt: data.due_at,
+          applicationDeadline: data.application_deadline,
           reasons:
             data.work_mode === "remote" ? ["Remote - work from anywhere"] : [],
         });
 
         try {
-          await cache.set(safeUser, cacheKey, mapped);
+          if (userId) await cache.set(userId, cacheKey, mapped);
         } catch {
           // Best effort cache write
         }
@@ -197,8 +236,15 @@ export function createDiscoveryGateway(
         return mapped;
       } catch (err) {
         try {
-          const cached = await cache.get<DiscoveryGigCard>(safeUser, cacheKey);
-          if (cached?.data) return cached.data;
+          if (!userId || !isNetworkFailure(err)) throw err;
+          const cached = await cache.get<DiscoveryGigCard>(userId, cacheKey);
+          const parsed = DiscoveryGigCardSchema.safeParse(cached?.data);
+          if (
+            cached?.userId === userId &&
+            parsed.success &&
+            parsed.data.id === gigId
+          )
+            return parsed.data;
         } catch {
           // Best effort cache read
         }

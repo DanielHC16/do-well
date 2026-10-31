@@ -1,12 +1,7 @@
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
+import { Text } from "@/shared/ui/Typography";
 
 import {
   assignmentGateway,
@@ -21,9 +16,11 @@ import {
   type NotificationService,
 } from "@/features/notifications";
 import { setupTheme } from "@/features/setup/setupTheme";
+import { EmptyState, ErrorState, LoadingSkeleton } from "@/shared/ui";
+import { AppIcon } from "@/shared/ui/AppIcon";
 import { useShellMode } from "@/features/shell/context/useShellMode";
 
-import { MarketplaceShell, marketplaceStyles } from "./MarketplaceShell";
+import { MarketplaceShell } from "./MarketplaceShell";
 
 type AuthenticatedActivityScreenProps = Readonly<{
   userId: string;
@@ -164,7 +161,10 @@ export function AuthenticatedActivityScreen({
   const router = useRouter();
   const { mode } = useShellMode();
   const [events, setEvents] = useState<ActivityEventRecord[]>([]);
-  const [busy, setBusy] = useState(true);
+  const [settledRequest, setSettledRequest] = useState<string | null>(null);
+  const [reload, setReload] = useState(0);
+  const requestKey = `${userId}:${reload}`;
+  const busy = settledRequest !== requestKey;
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [alertsEnabled, setAlertsEnabled] = useState(false);
   const [alertsBusy, setAlertsBusy] = useState(false);
@@ -194,23 +194,19 @@ export function AuthenticatedActivityScreen({
         setEvents(data);
         setErrorMessage(null);
       })
-      .catch((err: unknown) => {
+      .catch(() => {
         if (!mounted) return;
-        setErrorMessage(
-          err instanceof Error
-            ? err.message
-            : "Unable to load activity events.",
-        );
+        setErrorMessage("We couldn't load your activity. Try again.");
       })
       .finally(() => {
         if (!mounted) return;
-        setBusy(false);
+        setSettledRequest(requestKey);
       });
 
     return () => {
       mounted = false;
     };
-  }, [gateway]);
+  }, [gateway, requestKey]);
 
   useEffect(() => {
     if (!alertsEnabled || busy) return;
@@ -278,169 +274,243 @@ export function AuthenticatedActivityScreen({
   return (
     <MarketplaceShell
       activeSection="activity"
-      subtitle="Applications, assignments, submissions, and approvals share one readable trail."
-      title="Nothing gets lost in the handoff."
+      compactHeader
+      subtitle="Applications, work updates, and decisions in one place."
+      title="Activity"
     >
-      {!alertsEnabled ? (
-        <View style={marketplaceStyles.card}>
-          <Text style={marketplaceStyles.cardKicker}>LOCAL ALERTS</Text>
-          <Text style={marketplaceStyles.cardTitle}>Keep handoffs visible</Text>
-          <Text style={marketplaceStyles.body}>
-            Enable on-device alerts for new assignment activity already synced
-            to this account. No paid push service is used.
-          </Text>
-          <Pressable
-            accessibilityLabel="Enable local activity alerts"
-            accessibilityRole="button"
-            disabled={alertsBusy}
-            onPress={() => void handleEnableAlerts()}
-            style={marketplaceStyles.primaryButton}
-          >
-            <Text style={marketplaceStyles.primaryButtonText}>
-              {alertsBusy ? "Requesting permission..." : "Enable local alerts"}
-            </Text>
-          </Pressable>
-        </View>
-      ) : null}
+      <View style={styles.listHeader}>
+        <Text accessibilityRole="header" style={styles.listTitle}>
+          Recent activity
+        </Text>
+        <Pressable
+          accessibilityLabel="Refresh activity"
+          accessibilityRole="button"
+          accessibilityState={{ busy, disabled: busy }}
+          disabled={busy}
+          onPress={() => setReload((value) => value + 1)}
+          style={styles.refreshButton}
+        >
+          {busy ? (
+            <ActivityIndicator color={setupTheme.color.primary} />
+          ) : (
+            <AppIcon name="refresh" size={20} />
+          )}
+        </Pressable>
+      </View>
       {busy ? (
-        <View style={styles.loadingBox}>
-          <ActivityIndicator color={setupTheme.color.foreground} />
-          <Text style={styles.loadingText}>Loading activity trail...</Text>
-        </View>
+        <LoadingSkeleton label="Loading activity…" />
       ) : errorMessage ? (
-        <View style={marketplaceStyles.card}>
-          <Text style={styles.errorKicker}>ACTIVITY ERROR</Text>
-          <Text style={marketplaceStyles.body}>{errorMessage}</Text>
-        </View>
+        <ErrorState
+          message={errorMessage}
+          onRetry={() => setReload((value) => value + 1)}
+        />
       ) : events.length === 0 ? (
-        <View style={marketplaceStyles.card}>
-          <Text style={marketplaceStyles.cardKicker}>RECENT ACTIVITY</Text>
-          <Text style={marketplaceStyles.cardTitle}>No activity yet</Text>
-          <Text style={marketplaceStyles.body}>
-            Real account activity will appear here as you apply to gigs, select
-            workers, confirm agreements, and update milestones.
-          </Text>
-        </View>
+        <EmptyState
+          kind="activity"
+          title="No activity yet"
+          message="Your application and work updates appear here."
+        />
       ) : (
         <View style={styles.eventList}>
           {events.map((event) => {
             const isUnread = event.readAt === null;
             return (
               <Pressable
-                accessibilityLabel={`${formatEventTitle(event)}. ${formatEventDescription(event)}`}
+                accessibilityLabel={`${isUnread ? "Unread. " : ""}${formatEventTitle(event)}. ${formatEventDescription(event)}`}
                 accessibilityRole="button"
+                accessibilityHint={
+                  event.assignmentId ? "Opens the task agreement." : undefined
+                }
                 key={event.id}
                 onPress={() => void handlePressEvent(event)}
                 style={[styles.eventCard, isUnread && styles.unreadEventCard]}
               >
-                <View style={styles.eventTopRow}>
-                  <View style={styles.eventBadgeGroup}>
-                    {isUnread ? (
-                      <View style={styles.newPill}>
-                        <Text style={styles.newPillText}>NEW</Text>
-                      </View>
-                    ) : null}
-                    <Text style={styles.eventTitle}>
-                      {formatEventTitle(event)}
+                <View style={styles.eventIcon}>
+                  <AppIcon
+                    name={event.assignmentId ? "briefcase" : "bell"}
+                    size={20}
+                    color={setupTheme.color.primary}
+                  />
+                </View>
+                <View style={styles.eventContent}>
+                  <View style={styles.eventTopRow}>
+                    <View style={styles.eventBadgeGroup}>
+                      {isUnread ? (
+                        <View style={styles.newPill}>
+                          <Text style={styles.newPillText}>New</Text>
+                        </View>
+                      ) : null}
+                      <Text style={styles.eventTitle}>
+                        {formatEventTitle(event)}
+                      </Text>
+                    </View>
+                    <Text style={styles.eventTime}>
+                      {new Date(event.createdAt).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                      })}
                     </Text>
                   </View>
-                  <Text style={styles.eventTime}>
-                    {new Date(event.createdAt).toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                    })}
+                  <Text style={styles.eventDescription}>
+                    {formatEventDescription(event)}
                   </Text>
                 </View>
-                <Text style={styles.eventDescription}>
-                  {formatEventDescription(event)}
-                </Text>
-                {event.assignmentId ? (
-                  <Text style={styles.viewLinkText}>
-                    View Task Agreement &rarr;
-                  </Text>
-                ) : null}
               </Pressable>
             );
           })}
         </View>
       )}
+      {!alertsEnabled ? (
+        <View style={styles.alertBanner}>
+          <AppIcon name="bell" size={20} />
+          <View style={styles.alertCopy}>
+            <Text style={styles.alertTitle}>Device alerts</Text>
+            <Text style={styles.alertDescription}>
+              Optional work notifications.
+            </Text>
+          </View>
+          <Pressable
+            accessibilityLabel="Enable local activity alerts"
+            accessibilityRole="button"
+            accessibilityState={{ busy: alertsBusy, disabled: alertsBusy }}
+            disabled={alertsBusy}
+            onPress={() => void handleEnableAlerts()}
+            style={styles.alertAction}
+          >
+            {alertsBusy ? (
+              <ActivityIndicator color={setupTheme.color.primary} />
+            ) : null}
+            <Text style={styles.alertActionText}>Enable</Text>
+          </Pressable>
+        </View>
+      ) : null}
     </MarketplaceShell>
   );
 }
 
 const styles = StyleSheet.create({
-  loadingBox: {
+  listHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: setupTheme.spacing.compact,
+  },
+  listTitle: {
+    flex: 1,
+    fontSize: setupTheme.type.cardTitle,
+    fontWeight: "600",
+    color: setupTheme.color.foreground,
+  },
+  refreshButton: {
+    minHeight: setupTheme.size.touchTarget,
+    minWidth: setupTheme.size.touchTarget,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: setupTheme.radius.control,
+    backgroundColor: setupTheme.color.accentSurface,
+  },
+  alertBanner: {
+    flexDirection: "row",
+    flexWrap: "wrap",
     alignItems: "center",
     gap: setupTheme.spacing.compact,
-    paddingVertical: setupTheme.spacing.section * 2,
+    padding: setupTheme.spacing.compact + setupTheme.spacing.tight,
+    borderRadius: setupTheme.radius.card,
+    backgroundColor: setupTheme.color.accentSurface,
   },
-  loadingText: {
+  alertCopy: { flex: 1, minWidth: 120, gap: setupTheme.spacing.tight },
+  alertTitle: {
+    color: setupTheme.color.foreground,
+    fontSize: setupTheme.type.caption,
+    fontWeight: "600",
+  },
+  alertDescription: {
     color: setupTheme.color.muted,
+    fontSize: setupTheme.type.caption,
+    lineHeight: 18,
+  },
+  alertAction: {
+    minHeight: setupTheme.size.touchTarget,
+    minWidth: setupTheme.size.touchTarget,
+    flexDirection: "row",
+    gap: setupTheme.spacing.tight,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: setupTheme.spacing.compact,
+  },
+  alertActionText: {
+    color: setupTheme.color.primary,
+    fontWeight: "600",
     fontSize: setupTheme.type.body,
   },
-  errorKicker: {
-    color: setupTheme.color.danger,
-    fontSize: setupTheme.type.label,
-    fontWeight: "900",
+  eventIcon: {
+    minHeight: 36,
+    width: 36,
+    borderRadius: setupTheme.radius.control,
+    backgroundColor: setupTheme.color.accentSurface,
+    alignItems: "center",
+    justifyContent: "center",
   },
+  eventContent: { flex: 1, gap: setupTheme.spacing.compact },
   eventList: {
     gap: setupTheme.spacing.compact,
   },
   eventCard: {
+    flexDirection: "row",
+    alignItems: "flex-start",
     ...setupTheme.shadow.card,
     backgroundColor: setupTheme.color.surface,
     borderColor: setupTheme.color.border,
-    borderRadius: setupTheme.radius.control,
-    borderWidth: 1.5,
-    gap: 6,
-    padding: setupTheme.spacing.compact,
+    borderRadius: setupTheme.radius.card,
+    borderWidth: 1,
+    gap: setupTheme.spacing.compact + setupTheme.spacing.tight,
+    padding: setupTheme.spacing.compact + setupTheme.spacing.tight,
   },
   unreadEventCard: {
-    backgroundColor: setupTheme.color.highlightSurface,
-    borderColor: setupTheme.color.foreground,
-    borderWidth: 2,
+    backgroundColor: setupTheme.color.surface,
+    borderColor: setupTheme.color.border,
+    borderLeftWidth: 3,
+    borderLeftColor: setupTheme.color.primary,
+    borderWidth: 1,
   },
   eventTopRow: {
+    flexWrap: "wrap",
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
   },
   eventBadgeGroup: {
+    flex: 1,
     alignItems: "center",
     flexDirection: "row",
     gap: 6,
   },
   newPill: {
-    backgroundColor: setupTheme.color.foreground,
+    backgroundColor: setupTheme.color.accentSurface,
     borderRadius: setupTheme.radius.status,
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
   newPillText: {
-    color: setupTheme.color.surface,
-    fontSize: 9,
-    fontWeight: "900",
+    color: setupTheme.color.primary,
+    fontSize: setupTheme.type.caption,
+    fontWeight: "600",
   },
   eventTitle: {
+    flexShrink: 1,
+    lineHeight: 22,
     color: setupTheme.color.foreground,
-    fontSize: setupTheme.type.caption,
-    fontWeight: "900",
-    letterSpacing: 0.4,
+    fontSize: setupTheme.type.cardTitle,
+    fontWeight: "600",
   },
   eventTime: {
     color: setupTheme.color.muted,
-    fontSize: 11,
+    fontSize: setupTheme.type.caption,
     fontWeight: "600",
   },
   eventDescription: {
-    color: setupTheme.color.foreground,
+    color: setupTheme.color.muted,
     fontSize: setupTheme.type.body,
     lineHeight: 20,
-  },
-  viewLinkText: {
-    color: setupTheme.color.foreground,
-    fontSize: setupTheme.type.caption,
-    fontWeight: "800",
-    marginTop: 2,
   },
 });

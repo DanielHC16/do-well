@@ -122,8 +122,8 @@ describe("GigFormScreen", () => {
 
     await render(<GigFormScreen draftStore={draftStore} gateway={gateway} />);
 
-    expect(screen.getByText("POST A GIG")).toBeVisible();
-    expect(screen.getByText("AI JOB BRIEF BUILDER")).toBeVisible();
+    expect(screen.getByText("Post a gig")).toBeVisible();
+    expect(screen.getByText("Job brief assistant")).toBeVisible();
     expect(screen.getByText("TEMPLATE BUILDER")).toBeVisible();
     expect(screen.getByLabelText("Draft with Brief Builder")).toBeVisible();
     expect(screen.getByLabelText("Gig Title")).toBeVisible();
@@ -139,7 +139,7 @@ describe("GigFormScreen", () => {
     await fireEvent.press(screen.getByRole("button", { name: "Post notice" }));
 
     await waitFor(() => {
-      expect(screen.getByText("CANNOT POST NOTICE")).toBeVisible();
+      expect(screen.getByText("Cannot post notice")).toBeVisible();
     });
     expect(gateway.createDraft).not.toHaveBeenCalled();
   });
@@ -193,6 +193,14 @@ describe("GigFormScreen", () => {
       screen.getByLabelText("Description"),
       "Need three hours of help clearing weeds from yard and cutting small branches.",
     );
+    await fireEvent.changeText(
+      screen.getByLabelText("Applications close on"),
+      "2026-11-08",
+    );
+    await fireEvent.changeText(
+      screen.getByLabelText("Work due on"),
+      "2026-11-10",
+    );
 
     await fireEvent.press(screen.getByRole("button", { name: "Post notice" }));
 
@@ -203,6 +211,8 @@ describe("GigFormScreen", () => {
           category: "errands",
           workMode: "onsite",
           publicArea: "Poblacion, Makati",
+          applicationDeadline: "2026-11-08T23:59:00+08:00",
+          dueAt: "2026-11-10T23:59:00+08:00",
         }),
         "e0000000-0000-4000-8000-000000000001",
       );

@@ -85,6 +85,77 @@ describe("AuthenticatedActivityScreen", () => {
     jest.clearAllMocks();
   });
 
+  it("prioritizes recent updates before asking users to enable optional alerts", async () => {
+    const notifications = createMockNotifications();
+    const view = await render(
+      <AuthenticatedActivityScreen
+        gateway={createMockGateway([mockEvent])}
+        notifications={notifications}
+        dedupeStore={createMockDedupeStore()}
+        userId="80000000-0000-4000-8000-000000000002"
+      />,
+    );
+    await view.findByText("Selected for Task");
+    const buttons = view.getAllByRole("button");
+    const eventIndex = buttons.findIndex((button) =>
+      String(button.props.accessibilityLabel).includes("Selected for Task"),
+    );
+    const permissionIndex = buttons.findIndex(
+      (button) =>
+        button.props.accessibilityLabel === "Enable local activity alerts",
+    );
+    expect(eventIndex).toBeGreaterThanOrEqual(0);
+    expect(permissionIndex).toBeGreaterThan(eventIndex);
+    expect(notifications.requestPermissions).not.toHaveBeenCalled();
+  });
+
+  it("shows shared loading feedback and blocks refresh until the current request settles", async () => {
+    let finish: () => void = () => undefined;
+    const pending = new Promise<ActivityEventRecord[]>((resolve) => {
+      finish = () => resolve([]);
+    });
+    const gateway = createMockGateway();
+    jest.mocked(gateway.listUserActivity).mockImplementation(() => pending);
+    const view = await render(
+      <AuthenticatedActivityScreen
+        gateway={gateway}
+        notifications={createMockNotifications()}
+        dedupeStore={createMockDedupeStore()}
+        userId="80000000-0000-4000-8000-000000000002"
+      />,
+    );
+    expect(view.getByText("Loading activity…")).toBeVisible();
+    expect(
+      view.getByRole("button", { name: "Refresh activity" }),
+    ).toBeDisabled();
+    expect(view.queryByText("No activity yet")).toBeNull();
+    finish();
+    expect(await view.findByText("No activity yet")).toBeVisible();
+  });
+
+  it("retries a failed activity read without presenting an empty trail", async () => {
+    const gateway = createMockGateway();
+    jest
+      .mocked(gateway.listUserActivity)
+      .mockRejectedValueOnce(new Error("private details"));
+    const view = await render(
+      <AuthenticatedActivityScreen
+        gateway={gateway}
+        notifications={createMockNotifications()}
+        dedupeStore={createMockDedupeStore()}
+        userId="80000000-0000-4000-8000-000000000002"
+      />,
+    );
+    expect(
+      await view.findByText("We couldn't load your activity. Try again."),
+    ).toBeVisible();
+    expect(view.queryByText("No activity yet")).toBeNull();
+    await fireEvent.press(
+      view.getByRole("button", { name: "Refresh activity" }),
+    );
+    expect(await view.findByText("No activity yet")).toBeVisible();
+  });
+
   it("renders the empty activity notice when no events exist", async () => {
     const gateway = createMockGateway([]);
     const notifications = createMockNotifications();
@@ -98,9 +169,9 @@ describe("AuthenticatedActivityScreen", () => {
     );
 
     await waitFor(() => {
-      expect(view.getByText("Nothing gets lost in the handoff.")).toBeVisible();
+      expect(view.getByRole("header", { name: "Activity" })).toBeVisible();
       expect(view.getByText("No activity yet")).toBeVisible();
-      expect(view.getByText("RECENT ACTIVITY")).toBeVisible();
+      expect(view.getByText("Recent activity")).toBeVisible();
     });
   });
 
@@ -118,7 +189,7 @@ describe("AuthenticatedActivityScreen", () => {
 
     await waitFor(() => {
       expect(view.getByText("Selected for Task")).toBeVisible();
-      expect(view.getByText("NEW")).toBeVisible();
+      expect(view.getByText("New")).toBeVisible();
       expect(
         view.getByText(
           'You were selected as the worker for "Makati Deep Cleaning". Review and confirm the agreement.',
@@ -166,9 +237,11 @@ describe("AuthenticatedActivityScreen", () => {
     );
 
     await waitFor(() => {
-      expect(view.getByText("Enable local alerts")).toBeVisible();
+      expect(
+        view.getByRole("button", { name: "Enable local activity alerts" }),
+      ).toBeVisible();
     });
-    fireEvent.press(view.getByLabelText("Enable local activity alerts"));
+    await fireEvent.press(view.getByLabelText("Enable local activity alerts"));
 
     await waitFor(() => {
       expect(notifications.requestPermissions).toHaveBeenCalledTimes(1);

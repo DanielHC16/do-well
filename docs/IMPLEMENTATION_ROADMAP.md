@@ -1,5 +1,13 @@
 # Do Well Implementation Plan and Roadmap
 
+Latest M21 content-first refinement prioritizes gigs/work/activity, adds compact headers and feedback states while preserving contracts/branding. Verification: formatting, lint, strict TypeScript, **103 suites / 628 tests**, plus final filter-scrollbar focused checks. See [current report](reports/2026-10-31-content-first-composition.md). Milestone remains in progress pending owner/workflow/device acceptance; no commit/push/merge.
+
+Latest M21 lavender reference refinement: compact marketplace composition, softer layered cards/navigation, locally bundled licensed Inter, and owner-authorized current-logo Expo icon/splash references. No generated native changes or rebuild; backend/contracts remain intact. Verification: **103 suites / 617 tests**, formatting, lint, strict typecheck; focused tests passed after final layout/label adjustments. Worker/employer dashboards inspected at 360dp/150%; settings restored. See [latest report](reports/2026-10-31-lavender-visual-refinement.md). Status remains in progress pending owner and workflow/native-artwork acceptance.
+
+Latest follow-up verification: formatting, lint, strict TypeScript, **102 suites / 614 tests passed**, and diff check passed after accessibility fixes. This supersedes older M21 local test totals below, while release/workflow acceptance remains pending.
+
+Latest M21 follow-up: professional dashboard composition and supporting-screen consistency implemented on `feat/frontend-marketplace`; see [redesign report](reports/2026-10-31-professional-dashboard-redesign.md) and [composition plan](plans/2026-10-31-m21-dashboard-composition.md). New owner SVG is preserved with a faithful PNG display rendition. Actual emulator dashboard inspection includes 360dp/150% text; display settings restored. No dependencies/backend/native changes in this follow-up. Milestone remains in progress pending owner review and remaining device/workflow acceptance; no commit, push, or merge.
+
 > **For Claude:** Use the `executing-plans` skill to execute one approved milestone at a time. Apply `test-driven-development` during implementation and `verification-before-completion` before changing a milestone status.
 
 **Goal:** deliver a secure, zero-external-cost Android MVP through small, independently reviewable milestones that survive session handoffs.
@@ -78,6 +86,7 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 | M18       | Functional reporting and moderation console                               | **COMPLETED**   | [#43](https://github.com/DanielHC16/do-well/issues/43) |
 | M19       | Presentation refinement and honest production copy                        | **IN PROGRESS** | [#44](https://github.com/DanielHC16/do-well/issues/44) |
 | M20       | Live demo environment, dual-identity scenario, and release proof           | **IN PROGRESS** | [#45](https://github.com/DanielHC16/do-well/issues/45) |
+| M21       | Frontend marketplace branding, discovery, navigation, and work refinement | **IN PROGRESS** | Owner-authorized task, 2026-10-31; GitHub authentication unavailable |
 
 ## M00 — Secure repository and approve architecture
 
@@ -326,6 +335,18 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 - **Verification:** 92 Jest test suites / 538 tests passing, 2 integration test suites passing, 13 pgTAP database test suites / 253 tests passing, zero format, lint, or typecheck errors, 20/20 Expo Doctor checks, and clean Android Hermes bytecode export.
 - **Branch / commits:** `feat/database-and-provisioning-m20`.
 
+## M21 — Frontend marketplace refinement
+
+Navigation investigation: application source already has one standard Expo Router root; nested Stacks remain correct. Font-scale Activity recreation reproduces overlapping Expo/Fabric development-runtime roots. Cold process recovery yields zero queue/linking warnings; a permanent framework lifecycle correction remains open under the no-native-change constraint. Lint, TypeScript, and 3 relevant suites / 23 tests passed. See the [investigation](reports/2026-10-31-navigation-runtime-investigation.md); no navigation source rewrite, warning suppression, dependency change, or native modification was introduced.
+
+Creative-assets follow-up: shared Expo Symbols icons, original native onboarding artwork, icon-backed navigation, and coordinated auth/Home/My Work/profile presentation are implemented with existing packages. Sources/licenses are in `branding/ASSET_SOURCES.md`. Final checks pass **100 suites / 608 tests**, formatting, lint, and strict TypeScript. Auth/onboarding were checked at 360dp/150%-text on the running emulator; protected-screen device and accessibility acceptance remain open. No backend/native/dependency changes, commit, push, or merge occurred. See the [report](reports/2026-10-31-frontend-marketplace.md#creative-assets-and-interface-follow-up).
+
+Authentication design follow-up: the owner requested a more compact indigo/lavender interface. The auth screen and tests now pass formatting, lint, strict TypeScript, and **98 suites / 605 tests**. Default and 360dp/150%-text layouts were inspected in the running Android Development Build; standard soft-keyboard, TalkBack, and real authentication acceptance remain open. No native regeneration/rebuild or backend changes were needed. See the [report](reports/2026-10-31-frontend-marketplace.md#authentication-design-follow-up).
+
+**Status:** `IN PROGRESS` on `feat/frontend-marketplace`, based on local `main` at `88cbfbf`.
+
+The owner's 2026-10-31 frontend task authorizes refinement using the existing Expo Router architecture and backend contracts. The [M21 plan](plans/2026-10-31-m21-frontend-marketplace.md) records the inspected integration inventory, design-system approach, acceptance criteria, and unsupported capabilities. Implementation on `feat/frontend-marketplace` passes formatting, lint, strict TypeScript, 98 Jest suites / 602 tests, and Android Hermes export (approximately 5 MB). See the [implementation report](reports/2026-10-31-frontend-marketplace.md) for exact changes, integrations, files, and commands. Backend schema, RLS, authentication configuration, credentials, and dependencies are unchanged. Review and actual Android device acceptance remain pending; no PR or merge occurred because GitHub CLI is signed out.
+
 ## Milestone closeout checklist
 
 Before changing any row to `COMPLETED`:
@@ -340,5 +361,7 @@ Before changing any row to `COMPLETED`:
 - [ ] Next issue is selected, but its branch has not absorbed unrelated work.
 
 ## Current milestone and blockers
+
+M21 frontend marketplace refinement remains in progress pending review and Android acceptance. Local implementation verification passed on 2026-10-31: formatting, lint, strict typecheck, 98 suites / 602 tests, and Android Hermes export. The [M21 report](reports/2026-10-31-frontend-marketplace.md) records remaining integration limits and device work. ADB listed no attached device/emulator; no new device testing is claimed. GitHub issue/PR inspection is blocked by missing CLI authentication. Historical milestone evidence below describes prior work and must not be treated as M21 verification.
 
 The implementation baseline for M00 through M14, D01, and M20 remains completed. The 2026-10-26 Section 11 verification attempt freshly passed 92 Jest suites / 538 tests, formatting, lint, strict typecheck, Expo Doctor 20/20, and Android Hermes export (4.9MB). Hosted migration parity is now applied and verified through `20261026000100_admin_roles_and_reporting.sql`. Local pgTAP and HTTP integration checks remain blocked because Docker is unavailable. Hosted operator apply remains pending until an explicit owner/admin email is configured; the dry-run itself completed without changes. M03B hosted OAuth/physical-device acceptance also remains deferred.

@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/types/database.generated";
+import type { AssignmentDetail } from "../../model/assignment-schemas";
 
 import { createAssignmentGateway } from "../assignment-gateway";
 
@@ -46,6 +47,226 @@ const mockRawMilestone = {
   created_at: "2026-10-25T01:00:00.000Z",
   updated_at: "2026-10-25T01:00:00.000Z",
 };
+
+const privateDetail: AssignmentDetail = {
+  assignment: {
+    id: mockRawAssignment.id,
+    gigId: mockRawAssignment.gig_id,
+    applicationId: mockRawAssignment.application_id,
+    employerId: mockRawAssignment.employer_id,
+    workerId: mockRawAssignment.worker_id,
+    agreementVersion: 1,
+    agreedTitle: "Private office agreement",
+    agreedDescription:
+      "Private participant terms for assembling office furniture.",
+    agreedAmount: 2500,
+    currency: "PHP",
+    dueAt: null,
+    status: "proposed",
+    employerConfirmedAt: mockRawAssignment.employer_confirmed_at,
+    workerConfirmedAt: null,
+    startedAt: null,
+    completedAt: null,
+    cancelledAt: null,
+    clientRequestId: mockRawAssignment.client_request_id,
+    createdAt: mockRawAssignment.created_at,
+    updatedAt: mockRawAssignment.updated_at,
+  },
+  employer: {
+    id: mockRawAssignment.employer_id,
+    displayName: "Elena",
+    homeArea: "Makati",
+  },
+  worker: {
+    id: mockRawAssignment.worker_id,
+    displayName: "Warren",
+    homeArea: "Makati",
+  },
+  gig: {
+    id: mockRawAssignment.gig_id,
+    title: "Private office agreement",
+    category: "admin",
+    workMode: "onsite",
+    publicArea: "Makati",
+  },
+};
+
+function privateCache(
+  detail: unknown = privateDetail,
+  userId = privateDetail.assignment.workerId,
+) {
+  return {
+    get: jest.fn().mockResolvedValue({
+      data: detail,
+      userId,
+      cachedAt: "2026-10-31T00:00:00Z",
+    }),
+    set: jest.fn(),
+    remove: jest.fn(),
+    purgeUser: jest.fn(),
+    clearAll: jest.fn(),
+  };
+}
+
+describe("private assignment cache boundaries", () => {
+  it("ignores legacy anonymous private data during a network failure", async () => {
+    const cache = privateCache(privateDetail, "anonymous");
+    const rpc = jest
+      .fn()
+      .mockRejectedValue(new TypeError("Network request failed"));
+    // The small test double implements only the RPC boundary this test exercises.
+    const gateway = createAssignmentGateway(
+      { rpc } as unknown as SupabaseClient<Database>,
+      cache,
+    );
+    await expect(
+      gateway.getAssignmentDetail(privateDetail.assignment.id),
+    ).rejects.toThrow();
+    expect(cache.get).not.toHaveBeenCalled();
+  });
+
+  it("rejects malformed private cache data", async () => {
+    const cache = privateCache({
+      assignment: { id: privateDetail.assignment.id },
+    });
+    const rpc = jest
+      .fn()
+      .mockRejectedValue(new TypeError("Network request failed"));
+    // The small test double implements only the RPC boundary this test exercises.
+    const gateway = createAssignmentGateway(
+      { rpc } as unknown as SupabaseClient<Database>,
+      cache,
+    );
+    await expect(
+      gateway.getAssignmentDetail(
+        privateDetail.assignment.id,
+        privateDetail.assignment.workerId,
+      ),
+    ).rejects.toThrow();
+  });
+
+  it.each([401, 403])(
+    "does not use cache after HTTP %s even if error mentions network",
+    async (status) => {
+      const cache = privateCache();
+      const rpc = jest.fn().mockResolvedValue({
+        data: null,
+        error: { status, message: "Network request denied" },
+      });
+      // The small test double implements only the RPC boundary this test exercises.
+      const gateway = createAssignmentGateway(
+        { rpc } as unknown as SupabaseClient<Database>,
+        cache,
+      );
+      await expect(
+        gateway.getAssignmentDetail(
+          privateDetail.assignment.id,
+          privateDetail.assignment.workerId,
+        ),
+      ).rejects.toThrow();
+      expect(cache.get).not.toHaveBeenCalled();
+    },
+  );
+  it("never writes or reads legacy anonymous private records across account switches", async () => {
+    const cache = privateCache(privateDetail, "anonymous");
+    const rpc = jest
+      .fn()
+      .mockResolvedValueOnce({ data: privateDetail, error: null })
+      .mockResolvedValueOnce({
+        data: null,
+        error: { code: "42501", message: "Permission denied" },
+      });
+    // The small test double implements only the RPC boundary this test exercises.
+    const gateway = createAssignmentGateway(
+      { rpc } as unknown as SupabaseClient<Database>,
+      cache,
+    );
+    await gateway.getAssignmentDetail(privateDetail.assignment.id);
+    await expect(
+      gateway.getAssignmentDetail(privateDetail.assignment.id),
+    ).rejects.toThrow();
+    expect(cache.set).not.toHaveBeenCalled();
+    expect(cache.get).not.toHaveBeenCalled();
+  });
+
+  it.each(["42501", "28000", "PGRST301", "PGRST302", "PGRST303"])(
+    "does not bypass server auth failure %s using a cached record",
+    async (code) => {
+      const cache = privateCache();
+      const rpc = jest.fn().mockResolvedValue({
+        data: null,
+        error: { code, message: "Access unavailable" },
+      });
+      // The small test double implements only the RPC boundary this test exercises.
+      const gateway = createAssignmentGateway(
+        { rpc } as unknown as SupabaseClient<Database>,
+        cache,
+      );
+      await expect(
+        gateway.getAssignmentDetail(
+          privateDetail.assignment.id,
+          privateDetail.assignment.workerId,
+        ),
+      ).rejects.toThrow();
+      expect(cache.get).not.toHaveBeenCalled();
+    },
+  );
+
+  it("rejects another participant's cached data even when stored in the requested namespace", async () => {
+    const stranger = "80000000-0000-4000-8000-000000000003";
+    const cache = privateCache(privateDetail, stranger);
+    const rpc = jest
+      .fn()
+      .mockRejectedValue(new TypeError("Network request failed"));
+    // The small test double implements only the RPC boundary this test exercises.
+    const gateway = createAssignmentGateway(
+      { rpc } as unknown as SupabaseClient<Database>,
+      cache,
+    );
+    await expect(
+      gateway.getAssignmentDetail(privateDetail.assignment.id, stranger),
+    ).rejects.toThrow();
+  });
+
+  it("rejects cache envelopes belonging to another identity", async () => {
+    const cache = privateCache(
+      privateDetail,
+      privateDetail.assignment.employerId,
+    );
+    const rpc = jest
+      .fn()
+      .mockRejectedValue(new TypeError("Network request failed"));
+    // The small test double implements only the RPC boundary this test exercises.
+    const gateway = createAssignmentGateway(
+      { rpc } as unknown as SupabaseClient<Database>,
+      cache,
+    );
+    await expect(
+      gateway.getAssignmentDetail(
+        privateDetail.assignment.id,
+        privateDetail.assignment.workerId,
+      ),
+    ).rejects.toThrow();
+  });
+
+  it("rejects a cached agreement with the wrong assignment id", async () => {
+    const cache = privateCache();
+    const rpc = jest
+      .fn()
+      .mockRejectedValue(new TypeError("Network request failed"));
+    // The small test double implements only the RPC boundary this test exercises.
+    const gateway = createAssignmentGateway(
+      { rpc } as unknown as SupabaseClient<Database>,
+      cache,
+    );
+    await expect(
+      gateway.getAssignmentDetail(
+        "90000000-0000-4000-8000-000000000002",
+        privateDetail.assignment.workerId,
+      ),
+    ).rejects.toThrow();
+  });
+});
 
 describe("AssignmentGateway", () => {
   it("confirms an assignment successfully", async () => {
@@ -281,7 +502,7 @@ describe("AssignmentGateway", () => {
     const gateway = createAssignmentGateway(client, mockCache as any);
     const result = await gateway.getAssignmentDetailWithMetadata(
       mockRawAssignment.id,
-      "worker-1",
+      mockRawAssignment.worker_id,
     );
 
     expect(result.isFromCache).toBe(false);
@@ -289,7 +510,7 @@ describe("AssignmentGateway", () => {
       "Office Furniture Assembly",
     );
     expect(mockCache.set).toHaveBeenCalledWith(
-      "worker-1",
+      mockRawAssignment.worker_id,
       `assignment:detail:${mockRawAssignment.id}`,
       result.detail,
     );
@@ -349,7 +570,7 @@ describe("AssignmentGateway", () => {
       get: jest.fn().mockResolvedValue({
         data: cachedDetail,
         cachedAt: "2026-10-25T11:00:00.000Z",
-        userId: "worker-1",
+        userId: mockRawAssignment.worker_id,
         version: 1,
         key: `assignment:detail:${mockRawAssignment.id}`,
         byteSize: 200,
@@ -363,7 +584,7 @@ describe("AssignmentGateway", () => {
     const gateway = createAssignmentGateway(failingClient, mockCache as any);
     const result = await gateway.getAssignmentDetailWithMetadata(
       mockRawAssignment.id,
-      "worker-1",
+      mockRawAssignment.worker_id,
     );
 
     expect(result.isFromCache).toBe(true);
@@ -375,7 +596,7 @@ describe("AssignmentGateway", () => {
     // Also verify getAssignmentDetail returns cached data directly
     const directFallback = await gateway.getAssignmentDetail(
       mockRawAssignment.id,
-      "worker-1",
+      mockRawAssignment.worker_id,
     );
     expect(directFallback.assignment.agreedTitle).toBe(
       "Cached Furniture Assembly",

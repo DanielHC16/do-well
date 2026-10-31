@@ -1,10 +1,10 @@
+import { Text } from "@/shared/ui/Typography";
 import {
   ActivityIndicator,
   Modal,
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from "react-native";
 
@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
   },
   activeCheckText: {
     color: setupTheme.color.ready,
-    fontFamily: "Inter_700Bold",
+    fontWeight: "600",
     fontSize: 10,
     letterSpacing: 0.5,
   },
@@ -261,10 +261,12 @@ const styles = StyleSheet.create({
   },
   clearButtonText: {
     color: setupTheme.color.muted,
-    fontFamily: "Inter_600SemiBold",
+    fontWeight: "600",
     fontSize: setupTheme.type.caption,
   },
   closeButton: {
+    minHeight: setupTheme.size.touchTarget,
+    justifyContent: "center",
     backgroundColor: setupTheme.color.surfaceMuted,
     borderColor: setupTheme.color.border,
     borderRadius: setupTheme.radius.control,
@@ -274,12 +276,12 @@ const styles = StyleSheet.create({
   },
   closeButtonText: {
     color: setupTheme.color.foreground,
-    fontFamily: "Inter_700Bold",
+    fontWeight: "600",
     fontSize: setupTheme.type.caption,
   },
   disclaimerText: {
     color: setupTheme.color.muted,
-    fontFamily: "Inter_400Regular",
+    fontWeight: "400",
     fontSize: 11,
     lineHeight: 16,
     marginTop: setupTheme.spacing.compact,
@@ -294,15 +296,16 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: setupTheme.color.danger,
-    fontFamily: "Inter_500Medium",
+    fontWeight: "500",
     fontSize: 12,
   },
   gpsButton: {
+    minHeight: setupTheme.size.touchTarget,
     alignItems: "center",
     backgroundColor: setupTheme.color.surface,
     borderColor: setupTheme.color.border,
     borderRadius: setupTheme.radius.control,
-    borderWidth: 2,
+    borderWidth: 1,
     justifyContent: "center",
     paddingVertical: setupTheme.spacing.section,
     ...setupTheme.shadow.card,
@@ -313,7 +316,7 @@ const styles = StyleSheet.create({
   },
   gpsButtonText: {
     color: setupTheme.color.foreground,
-    fontFamily: "Inter_700Bold",
+    fontWeight: "600",
     fontSize: setupTheme.type.body,
   },
   headerRow: {
@@ -342,7 +345,7 @@ const styles = StyleSheet.create({
   localityCardActive: {
     backgroundColor: setupTheme.color.surfaceMuted,
     borderColor: setupTheme.color.border,
-    borderWidth: 2,
+    borderWidth: 1,
   },
   localityInfo: {
     flex: 1,
@@ -353,7 +356,7 @@ const styles = StyleSheet.create({
   },
   localityName: {
     color: setupTheme.color.foreground,
-    fontFamily: "Inter_700Bold",
+    fontWeight: "600",
     fontSize: setupTheme.type.body,
     marginBottom: 2,
   },
@@ -362,18 +365,18 @@ const styles = StyleSheet.create({
   },
   localityRegion: {
     color: setupTheme.color.muted,
-    fontFamily: "Inter_400Regular",
+    fontWeight: "400",
     fontSize: setupTheme.type.caption,
   },
   modalKicker: {
     color: setupTheme.color.muted,
-    fontFamily: "Inter_700Bold",
+    fontWeight: "600",
     fontSize: 10,
     letterSpacing: 0.8,
   },
   modalTitle: {
     color: setupTheme.color.foreground,
-    fontFamily: "Inter_700Bold",
+    fontWeight: "600",
     fontSize: setupTheme.type.heading,
   },
   noticeBox: {
@@ -386,15 +389,17 @@ const styles = StyleSheet.create({
   },
   noticeText: {
     color: setupTheme.color.warning,
-    fontFamily: "Inter_500Medium",
+    fontWeight: "500",
     fontSize: 12,
   },
   overlay: {
-    backgroundColor: "rgba(23, 56, 45, 0.4)",
+    backgroundColor: setupTheme.color.overlay,
     flex: 1,
     justifyContent: "flex-end",
   },
   radiusPill: {
+    minHeight: setupTheme.size.touchTarget,
+    justifyContent: "center",
     alignItems: "center",
     backgroundColor: setupTheme.color.surface,
     borderColor: setupTheme.color.borderSoft,
@@ -409,7 +414,7 @@ const styles = StyleSheet.create({
   },
   radiusPillText: {
     color: setupTheme.color.foreground,
-    fontFamily: "Inter_600SemiBold",
+    fontWeight: "600",
     fontSize: setupTheme.type.caption,
   },
   radiusPillTextActive: {
@@ -429,13 +434,13 @@ const styles = StyleSheet.create({
   },
   sectionSubtitle: {
     color: setupTheme.color.muted,
-    fontFamily: "Inter_400Regular",
+    fontWeight: "400",
     fontSize: 12,
     marginTop: 2,
   },
   sectionTitle: {
     color: setupTheme.color.foreground,
-    fontFamily: "Inter_700Bold",
+    fontWeight: "600",
     fontSize: 11,
     letterSpacing: 0.6,
   },

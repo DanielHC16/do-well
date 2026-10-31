@@ -1,6 +1,8 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
+import { Text } from "@/shared/ui/Typography";
 
 import { setupTheme } from "@/features/setup/setupTheme";
+import { AppIcon } from "@/shared/ui/AppIcon";
 
 import type { ActiveLocation } from "../model/location-schemas";
 
@@ -8,12 +10,14 @@ export type LocationBarProps = Readonly<{
   activeLocation: ActiveLocation;
   radiusKm: number | null;
   onPress: () => void;
+  compact?: boolean;
 }>;
 
 export function LocationBar({
   activeLocation,
   onPress,
   radiusKm,
+  compact = false,
 }: LocationBarProps) {
   const radiusText = radiusKm ? `Within ${radiusKm} km` : "Any distance";
   const hasCoordinates =
@@ -23,118 +27,75 @@ export function LocationBar({
     <Pressable
       accessibilityLabel="Location and radius filter"
       accessibilityRole="button"
+      accessibilityValue={{
+        text: hasCoordinates
+          ? `${activeLocation.label}, ${radiusText}`
+          : "No area selected. Location is optional; remote gigs are available.",
+      }}
       onPress={onPress}
-      style={styles.container}
+      style={[styles.container, compact && styles.compact]}
     >
+      <AppIcon name="pin" size={18} color={setupTheme.color.primary} />
       <View style={styles.textContainer}>
-        <View style={styles.headerRow}>
-          <Text style={styles.kicker}>LOCATION & DISTANCE</Text>
-          <Text
-            style={[
-              styles.sourceBadge,
-              activeLocation.source === "gps"
-                ? styles.sourceBadgeGps
-                : styles.sourceBadgeManual,
-            ]}
-          >
-            {activeLocation.source === "gps"
-              ? "GPS FIX"
-              : activeLocation.source === "locality"
-                ? "MANUAL LOCALITY"
-                : "NOT SET"}
-          </Text>
-        </View>
-
-        <Text numberOfLines={1} style={styles.locationTitle}>
+        <Text
+          numberOfLines={compact ? 2 : undefined}
+          style={[styles.locationTitle, compact && styles.compactTitle]}
+        >
           {hasCoordinates
             ? activeLocation.label
-            : "Set location for nearby gigs"}
+            : compact
+              ? "Choose area"
+              : "Choose an area"}
         </Text>
-
-        <Text style={styles.radiusSubtitle}>
-          {hasCoordinates
-            ? `Filtering: ${radiusText}`
-            : "Tap to detect device GPS or pick your Metro Manila hub"}
-        </Text>
+        {!compact || hasCoordinates ? (
+          <Text style={styles.radiusSubtitle}>
+            {hasCoordinates ? radiusText : "Optional · Remote gigs available"}
+          </Text>
+        ) : null}
       </View>
-
-      <View style={styles.actionButton}>
-        <Text style={styles.actionButtonText}>Change</Text>
-      </View>
+      {!compact ? (
+        <AppIcon name="chevronRight" size={18} color={setupTheme.color.muted} />
+      ) : null}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  actionButton: {
-    alignItems: "center",
+  compact: {
+    width: 132,
     backgroundColor: setupTheme.color.surface,
-    borderColor: setupTheme.color.border,
-    borderRadius: setupTheme.radius.control,
     borderWidth: 1,
-    justifyContent: "center",
-    paddingHorizontal: setupTheme.spacing.section,
-    paddingVertical: setupTheme.spacing.compact,
+    borderColor: setupTheme.color.border,
+    paddingHorizontal: setupTheme.spacing.compact,
+    borderRadius: setupTheme.radius.control,
+    flexShrink: 0,
   },
-  actionButtonText: {
-    color: setupTheme.color.foreground,
-    fontFamily: "Inter_600SemiBold",
+  compactTitle: {
     fontSize: setupTheme.type.caption,
+    color: setupTheme.color.primary,
   },
   container: {
     alignItems: "center",
-    backgroundColor: setupTheme.color.surface,
-    borderColor: setupTheme.color.border,
+    backgroundColor: setupTheme.color.background,
     borderRadius: setupTheme.radius.control,
-    borderWidth: 2,
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: setupTheme.spacing.section,
-    padding: setupTheme.spacing.section,
-    ...setupTheme.shadow.card,
-  },
-  headerRow: {
-    alignItems: "center",
-    flexDirection: "row",
+    minHeight: setupTheme.size.touchTarget,
     gap: setupTheme.spacing.compact,
-    marginBottom: setupTheme.spacing.tight,
-  },
-  kicker: {
-    color: setupTheme.color.muted,
-    fontFamily: "Inter_700Bold",
-    fontSize: 10,
-    letterSpacing: 0.8,
+    paddingVertical: setupTheme.spacing.compact,
   },
   locationTitle: {
     color: setupTheme.color.foreground,
-    fontFamily: "Inter_700Bold",
+    fontWeight: "500",
     fontSize: setupTheme.type.body,
-    marginBottom: 2,
   },
   radiusSubtitle: {
     color: setupTheme.color.muted,
-    fontFamily: "Inter_400Regular",
+    fontWeight: "400",
     fontSize: setupTheme.type.caption,
-  },
-  sourceBadge: {
-    borderRadius: setupTheme.radius.status,
-    fontFamily: "Inter_700Bold",
-    fontSize: 9,
-    letterSpacing: 0.5,
-    overflow: "hidden",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  sourceBadgeGps: {
-    backgroundColor: setupTheme.color.readySurface,
-    color: setupTheme.color.ready,
-  },
-  sourceBadgeManual: {
-    backgroundColor: setupTheme.color.surfaceMuted,
-    color: setupTheme.color.foreground,
   },
   textContainer: {
     flex: 1,
-    marginRight: setupTheme.spacing.section,
+    gap: setupTheme.spacing.tight,
   },
 });
