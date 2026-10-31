@@ -20,4 +20,8 @@ Typography now uses locally bundled Inter Regular, Medium, SemiBold, and Bold, d
 
 The latest owner request also authorizes current-logo launcher/splash branding: `app.config.ts` points the app icon and splash image to the faithful PNG rendition on white. The separate `do-well-adaptive-foreground.png` centers a proportionally scaled 312px rendition on a transparent 512px canvas (100px padding) to protect the artwork within Android adaptive-icon masks. This is layout padding, with no logo tracing/recoloring. Generated native Android files were not changed or rebuilt; installed native artwork updates on a future intentional native build.
 
+### Outfit (soft-productivity redesign, 2026-10-31)
+
+The redesign replaces Inter with locally bundled Outfit Regular, Medium, SemiBold, and Bold (`branding/fonts/Outfit-*.ttf`, about 224 KB total). The static TTFs were extracted from the published `@expo-google-fonts/outfit` 0.4.3 package tarball ([source](https://github.com/expo/google-fonts/tree/main/font-packages/outfit)) without adding the package as a dependency. Outfit is by The Outfit Project Authors ([Outfit-Fonts](https://github.com/Outfitio/Outfit-Fonts)) under the SIL Open Font License 1.1; the notice is at `branding/licenses/Outfit-OFL.txt`. `src/theme/typography.ts` registers the faces; `TypographyProvider` holds the native splash until they load and falls back to the system font on failure. The Inter files remain until redesign Phase 5 removes unused assets.
+
 These assets are frontend-only and do not alter Supabase, authentication, schemas, API contracts, credentials, permissions, or native project configuration. Preserve the listed licenses when redistributing the application.

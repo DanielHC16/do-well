@@ -5,6 +5,8 @@ import { MarketplaceShell } from "../MarketplaceShell";
 
 const mockPush = jest.fn();
 const mockReplace = jest.fn();
+const mockSwitchMode = jest.fn(async () => true);
+let mockMode: "worker" | "employer" = "worker";
 
 jest.mock("expo-router", () => ({
   useRouter: () => ({ push: mockPush, replace: mockReplace }),
@@ -14,81 +16,113 @@ jest.mock("@/features/connectivity/components/OfflineBanner", () => ({
   OfflineBanner: () => null,
 }));
 
+jest.mock("@/features/shell/context/useUnreadActivity", () => ({
+  useUnreadActivity: () => false,
+}));
+
 jest.mock("@/features/shell/context/useShellMode", () => ({
   useShellMode: () => ({
-    mode: "worker",
+    mode: mockMode,
     busy: false,
     error: null,
-    switchMode: jest.fn(async () => true),
+    switchMode: mockSwitchMode,
     retry: jest.fn(async () => undefined),
   }),
 }));
 
 describe("MarketplaceShell", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockMode = "worker";
+  });
 
-  it("keeps compact secondary headers focused on the page title and workspace switch", async () => {
+  it("shows one navy header with the screen name and no page eyebrow or subtitle", async () => {
     const view = await render(
       <MarketplaceShell
-        compactHeader
         activeSection="work"
-        title="My Work"
+        title="My work"
         subtitle="A long descriptive block"
       >
         <Text>Work content</Text>
       </MarketplaceShell>,
     );
-    expect(view.getByRole("header", { name: "My Work" })).toBeVisible();
+    expect(view.getByRole("header", { name: "My work" })).toBeVisible();
     expect(view.queryByText("A long descriptive block")).toBeNull();
     expect(view.queryByText("FIND WORK")).toBeNull();
-    expect(
-      view.getByRole("radio", { name: "Show worker workspace" }),
-    ).toBeVisible();
+    expect(view.getByText("Work content")).toBeVisible();
   });
 
-  it("keeps the dashboard header compact and opens real activity without an invented unread count", async () => {
+  it("renders exactly one compact workspace switch in the header", async () => {
     const view = await render(
-      <MarketplaceShell
-        dashboard
-        activeSection="home"
-        title="Hidden duplicate title"
-        subtitle="Hidden duplicate description"
-      >
+      <MarketplaceShell activeSection="home" title="ignored">
         <Text>Dashboard content</Text>
       </MarketplaceShell>,
     );
-    expect(view.queryByText("Hidden duplicate title")).toBeNull();
-    expect(view.queryByText("MARKETPLACE")).toBeNull();
-    expect(view.queryByText("Good work. Close to home.")).toBeNull();
+    expect(view.getByRole("header", { name: "Discover gigs" })).toBeVisible();
+    expect(view.getAllByRole("radio")).toHaveLength(2);
     expect(
+      view.getByRole("radio", { name: "Show worker workspace" }),
+    ).toBeChecked();
+    await fireEvent.press(
       view.getByRole("radio", { name: "Show employer workspace" }),
-    ).toBeVisible();
-    await fireEvent.press(view.getByRole("button", { name: "Notifications" }));
-    expect(mockPush).toHaveBeenCalledWith("/(protected)/activity");
+    );
+    expect(mockSwitchMode).toHaveBeenCalledWith("employer");
+    expect(mockReplace).toHaveBeenCalledWith("/(protected)/employer");
   });
 
-  it("uses product-facing workspace labels and opens profile and work", async () => {
+  it("navigates with the tab bar and header buttons", async () => {
     const view = await render(
-      <MarketplaceShell
-        activeSection="account"
-        subtitle="Manage your marketplace account."
-        title="Account settings"
-      >
+      <MarketplaceShell activeSection="account" title="Account settings">
         <Text>Settings content</Text>
       </MarketplaceShell>,
     );
-
-    expect(view.queryByText("MARKETPLACE")).toBeNull();
-    expect(view.queryByText("Good work. Close to home.")).toBeNull();
-    expect(view.getByRole("button", { name: "Notifications" })).toBeVisible();
-    expect(view.getByText("FIND WORK")).toBeVisible();
-    expect(view.queryByText("LIVE WORKSPACE")).toBeNull();
-    expect(view.queryByText("WORKER VIEW")).toBeNull();
-
-    await fireEvent.press(view.getByRole("tab", { name: "Profile" }));
-    expect(mockPush).toHaveBeenCalledWith("/(protected)/profile");
+    expect(view.getByRole("tab", { name: "Profile" })).toBeSelected();
     await fireEvent.press(view.getByRole("tab", { name: "My Work" }));
     expect(mockPush).toHaveBeenCalledWith("/(protected)/work");
-    expect(view.getByRole("image", { name: "Do Well logo" })).toBeVisible();
+    await fireEvent.press(view.getByRole("tab", { name: "Home" }));
+    expect(mockReplace).toHaveBeenCalledWith("/(protected)/worker");
+    await fireEvent.press(view.getByRole("button", { name: "Notifications" }));
+    expect(mockPush).toHaveBeenCalledWith("/(protected)/activity");
+    await fireEvent.press(
+      view.getByRole("button", { name: "Open your profile" }),
+    );
+    expect(mockPush).toHaveBeenCalledWith("/(protected)/profile");
+  });
+
+  it("opens a find-gigs sheet from the center button in Find work mode", async () => {
+    const view = await render(
+      <MarketplaceShell activeSection="home" title="Home">
+        <Text>Home</Text>
+      </MarketplaceShell>,
+    );
+    await fireEvent.press(view.getByRole("button", { name: "Find gigs" }));
+    await fireEvent.press(view.getByRole("button", { name: "Browse remote" }));
+    expect(mockReplace).toHaveBeenCalledWith({
+      pathname: "/(protected)/worker",
+      params: { intent: "remote", at: expect.any(String) },
+    });
+  });
+
+  it("posts a gig from the center button in Offer work mode", async () => {
+    mockMode = "employer";
+    const view = await render(
+      <MarketplaceShell activeSection="home" title="Home">
+        <Text>Home</Text>
+      </MarketplaceShell>,
+    );
+    expect(view.getByRole("header", { name: "Your workspace" })).toBeVisible();
+    await fireEvent.press(view.getByRole("button", { name: "Post a gig" }));
+    expect(mockPush).toHaveBeenCalledWith("/(protected)/employer/gigs/new");
+  });
+
+  it("shows the search button only when the screen provides search", async () => {
+    const onSearch = jest.fn();
+    const view = await render(
+      <MarketplaceShell activeSection="home" title="Home" onSearch={onSearch}>
+        <Text>Home</Text>
+      </MarketplaceShell>,
+    );
+    await fireEvent.press(view.getByRole("button", { name: "Open search" }));
+    expect(onSearch).toHaveBeenCalled();
   });
 });

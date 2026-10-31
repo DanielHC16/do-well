@@ -67,6 +67,25 @@ const symbols = {
     web: "cleaning_services",
   },
   event: { ios: "party.popper", android: "celebration", web: "celebration" },
+  filter: { ios: "slider.horizontal.3", android: "tune", web: "tune" },
+  edit: { ios: "pencil", android: "edit", web: "edit" },
+  trash: { ios: "trash", android: "delete", web: "delete" },
+  chevronLeft: {
+    ios: "chevron.left",
+    android: "chevron_left",
+    web: "chevron_left",
+  },
+  chevronDown: {
+    ios: "chevron.down",
+    android: "expand_more",
+    web: "expand_more",
+  },
+  chat: { ios: "bubble.left", android: "chat_bubble", web: "chat_bubble" },
+  tick: { ios: "checkmark", android: "check", web: "check" },
+  flag: { ios: "flag", android: "flag", web: "flag" },
+  camera: { ios: "camera", android: "photo_camera", web: "photo_camera" },
+  info: { ios: "info.circle", android: "info", web: "info" },
+  wifiOff: { ios: "wifi.slash", android: "wifi_off", web: "wifi_off" },
 } satisfies Record<string, SymbolViewProps["name"]>;
 
 export type AppIconName = keyof typeof symbols;

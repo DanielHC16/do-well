@@ -1,24 +1,38 @@
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import type { PropsWithChildren, ReactNode } from "react";
+import {
+  useContext,
+  useState,
+  type PropsWithChildren,
+  type ReactNode,
+} from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
-  Platform,
-  Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { setupTheme } from "@/features/setup/setupTheme";
+import {
+  AppHeader,
+  BottomSheet,
+  PressableScale,
+  SegmentedPills,
+  TabBar,
+  Txt,
+  type TabKey,
+} from "@/components/ui";
+import { AuthContext } from "@/features/auth/context/useAuth";
 import { OfflineBanner } from "@/features/connectivity/components/OfflineBanner";
-import { BrandLogo } from "@/shared/ui";
-import { Text } from "@/shared/ui/Typography";
+import { setupTheme } from "@/features/setup/setupTheme";
 import { AppIcon, type AppIconName } from "@/shared/ui/AppIcon";
+import { palette, radius, size, space, status } from "@/theme";
 
 import { useShellMode } from "../context/useShellMode";
+import { useUnreadActivity } from "../context/useUnreadActivity";
 import type { ShellMode } from "../model/shell-mode";
 
 type ShellSection = "home" | "work" | "activity" | "profile" | "account";
@@ -26,13 +40,31 @@ type ShellSection = "home" | "work" | "activity" | "profile" | "account";
 type MarketplaceShellProps = PropsWithChildren<
   Readonly<{
     activeSection: ShellSection;
+    /** Screen name shown in the navy header (Home derives its own). */
     title: string;
-    subtitle: string;
+    /** @deprecated Retained for callers; the redesign shows no page subtitle. */
+    subtitle?: string;
     scrollable?: boolean;
-    listContent?: (heading: ReactNode) => ReactNode;
+    /** Renders a list body. `hero` is non-null when `heroScrolls` is set. */
+    listContent?: (notices: ReactNode, hero: ReactNode | null) => ReactNode;
+    /**
+     * Let the navy hero scroll away with a list (Home), keeping only a navy
+     * strip behind the status bar. Requires `listContent`.
+     */
+    heroScrolls?: boolean;
+    /** @deprecated The header no longer differs between dashboard pages. */
     dashboard?: boolean;
+    /** @deprecated The header no longer differs between dashboard pages. */
     compactHeader?: boolean;
+    /** Overrides the automatic "Hi, {first name}" line. */
     greeting?: string;
+    /** Content rendered on navy inside the header (e.g. Home stat tiles). */
+    headerContent?: ReactNode;
+    /** Shows the header search button (screens where search is meaningful). */
+    onSearch?: () => void;
+    /** Pull-to-refresh for scrollable screens. */
+    onRefresh?: () => void;
+    refreshing?: boolean;
   }>
 >;
 
@@ -41,212 +73,225 @@ const modeRoute = {
   employer: "/(protected)/employer",
 } as const;
 
+const tabRoute = {
+  work: "/(protected)/work",
+  activity: "/(protected)/activity",
+  profile: "/(protected)/profile",
+} as const;
+
 export function MarketplaceShell({
   activeSection,
   children,
-  subtitle,
   title,
   scrollable = true,
   listContent,
-  dashboard = false,
-  compactHeader = false,
+  heroScrolls = false,
+  headerContent,
+  onSearch,
+  onRefresh,
+  refreshing = false,
   greeting,
 }: MarketplaceShellProps) {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { busy, error, mode, switchMode } = useShellMode();
+  // Optional: unit tests may render the shell without an AuthProvider.
+  const auth = useContext(AuthContext);
+  const profileName = auth?.state.profile?.displayName ?? "";
+  const unread = useUnreadActivity(auth?.state.userId ?? null);
+  const [findSheet, setFindSheet] = useState(false);
 
   async function chooseMode(nextMode: ShellMode) {
     if (nextMode === mode) return;
     if (await switchMode(nextMode)) router.replace(modeRoute[nextMode]);
   }
 
-  const heading = (
+  function navigate(tab: TabKey) {
+    if (tab === "home") router.replace(modeRoute[mode]);
+    else router.push(tabRoute[tab]);
+  }
+
+  function findGigs(intent: "near" | "remote") {
+    setFindSheet(false);
+    // `at` makes repeated taps distinct so Home applies each one once.
+    router.replace({
+      pathname: modeRoute.worker,
+      params: { intent, at: String(Date.now()) },
+    });
+  }
+
+  const screenName =
+    activeSection === "home"
+      ? mode === "worker"
+        ? "Discover gigs"
+        : "Your workspace"
+      : title;
+
+  const notices = (
     <>
-      {!dashboard ? (
-        <View style={styles.heading}>
-          {!compactHeader ? (
-            <Text style={styles.eyebrow}>
-              {mode === "worker" ? "FIND WORK" : "OFFER WORK"}
-            </Text>
-          ) : null}
-          <Text
-            accessibilityRole="header"
-            style={[styles.title, compactHeader && styles.compactTitle]}
-          >
-            {title}
-          </Text>
-          {!compactHeader ? (
-            <Text style={styles.subtitle}>{subtitle}</Text>
-          ) : null}
-        </View>
-      ) : null}
-
-      <View accessibilityRole="radiogroup" style={styles.modeSwitcher}>
-        {(["worker", "employer"] as const).map((option) => {
-          const selected = mode === option;
-          const label =
-            option === "worker"
-              ? "Show worker workspace"
-              : "Show employer workspace";
-          return (
-            <Pressable
-              accessibilityLabel={label}
-              accessibilityRole="radio"
-              accessibilityState={{
-                checked: selected,
-                disabled: busy || selected,
-                selected,
-              }}
-              disabled={busy || selected}
-              key={option}
-              onPress={() => void chooseMode(option)}
-              style={[
-                styles.modeButton,
-                selected ? styles.modeButtonSelected : null,
-              ]}
-            >
-              <AppIcon
-                name={option === "worker" ? "search" : "briefcase"}
-                size={20}
-                color={
-                  selected ? setupTheme.color.primary : setupTheme.color.primary
-                }
-              />
-              <Text
-                style={[
-                  styles.modeButtonText,
-                  selected ? styles.modeButtonTextSelected : null,
-                ]}
-              >
-                {option === "worker" ? "Find work" : "Offer work"}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
-
+      <OfflineBanner />
       {error ? (
         <View accessibilityRole="alert" style={styles.errorPanel}>
-          <Text style={styles.errorTitle}>VIEW NOT SAVED</Text>
-          <Text style={styles.errorText}>{error}</Text>
+          <Txt variant="caption" style={{ color: status.danger.fg }}>
+            Workspace not saved. {error}
+          </Txt>
         </View>
       ) : null}
       {busy ? (
         <View accessibilityLiveRegion="polite" style={styles.busyRow}>
-          <ActivityIndicator color={setupTheme.color.foreground} />
-          <Text style={styles.busyText}>Saving your view...</Text>
+          <ActivityIndicator color={palette.purple} />
+          <Txt variant="caption" tone="secondary">
+            Switching workspace…
+          </Txt>
         </View>
       ) : null}
     </>
   );
 
+  const scrollingHero = heroScrolls && Boolean(listContent);
+  const hero = (
+    <AppHeader
+      insetTop={!scrollingHero}
+      name={profileName}
+      greeting={greeting}
+      screenName={screenName}
+      onAvatarPress={() => router.push(tabRoute.profile)}
+      onSearch={onSearch}
+      onNotifications={() => router.push(tabRoute.activity)}
+      unread={unread && activeSection !== "activity"}
+      controls={
+        <SegmentedPills
+          tone="onDark"
+          role="radio"
+          accessibilityLabel="Workspace"
+          value={mode}
+          disabled={busy}
+          onChange={(next) => void chooseMode(next)}
+          segments={[
+            {
+              value: "worker",
+              label: "Find work",
+              accessibilityLabel: "Show worker workspace",
+            },
+            {
+              value: "employer",
+              label: "Offer work",
+              accessibilityLabel: "Show employer workspace",
+            },
+          ]}
+        />
+      }
+    >
+      {headerContent}
+    </AppHeader>
+  );
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar style="dark" />
-      <View style={styles.topBar}>
-        <View style={styles.brandRow}>
-          <BrandLogo size={36} />
-          <View style={styles.brandCopy}>
-            <Text style={styles.wordmark}>Do Well</Text>
-            {greeting ? <Text style={styles.greeting}>{greeting}</Text> : null}
-          </View>
-        </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Notifications"
-          onPress={() => router.push("/(protected)/activity")}
-          style={styles.headerAction}
-        >
-          <AppIcon name="bell" size={20} />
-        </Pressable>
-      </View>
-      <OfflineBanner />
-      <KeyboardAvoidingView
-        style={styles.bodyArea}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
+    <View style={styles.root}>
+      <StatusBar style="light" />
+      {scrollingHero ? (
+        <View style={{ height: insets.top, backgroundColor: palette.navy }} />
+      ) : (
+        hero
+      )}
+      <KeyboardAvoidingView style={styles.body} behavior="height">
         {scrollable ? (
           <ScrollView
             keyboardShouldPersistTaps="handled"
-            contentContainerStyle={[
-              styles.content,
-              compactHeader && styles.compactContent,
-            ]}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.content}
+            refreshControl={
+              onRefresh ? (
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  colors={[palette.purple]}
+                  progressBackgroundColor={palette.surface}
+                />
+              ) : undefined
+            }
           >
-            {heading}
+            {notices}
             {children}
           </ScrollView>
         ) : listContent ? (
-          <View style={styles.bodyArea}>
-            {listContent(heading)}
+          <View style={styles.body}>
+            {listContent(notices, scrollingHero ? hero : null)}
             {children}
           </View>
         ) : (
-          <View style={styles.bodyArea}>
-            <View style={styles.fixedHeading}>{heading}</View>
-            <View style={styles.bodyArea}>{children}</View>
+          <View style={styles.body}>
+            <View style={styles.fixedNotices}>{notices}</View>
+            <View style={styles.body}>{children}</View>
           </View>
         )}
       </KeyboardAvoidingView>
-
-      <View accessibilityRole="tablist" style={styles.navigation}>
-        <ShellTab
-          active={activeSection === "home"}
-          label="Home"
-          icon="home"
-          onPress={() => router.replace(modeRoute[mode])}
+      <TabBar
+        active={activeSection === "account" ? "profile" : activeSection}
+        onNavigate={navigate}
+        fabLabel={mode === "employer" ? "Post a gig" : "Find gigs"}
+        onFab={() =>
+          mode === "employer"
+            ? router.push("/(protected)/employer/gigs/new")
+            : setFindSheet(true)
+        }
+      />
+      <BottomSheet
+        visible={findSheet}
+        title="Find gigs"
+        onClose={() => setFindSheet(false)}
+      >
+        <SheetOption
+          icon="pin"
+          title="Find gigs near me"
+          detail="Use your location or pick an area"
+          onPress={() => findGigs("near")}
         />
-        <ShellTab
-          active={activeSection === "work"}
-          label="My Work"
-          icon="briefcase"
-          onPress={() => router.push("/(protected)/work")}
+        <SheetOption
+          icon="remote"
+          title="Browse remote"
+          detail="Work from anywhere, no location needed"
+          onPress={() => findGigs("remote")}
         />
-        <ShellTab
-          active={activeSection === "activity"}
-          label="Activity"
-          icon="bell"
-          onPress={() => router.push("/(protected)/activity")}
-        />
-        <ShellTab
-          active={activeSection === "profile" || activeSection === "account"}
-          label="Profile"
-          icon="user"
-          onPress={() => router.push("/(protected)/profile")}
-        />
-      </View>
-    </SafeAreaView>
+      </BottomSheet>
+    </View>
   );
 }
 
-function ShellTab({
-  active,
-  label,
+function SheetOption({
   icon,
+  title,
+  detail,
   onPress,
 }: Readonly<{
-  active: boolean;
-  label: string;
   icon: AppIconName;
+  title: string;
+  detail: string;
   onPress: () => void;
 }>) {
   return (
-    <Pressable
-      accessibilityRole="tab"
-      accessibilityLabel={label}
-      accessibilityState={{ selected: active }}
+    <PressableScale
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      accessibilityHint={detail}
       onPress={onPress}
-      style={[styles.navItem, active ? styles.navItemActive : null]}
+      style={styles.option}
     >
+      <View style={styles.optionIcon}>
+        <AppIcon name={icon} size={size.icon} color={palette.navy} />
+      </View>
+      <View style={styles.optionCopy}>
+        <Txt variant="title">{title}</Txt>
+        <Txt variant="caption" tone="secondary">
+          {detail}
+        </Txt>
+      </View>
       <AppIcon
-        name={icon}
-        size={20}
-        color={active ? setupTheme.color.primary : setupTheme.color.muted}
+        name="chevronRight"
+        size={size.icon}
+        color={palette.textSecondary}
       />
-      <Text style={[styles.navText, active ? styles.navTextActive : null]}>
-        {label}
-      </Text>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -293,8 +338,8 @@ export const marketplaceStyles = StyleSheet.create({
   },
   mutedButton: {
     alignItems: "center",
-    backgroundColor: setupTheme.color.surfaceMuted,
-    borderColor: setupTheme.color.borderSoft,
+    backgroundColor: setupTheme.color.surface,
+    borderColor: setupTheme.color.border,
     borderRadius: setupTheme.radius.control,
     borderWidth: 1,
     justifyContent: "center",
@@ -302,180 +347,56 @@ export const marketplaceStyles = StyleSheet.create({
     paddingHorizontal: setupTheme.spacing.section,
   },
   mutedButtonText: {
-    color: setupTheme.color.muted,
+    color: setupTheme.color.foreground,
     fontSize: setupTheme.type.body,
     fontWeight: "500",
   },
 });
 
 const styles = StyleSheet.create({
-  greeting: {
-    color: setupTheme.color.muted,
-    fontSize: setupTheme.type.caption,
-    lineHeight: 18,
-  },
-  headerAction: {
-    width: setupTheme.size.touchTarget,
-    height: setupTheme.size.touchTarget,
-    borderRadius: setupTheme.radius.control,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  safeArea: { backgroundColor: setupTheme.color.background, flex: 1 },
-  bodyArea: {
+  root: { flex: 1, backgroundColor: palette.bg },
+  body: {
     flex: 1,
     width: "100%",
-    maxWidth: setupTheme.size.contentMax,
+    maxWidth: size.contentMax,
     alignSelf: "center",
-  },
-  fixedHeading: {
-    gap: setupTheme.spacing.section,
-    paddingHorizontal: setupTheme.spacing.section,
-    paddingBottom: setupTheme.spacing.compact,
-  },
-  topBar: {
-    alignItems: "center",
-    borderBottomColor: setupTheme.color.border,
-    borderBottomWidth: 0,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: setupTheme.spacing.section,
-    paddingVertical: setupTheme.spacing.compact,
-    width: "100%",
-    maxWidth: setupTheme.size.contentMax,
-    alignSelf: "center",
-    gap: setupTheme.spacing.compact,
-  },
-  brandRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: setupTheme.spacing.compact,
-    flex: 1,
-  },
-  brandCopy: { flex: 1 },
-  wordmark: {
-    color: setupTheme.color.foreground,
-    fontSize: setupTheme.type.heading,
-    fontWeight: "700",
   },
   content: {
-    gap: setupTheme.spacing.content,
-    padding: setupTheme.spacing.section,
-    paddingBottom: setupTheme.spacing.generous,
-    width: "100%",
-    maxWidth: setupTheme.size.contentMax,
-    alignSelf: "center",
+    gap: space.md,
+    paddingHorizontal: size.screenPadding,
+    paddingTop: space.lg,
+    paddingBottom: space.xxl,
   },
-  heading: { gap: setupTheme.spacing.compact },
-  compactContent: { gap: setupTheme.spacing.compact },
-  compactTitle: {
-    fontSize: setupTheme.type.heading,
-    lineHeight: setupTheme.type.heading * 1.3,
-    letterSpacing: 0,
-    fontWeight: "600",
-  },
-  eyebrow: {
-    color: setupTheme.color.accent,
-    fontSize: setupTheme.type.label,
-    fontWeight: "700",
-    letterSpacing: 0.8,
-  },
-  title: {
-    color: setupTheme.color.foreground,
-    fontSize: setupTheme.type.title,
-    fontWeight: "700",
-    letterSpacing: -0.5,
-    lineHeight: setupTheme.type.title * 1.25,
-  },
-  subtitle: {
-    color: setupTheme.color.muted,
-    fontSize: setupTheme.type.body,
-    lineHeight: 24,
-  },
-  modeSwitcher: {
-    backgroundColor: setupTheme.color.surfaceMuted,
-    borderColor: setupTheme.color.border,
-    borderRadius: setupTheme.radius.control,
-    flexDirection: "row",
-    gap: setupTheme.spacing.tight,
-  },
-  modeButton: {
-    alignItems: "center",
-    alignContent: "center",
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: setupTheme.spacing.compact,
-    borderRadius: setupTheme.radius.control,
-    flex: 1,
-    justifyContent: "center",
-    minHeight: 48,
-    paddingHorizontal: setupTheme.spacing.compact,
-  },
-  modeButtonSelected: { backgroundColor: setupTheme.color.surface },
-  modeButtonText: {
-    flexShrink: 1,
-    textAlign: "center",
-    color: setupTheme.color.foreground,
-    fontSize: setupTheme.type.caption,
-    fontWeight: "500",
-  },
-  modeButtonTextSelected: {
-    color: setupTheme.color.primary,
-    fontWeight: "600",
+  fixedNotices: {
+    gap: space.sm,
+    paddingHorizontal: size.screenPadding,
+    paddingTop: space.sm,
   },
   errorPanel: {
-    backgroundColor: setupTheme.color.dangerSurface,
-    borderColor: setupTheme.color.danger,
-    borderRadius: setupTheme.radius.control,
+    backgroundColor: status.danger.bg,
+    borderColor: status.danger.border,
+    borderRadius: radius.input,
     borderWidth: 1,
-    gap: setupTheme.spacing.tight,
-    padding: setupTheme.spacing.section,
+    padding: space.sm,
   },
-  errorTitle: {
-    color: setupTheme.color.danger,
-    fontSize: setupTheme.type.label,
-    fontWeight: "600",
-  },
-  errorText: { color: setupTheme.color.danger, fontSize: setupTheme.type.body },
-  busyRow: {
-    alignItems: "center",
+  busyRow: { alignItems: "center", flexDirection: "row", gap: space.xs },
+  option: {
     flexDirection: "row",
-    gap: setupTheme.spacing.compact,
-  },
-  busyText: {
-    color: setupTheme.color.muted,
-    fontSize: setupTheme.type.caption,
-    fontWeight: "500",
-  },
-  navigation: {
-    backgroundColor: setupTheme.color.surface,
-    borderTopColor: setupTheme.color.border,
-    borderTopWidth: 1,
-    flexDirection: "row",
-    gap: setupTheme.spacing.compact,
-    paddingHorizontal: setupTheme.spacing.compact,
-    paddingVertical: setupTheme.spacing.tight,
-    width: "100%",
-    maxWidth: setupTheme.size.contentMax,
-    alignSelf: "center",
-  },
-  navItem: {
     alignItems: "center",
-    borderRadius: setupTheme.radius.control,
-    flex: 1,
+    gap: space.sm,
+    padding: space.md,
+    borderRadius: radius.card,
+    borderWidth: 1,
+    borderColor: palette.border,
+    backgroundColor: palette.surface,
+  },
+  optionIcon: {
+    width: size.iconButton,
+    height: size.iconButton,
+    borderRadius: radius.pill,
+    backgroundColor: palette.lavender,
+    alignItems: "center",
     justifyContent: "center",
-    minHeight: 48,
-    gap: setupTheme.spacing.tight,
-    paddingVertical: setupTheme.spacing.tight,
   },
-  navItemActive: {
-    backgroundColor: setupTheme.color.accentSurface,
-  },
-  navText: {
-    textAlign: "center",
-    color: setupTheme.color.muted,
-    fontSize: setupTheme.type.caption,
-    fontWeight: "400",
-  },
-  navTextActive: { color: setupTheme.color.primary, fontWeight: "600" },
+  optionCopy: { flex: 1, gap: 2 },
 });

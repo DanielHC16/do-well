@@ -1,12 +1,20 @@
 import { render } from "@testing-library/react-native";
 import { useFonts } from "expo-font";
+import * as SplashScreen from "expo-splash-screen";
 import { Text, TextInput, TypographyProvider } from "../Typography";
 
 jest.mock("expo-font", () => ({ useFonts: jest.fn() }));
+jest.mock("expo-splash-screen", () => ({
+  preventAutoHideAsync: jest.fn(() => Promise.resolve(true)),
+  hideAsync: jest.fn(() => Promise.resolve(true)),
+}));
 const mockFonts = jest.mocked(useFonts);
+const mockHide = jest.mocked(SplashScreen.hideAsync);
 
 describe("bundled typography", () => {
-  it("waits for local fonts before mounting route content", async () => {
+  beforeEach(() => mockHide.mockClear());
+
+  it("keeps the native splash up and mounts nothing until fonts settle", async () => {
     mockFonts.mockReturnValue([false, null]);
     const view = await render(
       <TypographyProvider>
@@ -14,14 +22,15 @@ describe("bundled typography", () => {
       </TypographyProvider>,
     );
     expect(view.queryByText("Route content")).toBeNull();
-    expect(view.getByLabelText("Loading Do Well")).toBeVisible();
+    expect(mockHide).not.toHaveBeenCalled();
   });
 
-  it("maps semantic weights to loaded Inter faces and preserves input props", async () => {
+  it("maps semantic weights to loaded Outfit faces and hides the splash", async () => {
     mockFonts.mockReturnValue([true, null]);
     const view = await render(
       <TypographyProvider>
         <Text style={{ fontWeight: "700" }}>Heading</Text>
+        <Text style={{ fontWeight: "600" }}>Title</Text>
         <TextInput
           accessibilityLabel="Name"
           value="Jordan"
@@ -30,14 +39,18 @@ describe("bundled typography", () => {
       </TypographyProvider>,
     );
     expect(view.getByText("Heading")).toHaveStyle({
-      fontFamily: "InterBold",
+      fontFamily: "OutfitBold",
       fontWeight: "normal",
     });
+    expect(view.getByText("Title")).toHaveStyle({
+      fontFamily: "OutfitSemiBold",
+    });
     expect(view.getByLabelText("Name")).toHaveStyle({
-      fontFamily: "InterMedium",
+      fontFamily: "OutfitMedium",
       fontWeight: "normal",
     });
     expect(view.getByDisplayValue("Jordan")).toBeVisible();
+    expect(mockHide).toHaveBeenCalled();
   });
 
   it("keeps content usable with native fonts when loading fails", async () => {
@@ -48,5 +61,6 @@ describe("bundled typography", () => {
       </TypographyProvider>,
     );
     expect(view.getByText("Fallback")).toHaveStyle({ fontWeight: "700" });
+    expect(mockHide).toHaveBeenCalled();
   });
 });

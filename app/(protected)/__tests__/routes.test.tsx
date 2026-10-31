@@ -42,6 +42,7 @@ jest.mock("@react-native-async-storage/async-storage", () => ({
 }));
 
 jest.mock("@/features/auth/context/useAuth", () => ({
+  ...jest.requireActual("@/features/auth/context/useAuth"),
   useAuth: jest.fn(),
 }));
 
@@ -290,8 +291,18 @@ describe("Protected route components", () => {
   });
 
   it("EmployerHomeScreen renders employer workspace", async () => {
+    // The shell header and the employer route share one workspace mode.
+    mockedUseShellMode.mockReturnValue({
+      mode: "employer",
+      busy: false,
+      error: null,
+      switchMode: jest.fn(async () => true),
+      retry: jest.fn(async () => undefined),
+    });
     await render(<EmployerHomeScreen />);
-    expect(screen.getByRole("header", { name: "Manage gigs" })).toBeVisible();
+    expect(
+      screen.getByRole("header", { name: "Your workspace" }),
+    ).toBeVisible();
     expect(screen.getByText("Hi, Jordan")).toBeVisible();
   });
 

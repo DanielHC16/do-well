@@ -1,50 +1,47 @@
-import { createContext, useContext, type PropsWithChildren } from "react";
-import { useFonts } from "expo-font";
 import {
-  ActivityIndicator,
+  createContext,
+  useContext,
+  useEffect,
+  type ComponentRef,
+  type PropsWithChildren,
+  type Ref,
+} from "react";
+import { useFonts } from "expo-font";
+import * as SplashScreen from "expo-splash-screen";
+import {
   StyleSheet,
   Text as NativeText,
   TextInput as NativeTextInput,
-  View,
   type TextProps,
   type TextInputProps,
   type TextStyle,
 } from "react-native";
-import { setupTheme as theme } from "./theme";
+
+import { faceForWeight, fontFiles } from "@/theme";
+
+// Hold the native splash until fonts settle so the first frame is already Outfit.
+void SplashScreen.preventAutoHideAsync().catch(() => {
+  // The splash may already be hidden after a fast refresh; nothing to hold.
+});
 
 const FontsReady = createContext(false);
-const fonts = {
-  InterRegular: require("../../../branding/fonts/Inter-Regular.ttf"),
-  InterMedium: require("../../../branding/fonts/Inter-Medium.ttf"),
-  InterSemiBold: require("../../../branding/fonts/Inter-SemiBold.ttf"),
-  InterBold: require("../../../branding/fonts/Inter-Bold.ttf"),
-};
 
 export function TypographyProvider({ children }: PropsWithChildren) {
-  const [loaded, error] = useFonts(fonts);
-  if (!loaded && !error) {
-    return (
-      <View accessibilityLabel="Loading Do Well" style={styles.loading}>
-        <ActivityIndicator color={theme.color.primary} />
-      </View>
-    );
-  }
+  const [loaded, error] = useFonts(fontFiles);
+  const settled = loaded || Boolean(error);
+
+  useEffect(() => {
+    if (settled) void SplashScreen.hideAsync().catch(() => undefined);
+  }, [settled]);
+
+  if (!settled) return null;
   return <FontsReady.Provider value={loaded}>{children}</FontsReady.Provider>;
 }
 
 function fontFace(style: TextStyle | null | undefined): TextStyle {
   // Preserve intentional icon/custom font families rather than replacing glyphs.
   if (style?.fontFamily) return {};
-  const weight = style?.fontWeight;
-  const family =
-    weight === "bold" || Number(weight) >= 700
-      ? "InterBold"
-      : Number(weight) >= 600
-        ? "InterSemiBold"
-        : Number(weight) >= 500
-          ? "InterMedium"
-          : "InterRegular";
-  return { fontFamily: family, fontWeight: "normal" };
+  return { fontFamily: faceForWeight(style?.fontWeight), fontWeight: "normal" };
 }
 
 export function Text({ style, ...props }: TextProps) {
@@ -57,21 +54,19 @@ export function Text({ style, ...props }: TextProps) {
   );
 }
 
-export function TextInput({ style, ...props }: TextInputProps) {
+export type TextInputHandle = ComponentRef<typeof NativeTextInput>;
+
+export function TextInput({
+  style,
+  ref,
+  ...props
+}: TextInputProps & { ref?: Ref<TextInputHandle> }) {
   const ready = useContext(FontsReady);
   return (
     <NativeTextInput
       {...props}
+      ref={ref}
       style={[style, ready && fontFace(StyleSheet.flatten(style))]}
     />
   );
 }
-
-const styles = StyleSheet.create({
-  loading: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: theme.color.background,
-  },
-});

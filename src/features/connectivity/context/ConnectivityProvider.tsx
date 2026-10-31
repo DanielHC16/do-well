@@ -1,10 +1,13 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useState,
   type ReactNode,
 } from "react";
+
+import type { LoadErrorKind } from "@/shared/api/load-error";
 
 import type {
   ConnectivityService,
@@ -16,6 +19,11 @@ export interface ConnectivityContextValue {
   networkState: NetworkState;
   isOffline: boolean;
   refreshNetworkState: () => Promise<void>;
+  /**
+   * Screens report read outcomes so a failed request can mark the app offline when
+   * the OS still claims reachability (seen on Android emulators with broken DNS).
+   */
+  reportRequestOutcome: (outcome: "ok" | LoadErrorKind) => void;
 }
 
 const ConnectivityContext = createContext<ConnectivityContextValue | null>(
@@ -42,6 +50,13 @@ export function ConnectivityProvider({
     },
   );
 
+  const [requestFailed, setRequestFailed] = useState(false);
+
+  const reportRequestOutcome = useCallback((outcome: "ok" | LoadErrorKind) => {
+    if (outcome === "ok") setRequestFailed(false);
+    else if (outcome === "offline") setRequestFailed(true);
+  }, []);
+
   const refreshNetworkState = async () => {
     const next = await service.getNetworkState();
     setNetworkState(next);
@@ -57,6 +72,8 @@ export function ConnectivityProvider({
 
     const unsubscribe = service.addNetworkStateListener((state) => {
       if (mounted) {
+        // A fresh OS network event supersedes the last request failure.
+        setRequestFailed(false);
         setNetworkState(state);
       }
     });
@@ -68,7 +85,9 @@ export function ConnectivityProvider({
   }, [service]);
 
   const isOffline =
-    !networkState.isConnected || !networkState.isInternetReachable;
+    requestFailed ||
+    !networkState.isConnected ||
+    !networkState.isInternetReachable;
 
   return (
     <ConnectivityContext.Provider
@@ -76,6 +95,7 @@ export function ConnectivityProvider({
         networkState,
         isOffline,
         refreshNetworkState,
+        reportRequestOutcome,
       }}
     >
       {children}
@@ -92,6 +112,7 @@ const defaultConnectivityValue: ConnectivityContextValue = {
   },
   isOffline: false,
   refreshNetworkState: async () => {},
+  reportRequestOutcome: () => undefined,
 };
 
 export function useConnectivity(): ConnectivityContextValue {

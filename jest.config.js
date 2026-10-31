@@ -7,5 +7,6 @@ module.exports = {
     "<rootDir>/tests",
     "<rootDir>/scripts",
   ],
+  setupFiles: ["<rootDir>/tests/setup/jest.setup.js"],
   testPathIgnorePatterns: ["<rootDir>/tests/integration/"],
 };
