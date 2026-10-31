@@ -1,0 +1,553 @@
+[
+  {
+    "id": "01-hook",
+    "file": "audio/01-hook.wav",
+    "duration": 23.649,
+    "sampleRate": 24000,
+    "language": "en",
+    "engine": "Kokoro-82M v1.0 am_michael / Apache-2.0",
+    "textSha256": "5f2dd47eb3ea92c6e6da8069e288969e85c70645c3c8216385c6869302bb0a4f",
+    "cues": [
+      {
+        "text": "Five point nine million Filipinos.",
+        "start": 0.2,
+        "end": 2.94
+      },
+      {
+        "text": "Employed, and still looking for more work.",
+        "start": 3.49,
+        "end": 6.1156
+      },
+      {
+        "text": "That was August 2026, according to the Philippine Statistics Authority.",
+        "start": 6.6656,
+        "end": 12.8265
+      },
+      {
+        "text": "Unemployment eased from July, but it is still higher than a year ago.",
+        "start": 13.3765,
+        "end": 18.1857
+      },
+      {
+        "text": "People want to work.",
+        "start": 18.7357,
+        "end": 20.2068
+      },
+      {
+        "text": "The question is: can they find it?",
+        "start": 20.7568,
+        "end": 23.099
+      }
+    ],
+    "normalization": {
+      "targetLUFS": -19,
+      "targetTruePeakDB": -3,
+      "method": "highpass 70Hz, 2.5:1 compression, linear gain, sample-peak limiter; sample count preserved",
+      "actualLUFS": -19.01,
+      "actualTruePeakDB": -3.36
+    }
+  },
+  {
+    "id": "02-context",
+    "file": "audio/02-context.wav",
+    "duration": 24.8804,
+    "sampleRate": 24000,
+    "language": "en",
+    "engine": "Kokoro-82M v1.0 af_heart / Apache-2.0",
+    "textSha256": "1a125f344a45ffe07b2dd1f628a77184912419a8a40c3e546a4116cba1131a2e",
+    "cues": [
+      {
+        "text": "Underemployment means a person is employed, but wants more hours, another job, or a job with longer hours.",
+        "start": 0.2,
+        "end": 7.5919
+      },
+      {
+        "text": "In August, that described eleven point nine percent of employed Filipinos.",
+        "start": 7.9119,
+        "end": 12.702
+      },
+      {
+        "text": "Unemployment was five point three percent: lower than July, but higher than August last year.",
+        "start": 13.022,
+        "end": 19.1098
+      },
+      {
+        "text": "These are different measures.",
+        "start": 19.4298,
+        "end": 20.8953
+      },
+      {
+        "text": "Together, they show why access to suitable work matters.",
+        "start": 21.2153,
+        "end": 24.5604
+      }
+    ]
+  },
+  {
+    "id": "03-problem",
+    "file": "audio/03-problem.wav",
+    "duration": 24.4138,
+    "sampleRate": 24000,
+    "language": "en",
+    "engine": "Kokoro-82M v1.0 af_heart / Apache-2.0",
+    "textSha256": "e1551d5ed2d7af4344327a68eaf10e174dc23f037cde1a21bc5d1b086ced01a0",
+    "cues": [
+      {
+        "text": "Think of a student who wants a few paid hours around class, or someone already working who needs more.",
+        "start": 0.2,
+        "end": 6.0935
+      },
+      {
+        "text": "On the other side, a small café needs extra hands for one busy weekend.",
+        "start": 6.9435,
+        "end": 11.7613
+      },
+      {
+        "text": "Both sides face the same three questions.",
+        "start": 12.6113,
+        "end": 15.1427
+      },
+      {
+        "text": "Where is the right work?",
+        "start": 15.9927,
+        "end": 17.4113
+      },
+      {
+        "text": "What exactly needs to be done?",
+        "start": 18.2613,
+        "end": 20.0695
+      },
+      {
+        "text": "And how do both people know the job is finished?",
+        "start": 20.9195,
+        "end": 23.5638
+      }
+    ]
+  },
+  {
+    "id": "04-introduce",
+    "file": "audio/04-introduce.wav",
+    "duration": 23.3842,
+    "sampleRate": 24000,
+    "language": "en",
+    "engine": "Kokoro-82M v1.0 af_heart / Apache-2.0",
+    "textSha256": "16b512c1da7a33f48fc0e5cd390b4d10e9781a6ba9b68e831fb9faae29d2902b",
+    "cues": [
+      {
+        "text": "This is Do Well.",
+        "start": 0.2,
+        "end": 1.361
+      },
+      {
+        "text": "Find nearby work.",
+        "start": 2.211,
+        "end": 3.6473
+      },
+      {
+        "text": "Get it done well.",
+        "start": 4.4973,
+        "end": 5.5953
+      },
+      {
+        "text": "A native Android app for short-term local and remote gigs, running on a live cloud backend.",
+        "start": 6.4452,
+        "end": 12.3095
+      },
+      {
+        "text": "Meet Maya, who runs a café in Makati, and Alex, a student looking for extra work.",
+        "start": 13.1595,
+        "end": 18.7728
+      },
+      {
+        "text": "Everything you are about to see is the real app.",
+        "start": 19.6227,
+        "end": 22.5342
+      }
+    ]
+  },
+  {
+    "id": "05-employer",
+    "file": "audio/05-employer.wav",
+    "duration": 40.2163,
+    "sampleRate": 24000,
+    "language": "en",
+    "engine": "Kokoro-82M v1.0 af_heart / Apache-2.0",
+    "textSha256": "4b46920307041a9615a94474f847811b2a4c6227b8df2a1cff69bfba45173f79",
+    "cues": [
+      {
+        "text": "Maya needs help setting up a weekend community event.",
+        "start": 0.2,
+        "end": 3.6938
+      },
+      {
+        "text": "Instead of a vague post, she opens the Job Brief Builder.",
+        "start": 4.5438,
+        "end": 8.2449
+      },
+      {
+        "text": "She describes the task in one sentence, then picks a category, the work mode, a general area and her budget.",
+        "start": 9.0949,
+        "end": 15.9485
+      },
+      {
+        "text": "The builder turns that into a structured brief: a clear title, the scope, step by step tasks with acceptance criteria, and safety notes.",
+        "start": 16.7985,
+        "end": 25.8429
+      },
+      {
+        "text": "Maya applies it to the form, sets the title and her six hundred peso offer, and publishes.",
+        "start": 26.6929,
+        "end": 32.4732
+      },
+      {
+        "text": "Within seconds, the gig is live.",
+        "start": 33.3232,
+        "end": 35.4567
+      },
+      {
+        "text": "Every field stays editable before it goes live.",
+        "start": 36.3067,
+        "end": 39.3663
+      }
+    ]
+  },
+  {
+    "id": "06-discover",
+    "file": "audio/06-discover.wav",
+    "duration": 39.4274,
+    "sampleRate": 24000,
+    "language": "en",
+    "engine": "Kokoro-82M v1.0 af_heart / Apache-2.0",
+    "textSha256": "c5e1aeb228d636e252d509f6e54bdc35ec226a707dd28d659a45f14e34d67211",
+    "cues": [
+      {
+        "text": "Now Alex.",
+        "start": 0.2,
+        "end": 1.2365
+      },
+      {
+        "text": "His home screen lists open gigs, with filters for on site and remote work.",
+        "start": 2.0865,
+        "end": 6.9908
+      },
+      {
+        "text": "Location is optional.",
+        "start": 7.8408,
+        "end": 9.4518
+      },
+      {
+        "text": "When Alex looks for nearby work, Android shows its own permission prompt, and Do Well asks only for approximate location, while the app is in use.",
+        "start": 10.3018,
+        "end": 19.6524
+      },
+      {
+        "text": "There is no background tracking, and exact addresses are never shared.",
+        "start": 20.5024,
+        "end": 24.5108
+      },
+      {
+        "text": "Alex can also skip GPS entirely, and pick a Metro Manila hub and a search radius.",
+        "start": 25.3608,
+        "end": 33.265
+      },
+      {
+        "text": "Every result shows a rounded distance and a plain reason why it fits.",
+        "start": 34.115,
+        "end": 38.5774
+      }
+    ]
+  },
+  {
+    "id": "07-apply",
+    "file": "audio/07-apply.wav",
+    "duration": 23.5924,
+    "sampleRate": 24000,
+    "language": "en",
+    "engine": "Kokoro-82M v1.0 af_heart / Apache-2.0",
+    "textSha256": "3569d92c144b7780ad83167bf7737e2e4c7fc9bd0c109f54f865ce2deedab4d9",
+    "cues": [
+      {
+        "text": "Alex opens the café gig.",
+        "start": 0.2,
+        "end": 1.9803
+      },
+      {
+        "text": "He sees the pay, the general area, and the full brief.",
+        "start": 2.8303,
+        "end": 6.0522
+      },
+      {
+        "text": "Meeting details are agreed directly with the employer, never posted publicly.",
+        "start": 6.9022,
+        "end": 11.7233
+      },
+      {
+        "text": "He applies with a short note that only Maya can read, and the application appears in his work list right away.",
+        "start": 12.5733,
+        "end": 19.3945
+      },
+      {
+        "text": "If his plans change, he can withdraw it.",
+        "start": 20.2445,
+        "end": 22.7424
+      }
+    ]
+  },
+  {
+    "id": "08-select",
+    "file": "audio/08-select.wav",
+    "duration": 29.5564,
+    "sampleRate": 24000,
+    "language": "en",
+    "engine": "Kokoro-82M v1.0 af_heart / Apache-2.0",
+    "textSha256": "88de7c42f4b0cb26aa645bb17a4a19b068f329f67d63ea49564ccb50d4faf3b7",
+    "cues": [
+      {
+        "text": "On Maya's phone, the Activity feed reports a new application.",
+        "start": 0.2,
+        "end": 4.2447
+      },
+      {
+        "text": "She turns on device alerts, and Android asks for notification permission at the moment it is useful, not at launch.",
+        "start": 5.0947,
+        "end": 12.5011
+      },
+      {
+        "text": "Maya reads Alex's note and selects him.",
+        "start": 13.3511,
+        "end": 15.9002
+      },
+      {
+        "text": "Do Well explains exactly what happens next: the listing closes, other pending applications are declined, and an agreement is proposed.",
+        "start": 16.7502,
+        "end": 25.3882
+      },
+      {
+        "text": "Nothing is final until Alex accepts.",
+        "start": 26.2382,
+        "end": 28.7064
+      }
+    ]
+  },
+  {
+    "id": "09-agreement",
+    "file": "audio/09-agreement.wav",
+    "duration": 27.7868,
+    "sampleRate": 24000,
+    "language": "en",
+    "engine": "Kokoro-82M v1.0 af_heart / Apache-2.0",
+    "textSha256": "985460c40a51ef7946b32b769b9a317d1988627955af83791e99d9688f231b46",
+    "cues": [
+      {
+        "text": "Alex sees the update in his own Activity feed.",
+        "start": 0.2,
+        "end": 3.1776
+      },
+      {
+        "text": "He opens the task agreement, reviews the terms and the agreed amount, and accepts.",
+        "start": 4.0276,
+        "end": 9.1837
+      },
+      {
+        "text": "The agreement is now active.",
+        "start": 10.0337,
+        "end": 11.9932
+      },
+      {
+        "text": "Maya then breaks the job into milestones: arranging tables and chairs, setting out supplies, and tidying up afterwards.",
+        "start": 12.8432,
+        "end": 20.8665
+      },
+      {
+        "text": "Both of them now share one checklist, so expectations are clear before the work begins.",
+        "start": 21.7165,
+        "end": 26.9367
+      }
+    ]
+  },
+  {
+    "id": "10-submit",
+    "file": "audio/10-submit.wav",
+    "duration": 20.583,
+    "sampleRate": 24000,
+    "language": "en",
+    "engine": "Kokoro-82M v1.0 af_heart / Apache-2.0",
+    "textSha256": "da0f61300e776f0b5c711ec2c8f5e5257f8d06241d3af322b34be939cec68420",
+    "cues": [
+      {
+        "text": "On Saturday, Alex starts each milestone, so Maya can follow the progress.",
+        "start": 0.2,
+        "end": 4.9036
+      },
+      {
+        "text": "When the work is done, he writes a completion note.",
+        "start": 5.7536,
+        "end": 8.5539
+      },
+      {
+        "text": "He can attach up to three photos from the gallery or the camera, and Android asks for camera access only when he taps.",
+        "start": 9.4039,
+        "end": 16.8433
+      },
+      {
+        "text": "Then he submits the work for review.",
+        "start": 17.6933,
+        "end": 19.733
+      }
+    ]
+  },
+  {
+    "id": "11-approve",
+    "file": "audio/11-approve.wav",
+    "duration": 27.5465,
+    "sampleRate": 24000,
+    "language": "en",
+    "engine": "Kokoro-82M v1.0 af_heart / Apache-2.0",
+    "textSha256": "0e8e9645f9af180de7c3349672e36ed8729cb3a7c99f61b19afe019c1afb9049",
+    "cues": [
+      {
+        "text": "Maya's phone lights up with Android notifications: the agreement confirmed, each milestone started, and the work submitted.",
+        "start": 0.2,
+        "end": 8.0494
+      },
+      {
+        "text": "She opens the submission, reads Alex's note, and approves it.",
+        "start": 8.8994,
+        "end": 12.8783
+      },
+      {
+        "text": "She could also request a revision.",
+        "start": 13.7283,
+        "end": 15.7242
+      },
+      {
+        "text": "All three milestones are marked approved, and the task agreement is complete.",
+        "start": 16.5742,
+        "end": 21.2124
+      },
+      {
+        "text": "The completed agreement keeps a record of the six hundred pesos they agreed on.",
+        "start": 22.0624,
+        "end": 26.6965
+      }
+    ]
+  },
+  {
+    "id": "12-android",
+    "file": "audio/12-android.wav",
+    "duration": 29.1585,
+    "sampleRate": 24000,
+    "language": "en",
+    "engine": "Kokoro-82M v1.0 af_heart / Apache-2.0",
+    "textSha256": "df4f7103bbcc308ca5269bdea6707f78c3ebb5a9c697f5b243fab206420ad2a9",
+    "cues": [
+      {
+        "text": "Do Well is built for the way Android phones are really used.",
+        "start": 0.2,
+        "end": 3.659
+      },
+      {
+        "text": "Connections drop, so the app watches network state.",
+        "start": 4.509,
+        "end": 7.6828
+      },
+      {
+        "text": "When Alex goes offline, it switches to a saved snapshot and says so clearly, then refreshes once he reconnects.",
+        "start": 8.5328,
+        "end": 15.5707
+      },
+      {
+        "text": "Permissions are requested in context and kept to a minimum.",
+        "start": 16.4207,
+        "end": 20.0038
+      },
+      {
+        "text": "And when Maya approves, Alex gets his own notification, and the job moves to completed in his work list and profile.",
+        "start": 20.8538,
+        "end": 28.3085
+      }
+    ]
+  },
+  {
+    "id": "13-difference",
+    "file": "audio/13-difference.wav",
+    "duration": 27.0472,
+    "sampleRate": 24000,
+    "language": "en",
+    "engine": "Kokoro-82M v1.0 af_heart / Apache-2.0",
+    "textSha256": "1a73a0b3577a9c4655c5fcc610bcf81645122882315a88883d1423464457e9eb",
+    "cues": [
+      {
+        "text": "So what makes Do Well different?",
+        "start": 0.2,
+        "end": 1.929
+      },
+      {
+        "text": "A structured brief instead of a vague post.",
+        "start": 2.779,
+        "end": 5.3772
+      },
+      {
+        "text": "Discovery that explains itself.",
+        "start": 6.2272,
+        "end": 8.3099
+      },
+      {
+        "text": "An agreement both sides confirm, milestones both can see, and a clear finish.",
+        "start": 9.1599,
+        "end": 14.1596
+      },
+      {
+        "text": "For judging, that means innovation in the workflow, a native Android experience, privacy first security, complete functionality, and a calm, consistent user experience.",
+        "start": 15.0096,
+        "end": 26.1972
+      }
+    ]
+  },
+  {
+    "id": "14-close",
+    "file": "audio/14-close.wav",
+    "duration": 21.602,
+    "sampleRate": 24000,
+    "language": "en",
+    "engine": "Kokoro-82M v1.0 af_heart / Apache-2.0",
+    "textSha256": "b28e6ab2b81d03fefb10297ff525c91a6af3c8d467e09b9243891c2eef4de5f3",
+    "cues": [
+      {
+        "text": "Opportunity starts with a connection.",
+        "start": 0.2,
+        "end": 2.2178
+      },
+      {
+        "text": "Progress comes from getting the work done.",
+        "start": 2.5378,
+        "end": 4.7218
+      },
+      {
+        "text": "Do Well.",
+        "start": 5.0418,
+        "end": 5.863
+      },
+      {
+        "text": "Find nearby work.",
+        "start": 6.183,
+        "end": 7.6194
+      },
+      {
+        "text": "Get it done well.",
+        "start": 7.9394,
+        "end": 9.0373
+      },
+      {
+        "text": "Presented by Ang Huling Pull Request: Daniel Hardy Camacho, Hershey Anne Dalangin, and Carla Mabutas.",
+        "start": 9.3573,
+        "end": 16.515
+      },
+      {
+        "text": "UMAK IT Skills Olympics, twenty twenty six.",
+        "start": 16.835,
+        "end": 21.282
+      }
+    ]
+  }
+]

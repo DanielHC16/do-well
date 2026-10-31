@@ -1,5 +1,7 @@
 # Do Well Implementation Plan and Roadmap
 
+Owner-authorized competition video production (2026-10-31) is **IN PROGRESS**, isolated from product implementation on `feat/competition-video-production` from merged-redesign revision `2078bca`. See the [production checkpoint](../video-production/CHECKPOINT.md). This task does not close hosted authentication/device acceptance or alter milestone completion statuses; a final export must pass actual technical and editorial QA before delivery.
+
 Latest M21 content-first refinement prioritizes gigs/work/activity, adds compact headers and feedback states while preserving contracts/branding. Verification: formatting, lint, strict TypeScript, **103 suites / 628 tests**, plus final filter-scrollbar focused checks. See [current report](reports/2026-10-31-content-first-composition.md). Milestone remains in progress pending owner/workflow/device acceptance; no commit/push/merge.
 
 Latest M21 lavender reference refinement: compact marketplace composition, softer layered cards/navigation, locally bundled licensed Inter, and owner-authorized current-logo Expo icon/splash references. No generated native changes or rebuild; backend/contracts remain intact. Verification: **103 suites / 617 tests**, formatting, lint, strict typecheck; focused tests passed after final layout/label adjustments. Worker/employer dashboards inspected at 360dp/150%; settings restored. See [latest report](reports/2026-10-31-lavender-visual-refinement.md). Status remains in progress pending owner and workflow/native-artwork acceptance.

@@ -1,0 +1,55 @@
+{
+  "id": "10-complete",
+  "file": "audio/10-complete.wav",
+  "duration": 40.925,
+  "sampleRate": 24000,
+  "language": "en",
+  "engine": "Kokoro-82M v1.0 af_heart / Apache-2.0",
+  "textSha256": "790444cfc29d810f0796b6dd72a7c1622e7d3a939de1e92f9bb0050f77426640",
+  "cues": [
+    {
+      "text": "Maya now reviews the result.",
+      "start": 0.2,
+      "end": 2.0235
+    },
+    {
+      "text": "Pressing submit does not complete the task: the employer has the final review.",
+      "start": 2.3435,
+      "end": 7.2066
+    },
+    {
+      "text": "When Maya approves, the interface marks the work completed, and the activity timeline records the update.",
+      "start": 7.5266,
+      "end": 14.2805
+    },
+    {
+      "text": "From posting to applying, selecting, submitting, and approving, the task has a visible beginning and end.",
+      "start": 14.6005,
+      "end": 21.3156
+    },
+    {
+      "text": "This is local demonstration data, not proof of remote push delivery.",
+      "start": 21.6356,
+      "end": 26.184
+    },
+    {
+      "text": "Hosted account acceptance, device testing, and a complete two-account rehearsal still matter for deployment.",
+      "start": 26.504,
+      "end": 33.244
+    },
+    {
+      "text": "The demonstration shows the intended interaction clearly, while keeping those remaining verification steps visible.",
+      "start": 33.564,
+      "end": 40.605
+    }
+  ],
+  "normalization": {
+    "targetLUFS": -19,
+    "targetTruePeakDB": -3,
+    "actualLUFS": -19.23,
+    "actualTruePeakDB": -2.97,
+    "sampleCount": 982201,
+    "preservedSampleCount": true,
+    "rawFile": "audio\\raw\\10-complete.wav"
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "id": "06-discover",
+  "file": "audio/06-discover.wav",
+  "duration": 39.4274,
+  "sampleRate": 24000,
+  "language": "en",
+  "engine": "Kokoro-82M v1.0 af_heart / Apache-2.0",
+  "textSha256": "c5e1aeb228d636e252d509f6e54bdc35ec226a707dd28d659a45f14e34d67211",
+  "cues": [
+    {
+      "text": "Now Alex.",
+      "start": 0.2,
+      "end": 1.2365
+    },
+    {
+      "text": "His home screen lists open gigs, with filters for on site and remote work.",
+      "start": 2.0865,
+      "end": 6.9908
+    },
+    {
+      "text": "Location is optional.",
+      "start": 7.8408,
+      "end": 9.4518
+    },
+    {
+      "text": "When Alex looks for nearby work, Android shows its own permission prompt, and Do Well asks only for approximate location, while the app is in use.",
+      "start": 10.3018,
+      "end": 19.6524
+    },
+    {
+      "text": "There is no background tracking, and exact addresses are never shared.",
+      "start": 20.5024,
+      "end": 24.5108
+    },
+    {
+      "text": "Alex can also skip GPS entirely, and pick a Metro Manila hub and a search radius.",
+      "start": 25.3608,
+      "end": 33.265
+    },
+    {
+      "text": "Every result shows a rounded distance and a plain reason why it fits.",
+      "start": 34.115,
+      "end": 38.5774
+    }
+  ],
+  "normalization": {
+    "targetLUFS": -19,
+    "targetTruePeakDB": -3,
+    "actualLUFS": -19.34,
+    "actualTruePeakDB": -2.98,
+    "sampleCount": 946257,
+    "preservedSampleCount": true,
+    "rawFile": "audio\\raw\\06-discover.wav"
+  }
+}

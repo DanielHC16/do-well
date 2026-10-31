@@ -1,0 +1,45 @@
+{
+  "id": "09-agreement",
+  "file": "audio/09-agreement.wav",
+  "duration": 27.7868,
+  "sampleRate": 24000,
+  "language": "en",
+  "engine": "Kokoro-82M v1.0 af_heart / Apache-2.0",
+  "textSha256": "985460c40a51ef7946b32b769b9a317d1988627955af83791e99d9688f231b46",
+  "cues": [
+    {
+      "text": "Alex sees the update in his own Activity feed.",
+      "start": 0.2,
+      "end": 3.1776
+    },
+    {
+      "text": "He opens the task agreement, reviews the terms and the agreed amount, and accepts.",
+      "start": 4.0276,
+      "end": 9.1837
+    },
+    {
+      "text": "The agreement is now active.",
+      "start": 10.0337,
+      "end": 11.9932
+    },
+    {
+      "text": "Maya then breaks the job into milestones: arranging tables and chairs, setting out supplies, and tidying up afterwards.",
+      "start": 12.8432,
+      "end": 20.8665
+    },
+    {
+      "text": "Both of them now share one checklist, so expectations are clear before the work begins.",
+      "start": 21.7165,
+      "end": 26.9367
+    }
+  ],
+  "normalization": {
+    "targetLUFS": -19,
+    "targetTruePeakDB": -3,
+    "actualLUFS": -19.64,
+    "actualTruePeakDB": -2.99,
+    "sampleCount": 666882,
+    "preservedSampleCount": true,
+    "rawFile": "audio\\raw\\09-agreement.wav"
+  }
+}

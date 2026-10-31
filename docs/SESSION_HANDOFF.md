@@ -1,5 +1,9 @@
 # Session Handoff
 
+## Competition video production — in progress — 2026-10-31
+
+Owner-authorized autonomous video production is isolated under [`video-production/`](../video-production/README.md), with a persistent [checkpoint](../video-production/CHECKPOINT.md), on `feat/competition-video-production` from `2078bca`. The requested redesign is already merged in this local main revision. Existing `.gitignore` and `expo-env.d.ts` changes are preserved. Research verifies the PSA August 2026 figures; copyrighted news footage is excluded. Android capture uses the visibly disclosed synthetic offline fallback because a hosted two-principal rehearsal is unavailable. Do not treat the video as hosted acceptance or mark product milestones complete. Final MP4/render QA remains pending until the checkpoint records verified export evidence. No app feature change, hosted provisioning, commit, push, or merge is claimed.
+
 ## Redesign — committed — 2026-10-31
 
 Committed on `feat/frontend-redesign-soft-productivity` as `0c99972` (design system + shell), `65f959b` (Home), `4b510cd` (My Work), `530d96f` (Activity + Profile); each typechecked in isolation, final state 110 suites / 690 tests. Full analysis with before/after screenshots: [brand redesign report](reports/2026-10-31-brand-redesign.md). Remaining: task workspace, gig details/applicants, Post a gig builder, auth restyle, legacy `setupTheme`/Inter cleanup. `gh` CLI is not authenticated, so the PR must be opened from the GitHub web compare page.

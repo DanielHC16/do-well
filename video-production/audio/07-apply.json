@@ -1,0 +1,45 @@
+{
+  "id": "07-apply",
+  "file": "audio/07-apply.wav",
+  "duration": 23.5924,
+  "sampleRate": 24000,
+  "language": "en",
+  "engine": "Kokoro-82M v1.0 af_heart / Apache-2.0",
+  "textSha256": "3569d92c144b7780ad83167bf7737e2e4c7fc9bd0c109f54f865ce2deedab4d9",
+  "cues": [
+    {
+      "text": "Alex opens the café gig.",
+      "start": 0.2,
+      "end": 1.9803
+    },
+    {
+      "text": "He sees the pay, the general area, and the full brief.",
+      "start": 2.8303,
+      "end": 6.0522
+    },
+    {
+      "text": "Meeting details are agreed directly with the employer, never posted publicly.",
+      "start": 6.9022,
+      "end": 11.7233
+    },
+    {
+      "text": "He applies with a short note that only Maya can read, and the application appears in his work list right away.",
+      "start": 12.5733,
+      "end": 19.3945
+    },
+    {
+      "text": "If his plans change, he can withdraw it.",
+      "start": 20.2445,
+      "end": 22.7424
+    }
+  ],
+  "normalization": {
+    "targetLUFS": -19,
+    "targetTruePeakDB": -3,
+    "actualLUFS": -19.15,
+    "actualTruePeakDB": -3.0,
+    "sampleCount": 566218,
+    "preservedSampleCount": true,
+    "rawFile": "audio\\raw\\07-apply.wav"
+  }
+}

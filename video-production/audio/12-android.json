@@ -1,0 +1,45 @@
+{
+  "id": "12-android",
+  "file": "audio/12-android.wav",
+  "duration": 29.1585,
+  "sampleRate": 24000,
+  "language": "en",
+  "engine": "Kokoro-82M v1.0 af_heart / Apache-2.0",
+  "textSha256": "df4f7103bbcc308ca5269bdea6707f78c3ebb5a9c697f5b243fab206420ad2a9",
+  "cues": [
+    {
+      "text": "Do Well is built for the way Android phones are really used.",
+      "start": 0.2,
+      "end": 3.659
+    },
+    {
+      "text": "Connections drop, so the app watches network state.",
+      "start": 4.509,
+      "end": 7.6828
+    },
+    {
+      "text": "When Alex goes offline, it switches to a saved snapshot and says so clearly, then refreshes once he reconnects.",
+      "start": 8.5328,
+      "end": 15.5707
+    },
+    {
+      "text": "Permissions are requested in context and kept to a minimum.",
+      "start": 16.4207,
+      "end": 20.0038
+    },
+    {
+      "text": "And when Maya approves, Alex gets his own notification, and the job moves to completed in his work list and profile.",
+      "start": 20.8538,
+      "end": 28.3085
+    }
+  ],
+  "normalization": {
+    "targetLUFS": -19,
+    "targetTruePeakDB": -3,
+    "actualLUFS": -19.24,
+    "actualTruePeakDB": -2.98,
+    "sampleCount": 699804,
+    "preservedSampleCount": true,
+    "rawFile": "audio\\raw\\12-android.wav"
+  }
+}

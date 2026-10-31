@@ -1,0 +1,50 @@
+{
+  "id": "03-problem",
+  "file": "audio/03-problem.wav",
+  "duration": 24.4138,
+  "sampleRate": 24000,
+  "language": "en",
+  "engine": "Kokoro-82M v1.0 af_heart / Apache-2.0",
+  "textSha256": "e1551d5ed2d7af4344327a68eaf10e174dc23f037cde1a21bc5d1b086ced01a0",
+  "cues": [
+    {
+      "text": "Think of a student who wants a few paid hours around class, or someone already working who needs more.",
+      "start": 0.2,
+      "end": 6.0935
+    },
+    {
+      "text": "On the other side, a small café needs extra hands for one busy weekend.",
+      "start": 6.9435,
+      "end": 11.7613
+    },
+    {
+      "text": "Both sides face the same three questions.",
+      "start": 12.6113,
+      "end": 15.1427
+    },
+    {
+      "text": "Where is the right work?",
+      "start": 15.9927,
+      "end": 17.4113
+    },
+    {
+      "text": "What exactly needs to be done?",
+      "start": 18.2613,
+      "end": 20.0695
+    },
+    {
+      "text": "And how do both people know the job is finished?",
+      "start": 20.9195,
+      "end": 23.5638
+    }
+  ],
+  "normalization": {
+    "targetLUFS": -19,
+    "targetTruePeakDB": -3,
+    "actualLUFS": -19.22,
+    "actualTruePeakDB": -2.97,
+    "sampleCount": 585932,
+    "preservedSampleCount": true,
+    "rawFile": "audio\\raw\\03-problem.wav"
+  }
+}

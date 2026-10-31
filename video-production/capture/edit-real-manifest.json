@@ -1,0 +1,414 @@
+{
+  "policy": "Authentic frames from the hosted-app recordings only; speed-ups and cuts, final real frame held.",
+  "clips": [
+    {
+      "name": "e04b",
+      "segments": [
+        {
+          "take": "r01-employer-create",
+          "start": 0,
+          "end": 5,
+          "speed": 1
+        },
+        {
+          "take": "r12-discover-hub",
+          "start": 0,
+          "end": 7,
+          "speed": 1
+        }
+      ],
+      "held_final_frame_s": 3,
+      "edit_duration": 15.167
+    },
+    {
+      "name": "e05a",
+      "segments": [
+        {
+          "take": "r01-employer-create",
+          "start": 0,
+          "end": 6,
+          "speed": 1.5
+        },
+        {
+          "take": "r01-employer-create",
+          "start": 8,
+          "end": 44,
+          "speed": 3
+        }
+      ],
+      "held_final_frame_s": 3,
+      "edit_duration": 19.7
+    },
+    {
+      "name": "e05b",
+      "segments": [
+        {
+          "take": "r01-employer-create",
+          "start": 46,
+          "end": 72,
+          "speed": 2.6
+        }
+      ],
+      "held_final_frame_s": 3,
+      "edit_duration": 13.533
+    },
+    {
+      "name": "e05c",
+      "segments": [
+        {
+          "take": "r01-employer-create",
+          "start": 72,
+          "end": 78,
+          "speed": 1.2
+        },
+        {
+          "take": "r01-employer-create",
+          "start": 80,
+          "end": 104,
+          "speed": 5
+        },
+        {
+          "take": "r01-employer-create",
+          "start": 104,
+          "end": 121,
+          "speed": 1.2
+        }
+      ],
+      "held_final_frame_s": 3,
+      "edit_duration": 27.133
+    },
+    {
+      "name": "e06a",
+      "segments": [
+        {
+          "take": "r02-worker-discover",
+          "start": 0,
+          "end": 22,
+          "speed": 3
+        }
+      ],
+      "held_final_frame_s": 3,
+      "edit_duration": 10.4
+    },
+    {
+      "name": "e06b",
+      "segments": [
+        {
+          "take": "r02-worker-discover",
+          "start": 26,
+          "end": 44,
+          "speed": 3
+        },
+        {
+          "take": "r02-worker-discover",
+          "start": 46,
+          "end": 52,
+          "speed": 1.5
+        },
+        {
+          "take": "r02-worker-discover",
+          "start": 60,
+          "end": 67,
+          "speed": 1
+        }
+      ],
+      "held_final_frame_s": 3,
+      "edit_duration": 19.9
+    },
+    {
+      "name": "e06c",
+      "segments": [
+        {
+          "take": "r12-discover-hub",
+          "start": 6,
+          "end": 26,
+          "speed": 1
+        },
+        {
+          "take": "r12-discover-hub",
+          "start": 28,
+          "end": 40,
+          "speed": 1.5
+        }
+      ],
+      "held_final_frame_s": 3,
+      "edit_duration": 32.7
+    },
+    {
+      "name": "e07a",
+      "segments": [
+        {
+          "take": "r03-worker-apply",
+          "start": 0,
+          "end": 4,
+          "speed": 1
+        },
+        {
+          "take": "r03-worker-apply",
+          "start": 4,
+          "end": 26,
+          "speed": 2.6
+        }
+      ],
+      "held_final_frame_s": 3,
+      "edit_duration": 17.833
+    },
+    {
+      "name": "e07b",
+      "segments": [
+        {
+          "take": "r03-worker-apply",
+          "start": 26,
+          "end": 34,
+          "speed": 1
+        },
+        {
+          "take": "r03-worker-apply",
+          "start": 120,
+          "end": 134,
+          "speed": 1
+        }
+      ],
+      "held_final_frame_s": 3,
+      "edit_duration": 20.333
+    },
+    {
+      "name": "e08a",
+      "segments": [
+        {
+          "take": "r04-employer-select",
+          "start": 0,
+          "end": 6,
+          "speed": 2
+        },
+        {
+          "take": "r04-employer-select",
+          "start": 8,
+          "end": 24,
+          "speed": 4
+        },
+        {
+          "take": "r04-employer-select",
+          "start": 26,
+          "end": 30,
+          "speed": 1
+        },
+        {
+          "take": "r04-employer-select",
+          "start": 38,
+          "end": 41,
+          "speed": 1
+        }
+      ],
+      "held_final_frame_s": 3,
+      "edit_duration": 17.8
+    },
+    {
+      "name": "e08b",
+      "segments": [
+        {
+          "take": "r04-employer-select",
+          "start": 66,
+          "end": 72,
+          "speed": 1
+        },
+        {
+          "take": "r04-employer-select",
+          "start": 72,
+          "end": 98,
+          "speed": 3
+        },
+        {
+          "take": "r04-employer-select",
+          "start": 98,
+          "end": 110,
+          "speed": 1
+        }
+      ],
+      "held_final_frame_s": 3,
+      "edit_duration": 36.033
+    },
+    {
+      "name": "e09a",
+      "segments": [
+        {
+          "take": "r06-worker-accept",
+          "start": 8,
+          "end": 13,
+          "speed": 1
+        },
+        {
+          "take": "r06-worker-accept",
+          "start": 82,
+          "end": 88,
+          "speed": 3
+        },
+        {
+          "take": "r06-worker-accept",
+          "start": 108,
+          "end": 124,
+          "speed": 2.2
+        }
+      ],
+      "held_final_frame_s": 3,
+      "edit_duration": 14.833
+    },
+    {
+      "name": "e09b",
+      "segments": [
+        {
+          "take": "r07-employer-milestones",
+          "start": 16,
+          "end": 48,
+          "speed": 3
+        },
+        {
+          "take": "r07-employer-milestones",
+          "start": 48,
+          "end": 92,
+          "speed": 8
+        },
+        {
+          "take": "r07-employer-milestones",
+          "start": 92,
+          "end": 110,
+          "speed": 1.2
+        }
+      ],
+      "held_final_frame_s": 3,
+      "edit_duration": 33.633
+    },
+    {
+      "name": "e10a",
+      "segments": [
+        {
+          "take": "r08-worker-submit",
+          "start": 0,
+          "end": 10,
+          "speed": 3.3
+        },
+        {
+          "take": "r08-worker-submit",
+          "start": 22,
+          "end": 46,
+          "speed": 3.5
+        }
+      ],
+      "held_final_frame_s": 3,
+      "edit_duration": 12.933
+    },
+    {
+      "name": "e10b",
+      "segments": [
+        {
+          "take": "r08-worker-submit",
+          "start": 50,
+          "end": 82,
+          "speed": 2.5
+        },
+        {
+          "take": "r08-worker-submit",
+          "start": 82,
+          "end": 96,
+          "speed": 1.2
+        }
+      ],
+      "held_final_frame_s": 3,
+      "edit_duration": 27.167
+    },
+    {
+      "name": "e11a",
+      "segments": [
+        {
+          "take": "r10-employer-approve",
+          "start": 8,
+          "end": 12,
+          "speed": 1
+        },
+        {
+          "take": "r10-employer-approve",
+          "start": 22,
+          "end": 32,
+          "speed": 1.5
+        }
+      ],
+      "held_final_frame_s": 3,
+      "edit_duration": 16.333
+    },
+    {
+      "name": "e11b",
+      "segments": [
+        {
+          "take": "r10-employer-approve",
+          "start": 62,
+          "end": 74,
+          "speed": 3
+        },
+        {
+          "take": "r10-employer-approve",
+          "start": 74,
+          "end": 98,
+          "speed": 4.5
+        },
+        {
+          "take": "r10-employer-approve",
+          "start": 98,
+          "end": 110,
+          "speed": 1.2
+        },
+        {
+          "take": "r10-employer-approve",
+          "start": 126,
+          "end": 134,
+          "speed": 1.6
+        }
+      ],
+      "held_final_frame_s": 3,
+      "edit_duration": 31.7
+    },
+    {
+      "name": "e12a",
+      "segments": [
+        {
+          "take": "r09-offline",
+          "start": 0,
+          "end": 14,
+          "speed": 1
+        },
+        {
+          "take": "r09-offline",
+          "start": 44,
+          "end": 48,
+          "speed": 1
+        }
+      ],
+      "held_final_frame_s": 3,
+      "edit_duration": 21.667
+    },
+    {
+      "name": "e12b",
+      "segments": [
+        {
+          "take": "r11-worker-complete",
+          "start": 18,
+          "end": 28,
+          "speed": 1.5
+        },
+        {
+          "take": "r11-worker-complete",
+          "start": 36,
+          "end": 44,
+          "speed": 1
+        },
+        {
+          "take": "r11-worker-complete",
+          "start": 58,
+          "end": 64,
+          "speed": 1.5
+        }
+      ],
+      "held_final_frame_s": 3,
+      "edit_duration": 19.066
+    }
+  ]
+}

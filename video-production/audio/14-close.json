@@ -1,0 +1,55 @@
+{
+  "id": "14-close",
+  "file": "audio/14-close.wav",
+  "duration": 21.602,
+  "sampleRate": 24000,
+  "language": "en",
+  "engine": "Kokoro-82M v1.0 af_heart / Apache-2.0",
+  "textSha256": "b28e6ab2b81d03fefb10297ff525c91a6af3c8d467e09b9243891c2eef4de5f3",
+  "cues": [
+    {
+      "text": "Opportunity starts with a connection.",
+      "start": 0.2,
+      "end": 2.2178
+    },
+    {
+      "text": "Progress comes from getting the work done.",
+      "start": 2.5378,
+      "end": 4.7218
+    },
+    {
+      "text": "Do Well.",
+      "start": 5.0418,
+      "end": 5.863
+    },
+    {
+      "text": "Find nearby work.",
+      "start": 6.183,
+      "end": 7.6194
+    },
+    {
+      "text": "Get it done well.",
+      "start": 7.9394,
+      "end": 9.0373
+    },
+    {
+      "text": "Presented by Ang Huling Pull Request: Daniel Hardy Camacho, Hershey Anne Dalangin, and Carla Mabutas.",
+      "start": 9.3573,
+      "end": 16.515
+    },
+    {
+      "text": "UMAK IT Skills Olympics, twenty twenty six.",
+      "start": 16.835,
+      "end": 21.282
+    }
+  ],
+  "normalization": {
+    "targetLUFS": -19,
+    "targetTruePeakDB": -3,
+    "actualLUFS": -19.54,
+    "actualTruePeakDB": -2.96,
+    "sampleCount": 518449,
+    "preservedSampleCount": true,
+    "rawFile": "audio\\raw\\14-close.wav"
+  }
+}

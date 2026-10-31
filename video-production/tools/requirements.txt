@@ -1,0 +1,6 @@
+# Minimal production runtime. English/Tagalog use local ONNX graphs.
+# No PyTorch, cloud TTS, account, or API credential is needed.
+piper-tts==1.8.0
+onnxruntime==1.31.1
+numpy==2.5.4
+scipy==1.18.1
