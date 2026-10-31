@@ -79,10 +79,10 @@ Actual Android 16 Development Build inspection covered default 411dp/100% and 36
 - **Completed milestones:** M01 — Expo initialization; M02 — Supabase schema; M03A — auth foundation; D01 — Offline Demo; M04 — Marketplace shell; M05 — Gig creation; M06 — Discovery; M07 — Applications; M08 — Agreements; M09 — Submissions; M10 — AI Brief Builder; M11 — Location; M12 — Notifications/evidence; M13 — Weak-connectivity; M14 — Security & tests; M15 — CI & Productization Reset; M17 — Settings, Workspace Persistence & Admin Capability; M18 — Functional Moderation & Reporting UI; M19 — Presentation Hardening & Identity Boundaries; M20 — Database Parity, Operator Provisioning & HTTP Multi-Principal Integration
 - **Current milestone:** M20 — Database Parity, Operator Provisioning & HTTP Multi-Principal Integration
 - **Status:** `COMPLETED`
-- **Branch:** `feat/database-and-provisioning-m20`
+- **Branch:** `chore/local-build-unblocking`, based on `88cbfbf` (`docs: record hosted migration parity`)
 - **Base/default branch:** `main`
 - **Current implementation merge:** `2632a21` (`Merge pull request #42`)
-- **Current verification attempt:** `2026-10-26` on `main` at `b5ace38`; Jest, formatting, lint, typecheck, Expo Doctor, and Android Hermes export passed. Local database/HTTP integration checks were blocked by unavailable Docker, and hosted migration/provisioning was not attempted because `.env.local` and Supabase project linkage were absent.
+- **Current verification attempt:** `2026-10-26`; hosted migrations already match through `20261026000100`. The native `x86_64` release APK now builds, verifies, installs, and cold-launches on `emulator-5554`. ARM64 compilation and signature verification also passed. Docker Desktop and WSL are installed, but the engine remains unavailable pending a Windows restart. The owner/admin email is explicitly authorized and configured only in ignored local environment; the latest hosted dry-run returned `user_not_found` / `require_user_login`. No provisioning apply or admin grant occurred.
 - **Remote:** `https://github.com/DanielHC16/do-well` (`PRIVATE`)
 - **M01 PR:** [#17](https://github.com/DanielHC16/do-well/pull/17), squash-merged as `d073c4b`
 - **M02 PR:** [#19](https://github.com/DanielHC16/do-well/pull/19), merge commit `f7a3317`
@@ -348,10 +348,11 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 
 ## Exact next steps
 
-1. Rehearse the 3-5 minute competition judging presentation using `docs/DEMO_RUNBOOK.md`.
-2. Compile and package the standalone Android release APK using `docs/COMPETITION_BUILD.md`.
-3. Validate APK installation and launch on physical Android device (Infinix X6840 or competition test device).
-4. Maintain M03B hosted OAuth acceptance deferred until operator-managed credentials and live physical device tests are scheduled.
+1. Restart Windows to activate WSL/VirtualMachinePlatform, start Docker Desktop, and require a successful `docker info` before local database verification.
+2. Run the local database reset, pgTAP, lint, generated-type drift, and HTTP integration checks below once the engine is ready.
+3. Have the owner sign in with the explicitly authorized Google account configured in ignored `DEMO_ADMIN_EMAIL`. The latest hosted dry-run returned `user_not_found` / `require_user_login`; rerun it after account creation, verify the exact identity, and grant the admin role to that account.
+4. Install and exercise the verified ARM64 APK on the physical Android device. Emulator launch does not establish physical-device acceptance.
+5. Rehearse the two-principal hosted scenario in `docs/HOSTED_DEMO_SETUP.md` and the presentation in `docs/DEMO_RUNBOOK.md`; M03B hosted OAuth/device acceptance remains deferred.
 
 ## 2026-10-26 Section 11 execution attempt
 
@@ -368,22 +369,32 @@ M01 is merged. The Expo SDK 58 app, strict TypeScript/Jest checks, local Android
 - Hosted operator apply remains pending until the owner/admin email is explicitly configured. Do not infer it from unrelated credentials.
 - Android preparation: the local SDK already contains configured `Pixel` and `Pixel_2` AVDs; `Pixel` booted successfully as `emulator-5554`. Native APK installation remains blocked by Windows CMake/Ninja path-length failures during React Native codegen, despite installing CMake 3.31.6 and retrying an arm64 release build from a real short-path copy.
 
-The next operator must restore Docker, provide ignored hosted configuration, link the authorized project, capture the required backup, then repeat the dry-run, migration apply, and provisioning sequence in `docs/HOSTED_DEMO_SETUP.md`.
+## 2026-10-26 local build unblocking
+
+- Docker Desktop `4.96.3`, Docker CLI `29.9.2`, and WSL `3.0.3` are installed. Docker Desktop was launched, but its engine is unavailable. WSL reports that a Windows restart is required to activate WSL/VirtualMachinePlatform. Firmware virtualization is enabled; local database and HTTP integration verification remain pending.
+- Windows `LongPathsEnabled` is now `1`. The native build also uses `-Pexpo.android.cmakeObjectPathMax=240` so CMake hashes long object paths earlier; no dependency patch was required.
+- The `x86_64` release build succeeded in 5m39s (879 tasks). Preserved artifact: ignored `.codex-artifacts/do-well-emulator-x86_64.apk`, SHA-256 `DFA8D1C18DB49360A3D8ECA02B1A2BD18168C3EFCFBEE63BE4FE3549D678A721`. APK v2 signature verification passed; installation returned `Success`; cold launch on `emulator-5554` returned `Status: ok` in 1526ms.
+- The ARM64 release build succeeded in 2m46s; APK v2 signature verification and the native `arm64-v8a` library check passed. Preserved ignored artifact: `.codex-artifacts/do-well-android-arm64.apk` (35,343,354 bytes), SHA-256 `828BDAC6CC1582604941E7168D9A3E172A86ECE1CE3B201C438DAE8CD9311F06`. Both APKs use the generated development signing key. No physical phone is connected; physical-device installation and acceptance remain pending. Emulator launch evidence: ignored `.codex-artifacts/emulator-launch.png`.
+- The focused secret-exposure suite passed (1 suite / 4 tests); `git diff --check` passed. No application source or dependencies changed, so the previous full-suite results were not rerun or reasserted as fresh.
+- Hosted migration parity is already complete. Preserve the existing ignored configuration and linkage; inspect migration history rather than blindly relinking or reapplying those migrations. A new backup can be captured after Docker is ready, but cannot serve as a pre-apply backup for the migrations already applied.
+- The owner supplied the authorized admin email after the build continuation. It is configured in ignored `.env.local` only. A fresh hosted provisioning dry-run returned admin `user_not_found` / `require_user_login` and worker `not_found` / `create_and_onboard`. The owner must sign in first to establish the Auth identity. No hosted provisioning apply, counterpart-worker creation, or admin grant occurred. No billing was enabled and no secrets were exposed.
 
 ## Suggested continuation commands
 
 ```powershell
 git status --short --branch
 git diff --check
-npm run db:start
-npm run db:reset
-npm run db:test
-npm run db:lint
-npm run db:types:check
-npm run format:check
-npm run lint
-npm run typecheck
-npm run test:run
+docker info
+npm.cmd run db:start
+npm.cmd run db:reset
+npm.cmd run db:test
+npm.cmd run db:lint
+npm.cmd run db:types:check
+npm.cmd run test:auth:integration
+npm.cmd run format:check
+npm.cmd run lint
+npm.cmd run typecheck
+npm.cmd run test:run
 ```
 
 ## Stop conditions

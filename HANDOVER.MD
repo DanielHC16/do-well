@@ -385,3 +385,13 @@ The exact technical sequence for the next agent is:
 - Previous operational handoff: `docs/SESSION_HANDOFF.md`
 - Current demo script requiring correction: `docs/DEMO_RUNBOOK.md`
 - Dependency/security audit: `docs/reports/2026-10-25-dependency-audit-disposition.md`
+
+## 14. Verified local unblocking continuation (2026-10-26)
+
+This section supersedes the older installation and migration instructions in Section 11. Work is on `chore/local-build-unblocking`, based on `88cbfbf`. Hosted migration parity is already verified through `20261026000100`; preserve the existing ignored environment/linkage and inspect history before any further migration action.
+
+- Windows long paths are enabled. With `-Pexpo.android.cmakeObjectPathMax=240`, the `x86_64` release APK built successfully in 5m39s (879 tasks), passed APK v2 signature verification, installed successfully, and cold-launched on `emulator-5554` (`Status: ok`, 1526ms).
+- Preserved ignored emulator artifact: `.codex-artifacts/do-well-emulator-x86_64.apk`; SHA-256 `DFA8D1C18DB49360A3D8ECA02B1A2BD18168C3EFCFBEE63BE4FE3549D678A721`. The separate ARM64 build succeeded in 2m46s and passed APK v2 signature and architecture checks: `.codex-artifacts/do-well-android-arm64.apk`, SHA-256 `828BDAC6CC1582604941E7168D9A3E172A86ECE1CE3B201C438DAE8CD9311F06`. Both APKs use the generated development signing key. No physical phone is connected; physical-device installation and acceptance remain unverified.
+- Docker Desktop `4.96.3`, Docker CLI `29.9.2`, and WSL `3.0.3` are installed. Docker Desktop was launched but the engine is unavailable. Windows must restart to activate WSL/VirtualMachinePlatform; then start Docker Desktop, verify `docker info`, and rerun local database and HTTP integration checks.
+- The owner subsequently supplied the exact authorized admin email, now configured only in ignored `.env.local`. A fresh hosted dry-run returned admin `user_not_found` / `require_user_login`; the owner must sign in with that Google account before granting its role. The worker remains `not_found` / `create_and_onboard`. No provisioning apply, counterpart-worker creation, or administrator grant occurred.
+- No billing was enabled and no secrets were exposed. Hosted two-principal rehearsal, hosted OAuth acceptance, and physical-device acceptance remain pending. See `docs/SESSION_HANDOFF.md` for continuation commands and `docs/COMPETITION_BUILD.md` for reproducible Windows build commands.
