@@ -2,13 +2,14 @@ import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
-  TextInput,
   View,
 } from "react-native";
+import { Text, TextInput } from "@/shared/ui/Typography";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import {
@@ -18,6 +19,7 @@ import {
 import type { ApplicationRecord } from "@/features/applications/model/application-schemas";
 import { GIG_CATEGORY_LABELS } from "@/features/gigs/model/gig-schemas";
 import { setupTheme } from "@/features/setup/setupTheme";
+import { AppButton, ProfileAvatar } from "@/shared/ui";
 
 import {
   discoveryGateway,
@@ -27,6 +29,7 @@ import type { DiscoveryGigCard } from "../model/discovery-schemas";
 
 type WorkerGigDetailScreenProps = Readonly<{
   gigId: string;
+  userId?: string;
   gateway?: DiscoveryGateway;
   applications?: ApplicationGateway;
 }>;
@@ -35,26 +38,30 @@ export function WorkerGigDetailScreen({
   applications = applicationGateway,
   gateway = discoveryGateway,
   gigId,
+  userId,
 }: WorkerGigDetailScreenProps) {
   const router = useRouter();
   const [gig, setGig] = useState<DiscoveryGigCard | null>(null);
   const [application, setApplication] = useState<ApplicationRecord | null>(
     null,
   );
-  const [busy, setBusy] = useState(true);
+  const [settledRequest, setSettledRequest] = useState<string | null>(null);
   const [applying, setApplying] = useState(false);
   const [withdrawing, setWithdrawing] = useState(false);
   const [applyMessage, setApplyMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const [reload, setReload] = useState(0);
+  const requestKey = `${userId ?? "unscoped"}:${gigId}:${reload}`;
+  const busy = settledRequest !== requestKey;
 
   useEffect(() => {
     let mounted = true;
 
     Promise.all([
-      gateway.getPublicGig(gigId),
-      applications.getWorkerApplicationForGig(gigId).catch(() => null),
+      gateway.getPublicGig(gigId, userId),
+      applications.getWorkerApplicationForGig(gigId),
     ])
       .then(([gigData, appData]) => {
         if (mounted) {
@@ -65,23 +72,24 @@ export function WorkerGigDetailScreen({
           );
         }
       })
-      .catch((err: unknown) => {
+      .catch(() => {
         if (mounted) {
           setErrorMessage(
-            err instanceof Error ? err.message : "Unable to load gig details.",
+            "We couldn't load this gig or your application status. Check your connection and try again.",
           );
         }
       })
       .finally(() => {
-        if (mounted) setBusy(false);
+        if (mounted) setSettledRequest(requestKey);
       });
 
     return () => {
       mounted = false;
     };
-  }, [applications, gateway, gigId]);
+  }, [applications, gateway, gigId, reload, requestKey, userId]);
 
   async function handleApply() {
+    if (gig?.status !== "published") return;
     setApplying(true);
     setActionError(null);
     setActionSuccess(null);
@@ -136,10 +144,14 @@ export function WorkerGigDetailScreen({
     return (
       <SafeAreaView style={styles.centerContainer}>
         <View style={styles.errorCard}>
-          <Text style={styles.errorTitle}>NOTICE UNAVAILABLE</Text>
+          <Text style={styles.errorTitle}>Notice unavailable</Text>
           <Text style={styles.errorText}>
             {errorMessage ?? "This gig notice is no longer published."}
           </Text>
+          <AppButton
+            label="Try again"
+            onPress={() => setReload((value) => value + 1)}
+          />
           <Pressable
             accessibilityRole="button"
             onPress={() => router.replace("/(protected)/worker")}
@@ -167,217 +179,298 @@ export function WorkerGigDetailScreen({
         </Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.mainCard}>
-          <View style={styles.categoryRow}>
-            <Text style={styles.categoryBadge}>
-              {GIG_CATEGORY_LABELS[gig.category] ?? gig.category}
-            </Text>
-            <Text style={styles.modeBadge}>{gig.workMode.toUpperCase()}</Text>
-          </View>
-
-          <Text accessibilityRole="header" style={styles.title}>
-            {gig.title}
-          </Text>
-
-          <View style={styles.budgetRow}>
-            <Text style={styles.budgetLabel}>OFFERED COMPENSATION</Text>
-            <Text style={styles.budgetValue}>
-              {gig.currency} {gig.budgetAmount.toLocaleString("en-US")}
-            </Text>
-          </View>
-
-          {gig.workMode === "onsite" || gig.workMode === "hybrid" ? (
-            <View style={styles.areaSection}>
-              <Text style={styles.areaHeader}>NEIGHBORHOOD AREA</Text>
-              <Text style={styles.areaValue}>
-                {gig.publicArea ?? "Locality specified by employer"}
-                {gig.distanceKm !== null ? ` · ${gig.distanceKm} km away` : ""}
+      <KeyboardAvoidingView
+        style={styles.safeArea}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.mainCard}>
+            <View style={styles.categoryRow}>
+              <Text style={styles.categoryBadge}>
+                {GIG_CATEGORY_LABELS[gig.category] ?? gig.category}
               </Text>
-              <Text style={styles.privacyNote}>
-                Exact address is provided once selected by the employer.
-              </Text>
+              <Text style={styles.modeBadge}>{gig.workMode.toUpperCase()}</Text>
             </View>
-          ) : (
-            <View style={styles.areaSection}>
-              <Text style={styles.areaHeader}>WORK LOCATION</Text>
-              <Text style={styles.areaValue}>Remote (Work from anywhere)</Text>
-            </View>
-          )}
 
-          {gig.reasons.length > 0 ? (
-            <View style={styles.reasonsSection}>
-              <Text style={styles.reasonsHeader}>WHY THIS IS RELEVANT</Text>
-              <View style={styles.reasonsList}>
-                {gig.reasons.map((reason) => (
-                  <View key={reason} style={styles.reasonBadge}>
-                    <Text style={styles.reasonText}>{reason}</Text>
-                  </View>
-                ))}
+            <Text accessibilityRole="header" style={styles.title}>
+              {gig.title}
+            </Text>
+
+            <View style={styles.employerRow}>
+              {gig.employerDisplayName ? (
+                <ProfileAvatar name={gig.employerDisplayName} size={36} />
+              ) : null}
+              <View style={styles.employerIdentity}>
+                <Text style={styles.sectionHeader}>Posted by</Text>
+                <Text style={styles.descriptionText}>
+                  {gig.employerDisplayName ?? "Employer profile unavailable"}
+                </Text>
               </View>
+            </View>
+
+            <View style={styles.budgetRow}>
+              <Text style={styles.budgetLabel}>Offered compensation</Text>
+              <Text style={styles.budgetValue}>
+                ₱{gig.budgetAmount.toLocaleString("en-PH")}
+              </Text>
+            </View>
+
+            {gig.workMode === "onsite" || gig.workMode === "hybrid" ? (
+              <View style={styles.areaSection}>
+                <Text style={styles.areaHeader}>Neighborhood area</Text>
+                <Text style={styles.areaValue}>
+                  {gig.publicArea ?? "Locality specified by employer"}
+                  {gig.distanceKm !== null
+                    ? ` · ${gig.distanceKm} km away`
+                    : ""}
+                </Text>
+                <Text style={styles.privacyNote}>
+                  Keep exact addresses private; agree on meeting details with
+                  the employer.
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.areaSection}>
+                <Text style={styles.areaHeader}>Work location</Text>
+                <Text style={styles.areaValue}>
+                  Remote (Work from anywhere)
+                </Text>
+              </View>
+            )}
+
+            {gig.reasons.length > 0 ? (
+              <View style={styles.reasonsSection}>
+                <Text style={styles.reasonsHeader}>Why this is relevant</Text>
+                <View style={styles.reasonsList}>
+                  {gig.reasons.map((reason) => (
+                    <View key={reason} style={styles.reasonBadge}>
+                      <Text style={styles.reasonText}>{reason}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            ) : null}
+          </View>
+          <View style={styles.detailCard}>
+            <View style={styles.descriptionSection}>
+              <Text style={styles.sectionHeader}>Work description</Text>
+              <Text style={styles.descriptionText}>{gig.description}</Text>
+            </View>
+
+            {gig.applicationDeadline || gig.dueAt ? (
+              <View style={styles.descriptionSection}>
+                {gig.applicationDeadline ? (
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.sectionHeader}>
+                      Application deadline
+                    </Text>
+                    <Text style={styles.descriptionText}>
+                      {formatGigDate(gig.applicationDeadline)}
+                    </Text>
+                  </View>
+                ) : null}
+                {gig.dueAt ? (
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.sectionHeader}>Work due</Text>
+                    <Text style={styles.descriptionText}>
+                      {formatGigDate(gig.dueAt)}
+                    </Text>
+                  </View>
+                ) : null}
+                <Text style={styles.privacyNote}>Philippine time (UTC+8)</Text>
+              </View>
+            ) : null}
+
+            <Pressable
+              accessibilityRole="button"
+              onPress={() =>
+                router.push({
+                  pathname: "/(protected)/reports/new" as unknown as Parameters<
+                    typeof router.push
+                  >[0],
+                  params: {
+                    targetType: "gig",
+                    targetId: gig.id,
+                    targetTitle: gig.title,
+                  },
+                } as unknown as Parameters<typeof router.push>[0])
+              }
+              style={styles.reportNoticeButton}
+            >
+              <Text style={styles.reportNoticeText}>Report this notice</Text>
+            </Pressable>
+          </View>
+
+          {actionSuccess ? (
+            <View style={styles.successBanner}>
+              <Text style={styles.successText}>{actionSuccess}</Text>
             </View>
           ) : null}
 
-          <View style={styles.descriptionSection}>
-            <Text style={styles.sectionHeader}>WORK DESCRIPTION</Text>
-            <Text style={styles.descriptionText}>{gig.description}</Text>
-          </View>
+          {actionError ? (
+            <View style={styles.errorCard}>
+              <Text style={styles.errorTitle}>Action failed</Text>
+              <Text style={styles.errorText}>{actionError}</Text>
+            </View>
+          ) : null}
 
-          <Pressable
-            accessibilityRole="button"
-            onPress={() =>
-              router.push({
-                pathname: "/(protected)/reports/new" as unknown as Parameters<
-                  typeof router.push
-                >[0],
-                params: {
-                  targetType: "gig",
-                  targetId: gig.id,
-                  targetTitle: gig.title,
-                },
-              } as unknown as Parameters<typeof router.push>[0])
-            }
-            style={styles.reportNoticeButton}
-          >
-            <Text style={styles.reportNoticeText}>Report this notice</Text>
-          </Pressable>
-        </View>
-
-        {actionSuccess ? (
-          <View style={styles.successBanner}>
-            <Text style={styles.successText}>{actionSuccess}</Text>
-          </View>
-        ) : null}
-
-        {actionError ? (
-          <View style={styles.errorCard}>
-            <Text style={styles.errorTitle}>ACTION FAILED</Text>
-            <Text style={styles.errorText}>{actionError}</Text>
-          </View>
-        ) : null}
-
-        <View style={styles.applyCard}>
-          {application && application.status === "pending" ? (
-            <>
-              <View style={styles.appStatusRow}>
-                <Text style={styles.appStatusKicker}>YOUR APPLICATION</Text>
-                <Text style={styles.statusPendingBadge}>PENDING REVIEW</Text>
-              </View>
+          <View style={styles.applyCard}>
+            {application && application.status === "pending" ? (
+              <>
+                <View style={styles.appStatusRow}>
+                  <Text style={styles.appStatusKicker}>Your application</Text>
+                  <Text style={styles.statusPendingBadge}>Pending review</Text>
+                </View>
+                <Text style={styles.applyCardText}>
+                  Your application is currently under review by the employer.
+                  You will be notified once a selection is made.
+                </Text>
+                {application.message ? (
+                  <View style={styles.submittedMessageBox}>
+                    <Text style={styles.submittedMessageLabel}>
+                      Your note to employer:
+                    </Text>
+                    <Text style={styles.submittedMessageText}>
+                      {`"${application.message}"`}
+                    </Text>
+                  </View>
+                ) : null}
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={withdrawing}
+                  onPress={handleWithdraw}
+                  style={[
+                    styles.withdrawButton,
+                    withdrawing && styles.disabledAction,
+                  ]}
+                >
+                  {withdrawing ? (
+                    <ActivityIndicator color={setupTheme.color.danger} />
+                  ) : (
+                    <Text style={styles.withdrawButtonText}>
+                      Withdraw Application
+                    </Text>
+                  )}
+                </Pressable>
+              </>
+            ) : application && application.status === "accepted" ? (
+              <>
+                <View style={styles.appStatusRow}>
+                  <Text style={styles.appStatusKicker}>Your application</Text>
+                  <Text style={styles.statusAcceptedBadge}>Accepted</Text>
+                </View>
+                <Text style={styles.acceptedMessage}>
+                  Congratulations! The employer selected you for this
+                  assignment.
+                </Text>
+              </>
+            ) : application && application.status === "rejected" ? (
+              <>
+                <View style={styles.appStatusRow}>
+                  <Text style={styles.appStatusKicker}>Your application</Text>
+                  <Text style={styles.statusRejectedBadge}>Not selected</Text>
+                </View>
+                <Text style={styles.applyCardText}>
+                  The employer selected another applicant for this gig. Explore
+                  other active listings on the noticeboard!
+                </Text>
+              </>
+            ) : gig.status !== "published" ? (
               <Text style={styles.applyCardText}>
-                Your application is currently under review by the employer. You
-                will be notified once a selection is made.
+                Applications are closed for this gig.
               </Text>
-              {application.message ? (
-                <View style={styles.submittedMessageBox}>
-                  <Text style={styles.submittedMessageLabel}>
-                    YOUR NOTE TO EMPLOYER:
+            ) : (
+              <>
+                <View style={styles.comingSoonStrip}>
+                  <Text style={styles.comingSoonKicker}>
+                    Apply for this gig
                   </Text>
-                  <Text style={styles.submittedMessageText}>
-                    {`"${application.message}"`}
+                  {application?.status === "withdrawn" ? (
+                    <Text style={styles.statusWithdrawnBadge}>
+                      Previously withdrawn
+                    </Text>
+                  ) : null}
+                </View>
+                <Text style={styles.applyCardText}>
+                  Submit your qualifications or availability note directly to
+                  the employer. Only the employer will see this.
+                </Text>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>
+                    Qualifications / availability note (optional)
+                  </Text>
+                  <TextInput
+                    accessibilityLabel="Qualifications or availability note"
+                    editable={!applying}
+                    maxLength={1000}
+                    multiline
+                    numberOfLines={4}
+                    onChangeText={setApplyMessage}
+                    placeholder="e.g. I have 2 years of experience and can start tomorrow morning."
+                    placeholderTextColor={setupTheme.color.muted}
+                    style={styles.messageInput}
+                    value={applyMessage}
+                  />
+                  <Text style={styles.counterText}>
+                    {applyMessage.length} / 1000 characters
                   </Text>
                 </View>
-              ) : null}
-              <Pressable
-                accessibilityRole="button"
-                disabled={withdrawing}
-                onPress={handleWithdraw}
-                style={[
-                  styles.withdrawButton,
-                  withdrawing && styles.disabledAction,
-                ]}
-              >
-                {withdrawing ? (
-                  <ActivityIndicator color={setupTheme.color.danger} />
-                ) : (
-                  <Text style={styles.withdrawButtonText}>
-                    Withdraw Application
-                  </Text>
-                )}
-              </Pressable>
-            </>
-          ) : application && application.status === "accepted" ? (
-            <>
-              <View style={styles.appStatusRow}>
-                <Text style={styles.appStatusKicker}>YOUR APPLICATION</Text>
-                <Text style={styles.statusAcceptedBadge}>ACCEPTED</Text>
-              </View>
-              <Text style={styles.acceptedMessage}>
-                Congratulations! The employer selected you for this assignment.
-              </Text>
-            </>
-          ) : application && application.status === "rejected" ? (
-            <>
-              <View style={styles.appStatusRow}>
-                <Text style={styles.appStatusKicker}>YOUR APPLICATION</Text>
-                <Text style={styles.statusRejectedBadge}>NOT SELECTED</Text>
-              </View>
-              <Text style={styles.applyCardText}>
-                The employer selected another applicant for this gig. Explore
-                other active listings on the noticeboard!
-              </Text>
-            </>
-          ) : (
-            <>
-              <View style={styles.comingSoonStrip}>
-                <Text style={styles.comingSoonKicker}>APPLY FOR THIS GIG</Text>
-                {application?.status === "withdrawn" ? (
-                  <Text style={styles.statusWithdrawnBadge}>
-                    PREVIOUSLY WITHDRAWN
-                  </Text>
-                ) : null}
-              </View>
-              <Text style={styles.applyCardText}>
-                Submit your qualifications or availability note directly to the
-                employer. Only the employer will see this.
-              </Text>
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>
-                  QUALIFICATIONS / AVAILABILITY NOTE (OPTIONAL)
-                </Text>
-                <TextInput
-                  accessibilityLabel="Qualifications or availability note"
-                  editable={!applying}
-                  maxLength={1000}
-                  multiline
-                  numberOfLines={4}
-                  onChangeText={setApplyMessage}
-                  placeholder="e.g. I have 2 years of experience and can start tomorrow morning."
-                  placeholderTextColor={setupTheme.color.muted}
-                  style={styles.messageInput}
-                  value={applyMessage}
-                />
-                <Text style={styles.counterText}>
-                  {applyMessage.length} / 1000 characters
-                </Text>
-              </View>
-
-              <Pressable
-                accessibilityRole="button"
-                disabled={applying}
-                onPress={handleApply}
-                style={[
-                  styles.primaryAction,
-                  applying && styles.disabledAction,
-                ]}
-              >
-                {applying ? (
-                  <ActivityIndicator color={setupTheme.color.surface} />
-                ) : (
-                  <Text style={styles.primaryActionText}>
-                    Submit Application
-                  </Text>
-                )}
-              </Pressable>
-            </>
-          )}
-        </View>
-      </ScrollView>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Submit Application"
+                  disabled={applying}
+                  onPress={handleApply}
+                  style={[
+                    styles.primaryAction,
+                    applying && styles.disabledAction,
+                  ]}
+                >
+                  {applying ? (
+                    <ActivityIndicator color={setupTheme.color.surface} />
+                  ) : (
+                    <Text style={styles.primaryActionText}>
+                      Submit Application
+                    </Text>
+                  )}
+                </Pressable>
+              </>
+            )}
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
+function formatGigDate(value: string): string {
+  return new Date(value).toLocaleString("en-PH", {
+    timeZone: "Asia/Manila",
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
+
 const styles = StyleSheet.create({
+  detailCard: {
+    backgroundColor: setupTheme.color.surface,
+    borderColor: setupTheme.color.border,
+    borderWidth: 1,
+    borderRadius: setupTheme.radius.card,
+    padding: setupTheme.spacing.section,
+    gap: setupTheme.spacing.section,
+  },
+  employerRow: {
+    flexWrap: "wrap",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: setupTheme.spacing.compact,
+  },
+  employerIdentity: { flex: 1, gap: setupTheme.spacing.tight },
   safeArea: {
     backgroundColor: setupTheme.color.background,
     flex: 1,
@@ -397,28 +490,31 @@ const styles = StyleSheet.create({
   topBar: {
     alignItems: "center",
     borderBottomColor: setupTheme.color.border,
-    borderBottomWidth: 2,
+    borderBottomWidth: 1,
     flexDirection: "row",
     justifyContent: "space-between",
     paddingHorizontal: setupTheme.spacing.section,
     paddingVertical: setupTheme.spacing.compact,
   },
   backButton: {
+    minHeight: setupTheme.size.touchTarget,
     paddingVertical: setupTheme.spacing.compact,
   },
   backButtonText: {
     color: setupTheme.color.foreground,
     fontSize: setupTheme.type.body,
-    fontWeight: "800",
+    fontWeight: "600",
   },
   headerStatus: {
     color: setupTheme.color.accent,
     fontSize: setupTheme.type.label,
-    fontWeight: "900",
-    letterSpacing: 0.8,
+    fontWeight: "700",
   },
   content: {
-    gap: setupTheme.spacing.content,
+    alignSelf: "center",
+    maxWidth: setupTheme.size.contentMax,
+    width: "100%",
+    gap: setupTheme.spacing.section,
     padding: setupTheme.spacing.section,
     paddingBottom: setupTheme.spacing.generous,
   },
@@ -427,7 +523,7 @@ const styles = StyleSheet.create({
     backgroundColor: setupTheme.color.surface,
     borderColor: setupTheme.color.danger,
     borderRadius: setupTheme.radius.card,
-    borderWidth: 2,
+    borderWidth: 1,
     gap: setupTheme.spacing.compact,
     padding: setupTheme.spacing.section,
     width: "100%",
@@ -435,7 +531,7 @@ const styles = StyleSheet.create({
   errorTitle: {
     color: setupTheme.color.danger,
     fontSize: setupTheme.type.label,
-    fontWeight: "900",
+    fontWeight: "700",
   },
   errorText: {
     color: setupTheme.color.danger,
@@ -446,62 +542,65 @@ const styles = StyleSheet.create({
     backgroundColor: setupTheme.color.surface,
     borderColor: setupTheme.color.border,
     borderRadius: setupTheme.radius.card,
-    borderWidth: 2,
-    gap: setupTheme.spacing.section,
+    borderWidth: 1,
+    gap: setupTheme.spacing.compact + setupTheme.spacing.tight,
     padding: setupTheme.spacing.section,
   },
   categoryRow: {
+    flexWrap: "wrap",
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
   },
   categoryBadge: {
-    backgroundColor: setupTheme.color.highlightSurface,
+    backgroundColor: setupTheme.color.accentSurface,
     borderColor: setupTheme.color.foreground,
     borderRadius: setupTheme.radius.status,
-    borderWidth: 1,
-    color: setupTheme.color.foreground,
+    borderWidth: 0,
+    color: setupTheme.color.primary,
     fontSize: setupTheme.type.label,
-    fontWeight: "800",
+    fontWeight: "600",
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
   modeBadge: {
-    backgroundColor: setupTheme.color.surfaceMuted,
+    backgroundColor: setupTheme.color.background,
     borderColor: setupTheme.color.border,
     borderRadius: setupTheme.radius.status,
-    borderWidth: 1,
+    borderWidth: 0,
     color: setupTheme.color.muted,
     fontSize: setupTheme.type.caption,
-    fontWeight: "800",
+    fontWeight: "600",
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
   title: {
     color: setupTheme.color.foreground,
     fontSize: setupTheme.type.heading,
-    fontWeight: "900",
-    letterSpacing: -0.5,
+    fontWeight: "600",
     lineHeight: 28,
   },
   budgetRow: {
-    backgroundColor: setupTheme.color.surfaceMuted,
+    justifyContent: "space-between",
+    alignItems: "center",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    backgroundColor: setupTheme.color.accentSurface,
     borderColor: setupTheme.color.border,
     borderRadius: setupTheme.radius.control,
-    borderWidth: 1.5,
-    gap: 4,
-    padding: setupTheme.spacing.compact,
+    borderWidth: 0,
+    gap: setupTheme.spacing.compact,
+    padding: setupTheme.spacing.compact + setupTheme.spacing.tight,
   },
   budgetLabel: {
     color: setupTheme.color.muted,
-    fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 0.8,
+    fontSize: setupTheme.type.caption,
+    fontWeight: "600",
   },
   budgetValue: {
-    color: setupTheme.color.foreground,
+    color: setupTheme.color.primary,
     fontSize: setupTheme.type.heading,
-    fontWeight: "900",
+    fontWeight: "700",
   },
   areaSection: {
     gap: 4,
@@ -509,8 +608,7 @@ const styles = StyleSheet.create({
   areaHeader: {
     color: setupTheme.color.muted,
     fontSize: setupTheme.type.label,
-    fontWeight: "900",
-    letterSpacing: 0.8,
+    fontWeight: "700",
   },
   areaValue: {
     color: setupTheme.color.foreground,
@@ -528,8 +626,7 @@ const styles = StyleSheet.create({
   reasonsHeader: {
     color: setupTheme.color.muted,
     fontSize: setupTheme.type.label,
-    fontWeight: "900",
-    letterSpacing: 0.8,
+    fontWeight: "700",
   },
   reasonsList: {
     flexDirection: "row",
@@ -546,14 +643,14 @@ const styles = StyleSheet.create({
   },
   reasonText: {
     color: setupTheme.color.ready,
-    fontSize: 11,
-    fontWeight: "800",
+    fontSize: setupTheme.type.caption,
+    fontWeight: "600",
   },
   descriptionSection: {
     borderTopColor: setupTheme.color.borderSoft,
-    borderTopWidth: 1,
+    borderTopWidth: 0,
     gap: setupTheme.spacing.compact,
-    paddingTop: setupTheme.spacing.section,
+    paddingTop: 0,
   },
   reportNoticeButton: {
     alignSelf: "flex-start",
@@ -566,10 +663,10 @@ const styles = StyleSheet.create({
     textDecorationLine: "underline",
   },
   sectionHeader: {
-    color: setupTheme.color.muted,
-    fontSize: setupTheme.type.label,
-    fontWeight: "900",
-    letterSpacing: 0.8,
+    lineHeight: 24,
+    color: setupTheme.color.primary,
+    fontSize: setupTheme.type.section,
+    fontWeight: "600",
   },
   descriptionText: {
     color: setupTheme.color.foreground,
@@ -580,21 +677,21 @@ const styles = StyleSheet.create({
     backgroundColor: setupTheme.color.readySurface,
     borderColor: setupTheme.color.ready,
     borderRadius: setupTheme.radius.control,
-    borderWidth: 1.5,
+    borderWidth: 1,
     padding: setupTheme.spacing.section,
   },
   successText: {
     color: setupTheme.color.ready,
     fontSize: setupTheme.type.body,
-    fontWeight: "800",
+    fontWeight: "600",
   },
   applyCard: {
     ...setupTheme.shadow.card,
     backgroundColor: setupTheme.color.surface,
     borderColor: setupTheme.color.border,
     borderRadius: setupTheme.radius.card,
-    borderWidth: 2,
-    gap: setupTheme.spacing.section,
+    borderWidth: 1,
+    gap: setupTheme.spacing.compact + setupTheme.spacing.tight,
     padding: setupTheme.spacing.section,
   },
   comingSoonStrip: {
@@ -605,8 +702,7 @@ const styles = StyleSheet.create({
   comingSoonKicker: {
     color: setupTheme.color.muted,
     fontSize: setupTheme.type.label,
-    fontWeight: "900",
-    letterSpacing: 0.8,
+    fontWeight: "700",
   },
   comingSoonBadge: {
     backgroundColor: setupTheme.color.highlightSurface,
@@ -614,12 +710,14 @@ const styles = StyleSheet.create({
     borderRadius: setupTheme.radius.status,
     borderWidth: 1,
     color: setupTheme.color.foreground,
-    fontSize: 10,
-    fontWeight: "900",
+    fontSize: setupTheme.type.caption,
+    fontWeight: "700",
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
   appStatusRow: {
+    gap: setupTheme.spacing.compact,
+    flexWrap: "wrap",
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
@@ -627,17 +725,16 @@ const styles = StyleSheet.create({
   appStatusKicker: {
     color: setupTheme.color.foreground,
     fontSize: setupTheme.type.label,
-    fontWeight: "900",
-    letterSpacing: 0.8,
+    fontWeight: "700",
   },
   statusPendingBadge: {
     backgroundColor: setupTheme.color.highlightSurface,
     borderColor: setupTheme.color.foreground,
     borderRadius: setupTheme.radius.status,
-    borderWidth: 1.5,
+    borderWidth: 1,
     color: setupTheme.color.foreground,
-    fontSize: 11,
-    fontWeight: "900",
+    fontSize: setupTheme.type.caption,
+    fontWeight: "700",
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
@@ -645,10 +742,10 @@ const styles = StyleSheet.create({
     backgroundColor: setupTheme.color.readySurface,
     borderColor: setupTheme.color.ready,
     borderRadius: setupTheme.radius.status,
-    borderWidth: 1.5,
+    borderWidth: 1,
     color: setupTheme.color.ready,
-    fontSize: 11,
-    fontWeight: "900",
+    fontSize: setupTheme.type.caption,
+    fontWeight: "700",
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
@@ -658,8 +755,8 @@ const styles = StyleSheet.create({
     borderRadius: setupTheme.radius.status,
     borderWidth: 1,
     color: setupTheme.color.muted,
-    fontSize: 11,
-    fontWeight: "800",
+    fontSize: setupTheme.type.caption,
+    fontWeight: "600",
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
@@ -669,39 +766,39 @@ const styles = StyleSheet.create({
     borderRadius: setupTheme.radius.status,
     borderWidth: 1,
     color: setupTheme.color.muted,
-    fontSize: 10,
-    fontWeight: "800",
+    fontSize: setupTheme.type.caption,
+    fontWeight: "600",
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
   applyCardText: {
     color: setupTheme.color.muted,
-    fontSize: setupTheme.type.caption,
-    lineHeight: 18,
+    fontSize: setupTheme.type.body,
+    lineHeight: 22,
   },
   submittedMessageBox: {
-    backgroundColor: setupTheme.color.surfaceMuted,
+    backgroundColor: setupTheme.color.background,
     borderColor: setupTheme.color.borderSoft,
     borderRadius: setupTheme.radius.control,
-    borderWidth: 1,
+    borderWidth: 0,
     gap: 4,
-    padding: setupTheme.spacing.compact,
+    padding: setupTheme.spacing.compact + setupTheme.spacing.tight,
   },
   submittedMessageLabel: {
     color: setupTheme.color.muted,
-    fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 0.6,
+    fontSize: setupTheme.type.caption,
+    fontWeight: "600",
   },
   submittedMessageText: {
     color: setupTheme.color.foreground,
-    fontSize: setupTheme.type.caption,
+    fontSize: setupTheme.type.body,
+    lineHeight: 22,
     fontStyle: "italic",
   },
   acceptedMessage: {
     color: setupTheme.color.ready,
     fontSize: setupTheme.type.body,
-    fontWeight: "800",
+    fontWeight: "600",
   },
   inputGroup: {
     gap: 6,
@@ -709,13 +806,15 @@ const styles = StyleSheet.create({
   inputLabel: {
     color: setupTheme.color.foreground,
     fontSize: setupTheme.type.label,
-    fontWeight: "800",
+    fontWeight: "600",
   },
   messageInput: {
-    backgroundColor: setupTheme.color.surfaceMuted,
-    borderColor: setupTheme.color.border,
+    paddingVertical: setupTheme.spacing.compact,
+    fontWeight: "400",
+    backgroundColor: setupTheme.color.surface,
+    borderColor: setupTheme.color.borderSoft,
     borderRadius: setupTheme.radius.control,
-    borderWidth: 1.5,
+    borderWidth: 1,
     color: setupTheme.color.foreground,
     fontSize: setupTheme.type.body,
     minHeight: 80,
@@ -725,33 +824,37 @@ const styles = StyleSheet.create({
   counterText: {
     alignSelf: "flex-end",
     color: setupTheme.color.muted,
-    fontSize: 11,
+    fontSize: setupTheme.type.caption,
   },
   primaryAction: {
+    paddingHorizontal: setupTheme.spacing.section,
+    minHeight: setupTheme.size.button,
+    borderColor: setupTheme.color.primary,
     alignItems: "center",
-    backgroundColor: setupTheme.color.foreground,
+    backgroundColor: setupTheme.color.primary,
     borderRadius: setupTheme.radius.control,
     justifyContent: "center",
     paddingVertical: setupTheme.spacing.section,
   },
   primaryActionText: {
-    color: setupTheme.color.surface,
+    textAlign: "center",
+    color: setupTheme.color.onPrimary,
     fontSize: setupTheme.type.body,
-    fontWeight: "900",
+    fontWeight: "600",
   },
   withdrawButton: {
     alignItems: "center",
     backgroundColor: setupTheme.color.dangerSurface,
     borderColor: setupTheme.color.danger,
     borderRadius: setupTheme.radius.control,
-    borderWidth: 1.5,
+    borderWidth: 1,
     justifyContent: "center",
     paddingVertical: setupTheme.spacing.compact,
   },
   withdrawButtonText: {
     color: setupTheme.color.danger,
     fontSize: setupTheme.type.body,
-    fontWeight: "800",
+    fontWeight: "600",
   },
   disabledAction: {
     opacity: 0.6,

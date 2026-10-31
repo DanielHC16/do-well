@@ -1,9 +1,12 @@
-import { fireEvent, render, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, render, waitFor } from "@testing-library/react-native";
 
 import type { AssignmentGateway } from "@/features/assignments/data/assignment-gateway";
 import type { ActivityEventRecord } from "@/features/assignments/model/assignment-schemas";
 
-import { AuthenticatedActivityScreen } from "../AuthenticatedActivityScreen";
+import {
+  AuthenticatedActivityScreen,
+  groupActivity,
+} from "../AuthenticatedActivityScreen";
 
 jest.mock("@react-native-async-storage/async-storage", () => ({
   getItem: jest.fn(async () => null),
@@ -85,6 +88,129 @@ describe("AuthenticatedActivityScreen", () => {
     jest.clearAllMocks();
   });
 
+  it("shows a slim alerts banner only while alerts are off, without auto-requesting", async () => {
+    const notifications = createMockNotifications();
+    const view = await render(
+      <AuthenticatedActivityScreen
+        gateway={createMockGateway([mockEvent])}
+        notifications={notifications}
+        dedupeStore={createMockDedupeStore()}
+        userId="80000000-0000-4000-8000-000000000002"
+      />,
+    );
+    await view.findByText("Selected for Task");
+    expect(view.getByText("Turn on device alerts")).toBeVisible();
+    expect(notifications.requestPermissions).not.toHaveBeenCalled();
+
+    const granted = await render(
+      <AuthenticatedActivityScreen
+        gateway={createMockGateway([])}
+        notifications={createMockNotifications(true)}
+        dedupeStore={createMockDedupeStore()}
+        userId="80000000-0000-4000-8000-000000000003"
+      />,
+    );
+    await granted.findByText("No activity yet");
+    await waitFor(() =>
+      expect(granted.queryByText("Turn on device alerts")).toBeNull(),
+    );
+  });
+
+  it("dismisses the alerts banner for the rest of the session", async () => {
+    const userId = "80000000-0000-4000-8000-000000000009";
+    const view = await render(
+      <AuthenticatedActivityScreen
+        gateway={createMockGateway([])}
+        notifications={createMockNotifications()}
+        dedupeStore={createMockDedupeStore()}
+        userId={userId}
+      />,
+    );
+    await fireEvent.press(
+      view.getByRole("button", { name: "Dismiss device alerts suggestion" }),
+    );
+    expect(view.queryByText("Turn on device alerts")).toBeNull();
+    await view.unmount();
+    const again = await render(
+      <AuthenticatedActivityScreen
+        gateway={createMockGateway([])}
+        notifications={createMockNotifications()}
+        dedupeStore={createMockDedupeStore()}
+        userId={userId}
+      />,
+    );
+    await again.findByText("No activity yet");
+    expect(again.queryByText("Turn on device alerts")).toBeNull();
+  });
+
+  it("groups events into Today and Earlier", () => {
+    const now = new Date(2026, 9, 31, 15);
+    const groups = groupActivity(
+      [
+        {
+          ...mockEvent,
+          id: "a",
+          createdAt: new Date(2026, 9, 31, 9).toISOString(),
+        },
+        {
+          ...mockEvent,
+          id: "b",
+          createdAt: new Date(2026, 9, 29, 9).toISOString(),
+        },
+      ],
+      now,
+    );
+    expect(groups.map((group) => [group.title, group.events.length])).toEqual([
+      ["Today", 1],
+      ["Earlier", 1],
+    ]);
+    expect(groupActivity([], now)).toEqual([]);
+  });
+
+  it("shows a busy skeleton instead of an empty trail while loading", async () => {
+    let finish: () => void = () => undefined;
+    const pending = new Promise<ActivityEventRecord[]>((resolve) => {
+      finish = () => resolve([]);
+    });
+    const gateway = createMockGateway();
+    jest.mocked(gateway.listUserActivity).mockImplementation(() => pending);
+    const view = await render(
+      <AuthenticatedActivityScreen
+        gateway={gateway}
+        notifications={createMockNotifications()}
+        dedupeStore={createMockDedupeStore()}
+        userId="80000000-0000-4000-8000-000000000002"
+      />,
+    );
+    expect(view.getByLabelText("Loading activity")).toBeBusy();
+    expect(view.queryByRole("button", { name: "Refresh activity" })).toBeNull();
+    expect(view.queryByText("No activity yet")).toBeNull();
+    await act(async () => finish());
+    expect(await view.findByText("No activity yet")).toBeVisible();
+  });
+
+  it("retries a failed activity read without presenting an empty trail", async () => {
+    const gateway = createMockGateway();
+    jest
+      .mocked(gateway.listUserActivity)
+      .mockRejectedValueOnce(new Error("private details"));
+    const view = await render(
+      <AuthenticatedActivityScreen
+        gateway={gateway}
+        notifications={createMockNotifications()}
+        dedupeStore={createMockDedupeStore()}
+        userId="80000000-0000-4000-8000-000000000002"
+      />,
+    );
+    expect(
+      await view.findByText("We couldn't load your activity. Try again."),
+    ).toBeVisible();
+    expect(view.queryByText("No activity yet")).toBeNull();
+    expect(view.queryByText("private details")).toBeNull();
+    await fireEvent.press(view.getByRole("button", { name: "Try again" }));
+    expect(await view.findByText("No activity yet")).toBeVisible();
+  });
+
   it("renders the empty activity notice when no events exist", async () => {
     const gateway = createMockGateway([]);
     const notifications = createMockNotifications();
@@ -98,9 +224,9 @@ describe("AuthenticatedActivityScreen", () => {
     );
 
     await waitFor(() => {
-      expect(view.getByText("Nothing gets lost in the handoff.")).toBeVisible();
+      expect(view.getByRole("header", { name: "Activity" })).toBeVisible();
       expect(view.getByText("No activity yet")).toBeVisible();
-      expect(view.getByText("RECENT ACTIVITY")).toBeVisible();
+      expect(view.queryByText("Recent activity")).toBeNull();
     });
   });
 
@@ -118,7 +244,7 @@ describe("AuthenticatedActivityScreen", () => {
 
     await waitFor(() => {
       expect(view.getByText("Selected for Task")).toBeVisible();
-      expect(view.getByText("NEW")).toBeVisible();
+      expect(view.getByRole("header", { name: "Earlier" })).toBeVisible();
       expect(
         view.getByText(
           'You were selected as the worker for "Makati Deep Cleaning". Review and confirm the agreement.',
@@ -127,7 +253,7 @@ describe("AuthenticatedActivityScreen", () => {
     });
 
     const card = view.getByRole("button", {
-      name: /Selected for Task/,
+      name: /^Unread\. Selected for Task/,
     });
     await fireEvent.press(card);
 
@@ -166,9 +292,11 @@ describe("AuthenticatedActivityScreen", () => {
     );
 
     await waitFor(() => {
-      expect(view.getByText("Enable local alerts")).toBeVisible();
+      expect(
+        view.getByRole("button", { name: "Enable local activity alerts" }),
+      ).toBeVisible();
     });
-    fireEvent.press(view.getByLabelText("Enable local activity alerts"));
+    await fireEvent.press(view.getByLabelText("Enable local activity alerts"));
 
     await waitFor(() => {
       expect(notifications.requestPermissions).toHaveBeenCalledTimes(1);

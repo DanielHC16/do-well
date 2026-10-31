@@ -29,6 +29,23 @@ describe("Expo application configuration", () => {
     expect(appConfig.android?.package).toBe("com.anghulingpullrequest.dowell");
   });
 
+  it("uses the current owner logo for launcher and contained splash branding", () => {
+    expect(appConfig.icon).toBe("./branding/do-well-app-logo.png");
+    expect(appConfig.android?.adaptiveIcon).toEqual({
+      foregroundImage: "./branding/do-well-adaptive-foreground.png",
+      backgroundColor: "#FFFFFF",
+    });
+    expect(appConfig.plugins).toContainEqual([
+      "expo-splash-screen",
+      {
+        image: "./branding/do-well-app-logo.png",
+        imageWidth: 160,
+        resizeMode: "contain",
+        backgroundColor: "#FFFFFF",
+      },
+    ]);
+  });
+
   it("does not expose secret-shaped configuration fields", () => {
     expect(collectSecretShapedKeys(appConfig)).toEqual([]);
   });

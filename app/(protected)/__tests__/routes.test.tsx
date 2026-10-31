@@ -14,6 +14,7 @@ import ProfileRoute from "../profile";
 import WorkerHomeScreen from "../worker";
 import WorkerAssignmentDetailRoute from "../worker/assignments/[assignmentId]";
 import WorkerGigDetailRoute from "../worker/gigs/[gigId]";
+import WorkRoute from "../work";
 
 const mockReplace = jest.fn();
 const mockPush = jest.fn();
@@ -24,6 +25,7 @@ jest.mock("expo-router", () => {
     jest.requireActual<typeof import("react-native")>("react-native");
   return {
     useRouter: () => ({ push: mockPush, replace: mockReplace }),
+    useFocusEffect: (effect: () => void) => React.useEffect(effect, [effect]),
     useLocalSearchParams: () => ({
       gigId: "test-gig-id",
       assignmentId: "test-assignment-id",
@@ -40,6 +42,7 @@ jest.mock("@react-native-async-storage/async-storage", () => ({
 }));
 
 jest.mock("@/features/auth/context/useAuth", () => ({
+  ...jest.requireActual("@/features/auth/context/useAuth"),
   useAuth: jest.fn(),
 }));
 
@@ -122,6 +125,11 @@ jest.mock("@/features/applications/data/application-gateway", () => ({
 jest.mock("@/features/discovery/data/discovery-gateway", () => ({
   discoveryGateway: {
     discoverGigs: jest.fn(async () => []),
+    discoverGigsWithMetadata: jest.fn(async () => ({
+      gigs: [],
+      isFromCache: false,
+      cachedAt: null,
+    })),
     getPublicGig: jest.fn(async () => ({
       id: "test-gig-id",
       employerId: "employer-1",
@@ -140,6 +148,23 @@ jest.mock("@/features/discovery/data/discovery-gateway", () => ({
       createdAt: "2026-10-25T00:00:00.000Z",
       reasons: ["Within 5 km of you"],
     })),
+  },
+}));
+
+jest.mock("@/features/work/data/work-gateway", () => ({
+  WORK_PAGE_SIZE: 20,
+  workGateway: { list: jest.fn(async () => []) },
+}));
+
+jest.mock("@/features/profile/data/profile-editor-gateway", () => ({
+  profileEditorGateway: {
+    read: jest.fn(async () => ({
+      id: "user-test",
+      displayName: "Jordan Lee",
+      homeArea: "Quezon City",
+      bio: "",
+    })),
+    save: jest.fn(),
   },
 }));
 
@@ -261,20 +286,30 @@ describe("Protected route components", () => {
 
   it("WorkerHomeScreen renders worker workspace", async () => {
     await render(<WorkerHomeScreen />);
-    expect(screen.getByText("Good work starts nearby.")).toBeVisible();
-    expect(screen.getByText("Jordan Lee")).toBeVisible();
+    expect(screen.getByRole("header", { name: "Discover gigs" })).toBeVisible();
+    expect(screen.getByText("Hi, Jordan")).toBeVisible();
   });
 
   it("EmployerHomeScreen renders employer workspace", async () => {
+    // The shell header and the employer route share one workspace mode.
+    mockedUseShellMode.mockReturnValue({
+      mode: "employer",
+      busy: false,
+      error: null,
+      switchMode: jest.fn(async () => true),
+      retry: jest.fn(async () => undefined),
+    });
     await render(<EmployerHomeScreen />);
-    expect(screen.getByText("Put useful work in motion.")).toBeVisible();
-    expect(screen.getByText("Jordan Lee")).toBeVisible();
+    expect(
+      screen.getByRole("header", { name: "Your workspace" }),
+    ).toBeVisible();
+    expect(screen.getByText("Hi, Jordan")).toBeVisible();
   });
 
   it("EmployerNewGigRoute renders gig creation form", async () => {
     await render(<EmployerNewGigRoute />);
-    expect(screen.getByText("POST A GIG")).toBeVisible();
-    expect(screen.getByText("AI JOB BRIEF BUILDER")).toBeVisible();
+    expect(screen.getByText("Post a gig")).toBeVisible();
+    expect(screen.getByText("Job brief assistant")).toBeVisible();
   });
 
   it("EmployerGigDetailRoute renders gig details screen", async () => {
@@ -296,7 +331,7 @@ describe("Protected route components", () => {
   it("WorkerAssignmentDetailRoute renders worker agreement details screen", async () => {
     await render(<WorkerAssignmentDetailRoute />);
     await waitFor(() => {
-      expect(screen.getByText("TASK AGREEMENT")).toBeVisible();
+      expect(screen.getByText("Task agreement")).toBeVisible();
       expect(screen.getByText("Desk Assembly Agreement")).toBeVisible();
     });
   });
@@ -304,20 +339,26 @@ describe("Protected route components", () => {
   it("EmployerAssignmentDetailRoute renders employer agreement and milestones screen", async () => {
     await render(<EmployerAssignmentDetailRoute />);
     await waitFor(() => {
-      expect(screen.getByText("ASSIGNED CONTRACT")).toBeVisible();
+      expect(screen.getByText("Assigned contract")).toBeVisible();
       expect(screen.getByText("Desk Assembly Agreement")).toBeVisible();
     });
   });
 
   it("ActivityRoute renders activity trail", async () => {
     await render(<ActivityRoute />);
-    expect(screen.getByText("Nothing gets lost in the handoff.")).toBeVisible();
+    expect(screen.getByRole("header", { name: "Activity" })).toBeVisible();
   });
 
   it("ProfileRoute renders profile identity and sign-out", async () => {
     await render(<ProfileRoute />);
     expect(screen.getByText("Jordan Lee")).toBeVisible();
     expect(screen.getByRole("button", { name: "Sign out" })).toBeVisible();
+  });
+
+  it("WorkRoute renders applications within the authenticated shell", async () => {
+    await render(<WorkRoute />);
+    expect(await screen.findByText("No applications yet")).toBeVisible();
+    expect(screen.getByRole("tab", { name: "My Work" })).toBeVisible();
   });
 
   it("ProtectedUnmatchedRoute renders fallback 404 notice", async () => {

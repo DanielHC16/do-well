@@ -1,28 +1,70 @@
 import { useRouter } from "expo-router";
-import type { PropsWithChildren } from "react";
+import { StatusBar } from "expo-status-bar";
+import {
+  useContext,
+  useState,
+  type PropsWithChildren,
+  type ReactNode,
+} from "react";
 import {
   ActivityIndicator,
-  Pressable,
+  KeyboardAvoidingView,
+  RefreshControl,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { setupTheme } from "@/features/setup/setupTheme";
+import {
+  AppHeader,
+  BottomSheet,
+  PressableScale,
+  SegmentedPills,
+  TabBar,
+  Txt,
+  type TabKey,
+} from "@/components/ui";
+import { AuthContext } from "@/features/auth/context/useAuth";
 import { OfflineBanner } from "@/features/connectivity/components/OfflineBanner";
+import { setupTheme } from "@/features/setup/setupTheme";
+import { AppIcon, type AppIconName } from "@/shared/ui/AppIcon";
+import { palette, radius, size, space, status } from "@/theme";
 
 import { useShellMode } from "../context/useShellMode";
+import { useUnreadActivity } from "../context/useUnreadActivity";
 import type { ShellMode } from "../model/shell-mode";
 
-type ShellSection = "home" | "activity" | "profile" | "account";
+type ShellSection = "home" | "work" | "activity" | "profile" | "account";
 
 type MarketplaceShellProps = PropsWithChildren<
   Readonly<{
     activeSection: ShellSection;
+    /** Screen name shown in the navy header (Home derives its own). */
     title: string;
-    subtitle: string;
+    /** @deprecated Retained for callers; the redesign shows no page subtitle. */
+    subtitle?: string;
+    scrollable?: boolean;
+    /** Renders a list body. `hero` is non-null when `heroScrolls` is set. */
+    listContent?: (notices: ReactNode, hero: ReactNode | null) => ReactNode;
+    /**
+     * Let the navy hero scroll away with a list (Home), keeping only a navy
+     * strip behind the status bar. Requires `listContent`.
+     */
+    heroScrolls?: boolean;
+    /** @deprecated The header no longer differs between dashboard pages. */
+    dashboard?: boolean;
+    /** @deprecated The header no longer differs between dashboard pages. */
+    compactHeader?: boolean;
+    /** Overrides the automatic "Hi, {first name}" line. */
+    greeting?: string;
+    /** Content rendered on navy inside the header (e.g. Home stat tiles). */
+    headerContent?: ReactNode;
+    /** Shows the header search button (screens where search is meaningful). */
+    onSearch?: () => void;
+    /** Pull-to-refresh for scrollable screens. */
+    onRefresh?: () => void;
+    refreshing?: boolean;
   }>
 >;
 
@@ -31,135 +73,225 @@ const modeRoute = {
   employer: "/(protected)/employer",
 } as const;
 
+const tabRoute = {
+  work: "/(protected)/work",
+  activity: "/(protected)/activity",
+  profile: "/(protected)/profile",
+} as const;
+
 export function MarketplaceShell({
   activeSection,
   children,
-  subtitle,
   title,
+  scrollable = true,
+  listContent,
+  heroScrolls = false,
+  headerContent,
+  onSearch,
+  onRefresh,
+  refreshing = false,
+  greeting,
 }: MarketplaceShellProps) {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { busy, error, mode, switchMode } = useShellMode();
+  // Optional: unit tests may render the shell without an AuthProvider.
+  const auth = useContext(AuthContext);
+  const profileName = auth?.state.profile?.displayName ?? "";
+  const unread = useUnreadActivity(auth?.state.userId ?? null);
+  const [findSheet, setFindSheet] = useState(false);
 
   async function chooseMode(nextMode: ShellMode) {
     if (nextMode === mode) return;
     if (await switchMode(nextMode)) router.replace(modeRoute[nextMode]);
   }
 
-  return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.topBar}>
-        <View style={styles.brandRow}>
-          <Text accessibilityLabel="Do Well" style={styles.wordmark}>
-            DO / WELL
-          </Text>
-          <View style={styles.brandRule} />
-          <Text style={styles.brandNote}>NEIGHBORHOOD WORK</Text>
-        </View>
-        <Text style={styles.liveLabel}>MARKETPLACE</Text>
-      </View>
+  function navigate(tab: TabKey) {
+    if (tab === "home") router.replace(modeRoute[mode]);
+    else router.push(tabRoute[tab]);
+  }
+
+  function findGigs(intent: "near" | "remote") {
+    setFindSheet(false);
+    // `at` makes repeated taps distinct so Home applies each one once.
+    router.replace({
+      pathname: modeRoute.worker,
+      params: { intent, at: String(Date.now()) },
+    });
+  }
+
+  const screenName =
+    activeSection === "home"
+      ? mode === "worker"
+        ? "Discover gigs"
+        : "Your workspace"
+      : title;
+
+  const notices = (
+    <>
       <OfflineBanner />
-
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.heading}>
-          <Text style={styles.eyebrow}>
-            {mode === "worker" ? "FIND WORK" : "OFFER WORK"}
-          </Text>
-          <Text accessibilityRole="header" style={styles.title}>
-            {title}
-          </Text>
-          <Text style={styles.subtitle}>{subtitle}</Text>
+      {error ? (
+        <View accessibilityRole="alert" style={styles.errorPanel}>
+          <Txt variant="caption" style={{ color: status.danger.fg }}>
+            Workspace not saved. {error}
+          </Txt>
         </View>
-
-        <View accessibilityRole="radiogroup" style={styles.modeSwitcher}>
-          {(["worker", "employer"] as const).map((option) => {
-            const selected = mode === option;
-            const label =
-              option === "worker"
-                ? "Show worker workspace"
-                : "Show employer workspace";
-            return (
-              <Pressable
-                accessibilityLabel={label}
-                accessibilityRole="radio"
-                accessibilityState={{
-                  checked: selected,
-                  disabled: busy || selected,
-                  selected,
-                }}
-                disabled={busy || selected}
-                key={option}
-                onPress={() => void chooseMode(option)}
-                style={[
-                  styles.modeButton,
-                  selected ? styles.modeButtonSelected : null,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.modeButtonText,
-                    selected ? styles.modeButtonTextSelected : null,
-                  ]}
-                >
-                  {option === "worker" ? "Find work" : "Offer work"}
-                </Text>
-              </Pressable>
-            );
-          })}
+      ) : null}
+      {busy ? (
+        <View accessibilityLiveRegion="polite" style={styles.busyRow}>
+          <ActivityIndicator color={palette.purple} />
+          <Txt variant="caption" tone="secondary">
+            Switching workspace…
+          </Txt>
         </View>
+      ) : null}
+    </>
+  );
 
-        {error ? (
-          <View accessibilityRole="alert" style={styles.errorPanel}>
-            <Text style={styles.errorTitle}>VIEW NOT SAVED</Text>
-            <Text style={styles.errorText}>{error}</Text>
+  const scrollingHero = heroScrolls && Boolean(listContent);
+  const hero = (
+    <AppHeader
+      insetTop={!scrollingHero}
+      name={profileName}
+      greeting={greeting}
+      screenName={screenName}
+      onAvatarPress={() => router.push(tabRoute.profile)}
+      onSearch={onSearch}
+      onNotifications={() => router.push(tabRoute.activity)}
+      unread={unread && activeSection !== "activity"}
+      controls={
+        <SegmentedPills
+          tone="onDark"
+          role="radio"
+          accessibilityLabel="Workspace"
+          value={mode}
+          disabled={busy}
+          onChange={(next) => void chooseMode(next)}
+          segments={[
+            {
+              value: "worker",
+              label: "Find work",
+              accessibilityLabel: "Show worker workspace",
+            },
+            {
+              value: "employer",
+              label: "Offer work",
+              accessibilityLabel: "Show employer workspace",
+            },
+          ]}
+        />
+      }
+    >
+      {headerContent}
+    </AppHeader>
+  );
+
+  return (
+    <View style={styles.root}>
+      <StatusBar style="light" />
+      {scrollingHero ? (
+        <View style={{ height: insets.top, backgroundColor: palette.navy }} />
+      ) : (
+        hero
+      )}
+      <KeyboardAvoidingView style={styles.body} behavior="height">
+        {scrollable ? (
+          <ScrollView
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.content}
+            refreshControl={
+              onRefresh ? (
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  colors={[palette.purple]}
+                  progressBackgroundColor={palette.surface}
+                />
+              ) : undefined
+            }
+          >
+            {notices}
+            {children}
+          </ScrollView>
+        ) : listContent ? (
+          <View style={styles.body}>
+            {listContent(notices, scrollingHero ? hero : null)}
+            {children}
           </View>
-        ) : null}
-        {busy ? (
-          <View accessibilityLiveRegion="polite" style={styles.busyRow}>
-            <ActivityIndicator color={setupTheme.color.foreground} />
-            <Text style={styles.busyText}>Saving your view...</Text>
+        ) : (
+          <View style={styles.body}>
+            <View style={styles.fixedNotices}>{notices}</View>
+            <View style={styles.body}>{children}</View>
           </View>
-        ) : null}
-
-        {children}
-      </ScrollView>
-
-      <View accessibilityRole="tablist" style={styles.navigation}>
-        <ShellTab
-          active={activeSection === "home"}
-          label="Home"
-          onPress={() => router.replace(modeRoute[mode])}
+        )}
+      </KeyboardAvoidingView>
+      <TabBar
+        active={activeSection === "account" ? "profile" : activeSection}
+        onNavigate={navigate}
+        fabLabel={mode === "employer" ? "Post a gig" : "Find gigs"}
+        onFab={() =>
+          mode === "employer"
+            ? router.push("/(protected)/employer/gigs/new")
+            : setFindSheet(true)
+        }
+      />
+      <BottomSheet
+        visible={findSheet}
+        title="Find gigs"
+        onClose={() => setFindSheet(false)}
+      >
+        <SheetOption
+          icon="pin"
+          title="Find gigs near me"
+          detail="Use your location or pick an area"
+          onPress={() => findGigs("near")}
         />
-        <ShellTab
-          active={activeSection === "activity"}
-          label="Activity"
-          onPress={() => router.push("/(protected)/activity")}
+        <SheetOption
+          icon="remote"
+          title="Browse remote"
+          detail="Work from anywhere, no location needed"
+          onPress={() => findGigs("remote")}
         />
-        <ShellTab
-          active={activeSection === "profile" || activeSection === "account"}
-          label="Account"
-          onPress={() => router.push("/(protected)/settings")}
-        />
-      </View>
-    </SafeAreaView>
+      </BottomSheet>
+    </View>
   );
 }
 
-function ShellTab({
-  active,
-  label,
+function SheetOption({
+  icon,
+  title,
+  detail,
   onPress,
-}: Readonly<{ active: boolean; label: string; onPress: () => void }>) {
+}: Readonly<{
+  icon: AppIconName;
+  title: string;
+  detail: string;
+  onPress: () => void;
+}>) {
   return (
-    <Pressable
-      accessibilityRole="tab"
-      accessibilityState={{ selected: active }}
+    <PressableScale
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      accessibilityHint={detail}
       onPress={onPress}
-      style={[styles.navItem, active ? styles.navItemActive : null]}
+      style={styles.option}
     >
-      <Text style={[styles.navText, active ? styles.navTextActive : null]}>
-        {label}
-      </Text>
-    </Pressable>
+      <View style={styles.optionIcon}>
+        <AppIcon name={icon} size={size.icon} color={palette.navy} />
+      </View>
+      <View style={styles.optionCopy}>
+        <Txt variant="title">{title}</Txt>
+        <Txt variant="caption" tone="secondary">
+          {detail}
+        </Txt>
+      </View>
+      <AppIcon
+        name="chevronRight"
+        size={size.icon}
+        color={palette.textSecondary}
+      />
+    </PressableScale>
   );
 }
 
@@ -169,20 +301,20 @@ export const marketplaceStyles = StyleSheet.create({
     backgroundColor: setupTheme.color.surface,
     borderColor: setupTheme.color.border,
     borderRadius: setupTheme.radius.card,
-    borderWidth: 2,
+    borderWidth: 1,
     gap: setupTheme.spacing.compact,
     padding: setupTheme.spacing.section,
   },
   cardKicker: {
     color: setupTheme.color.accent,
     fontSize: setupTheme.type.label,
-    fontWeight: "900",
+    fontWeight: "700",
     letterSpacing: 0.8,
   },
   cardTitle: {
     color: setupTheme.color.foreground,
     fontSize: setupTheme.type.heading,
-    fontWeight: "900",
+    fontWeight: "700",
   },
   body: {
     color: setupTheme.color.muted,
@@ -191,23 +323,23 @@ export const marketplaceStyles = StyleSheet.create({
   },
   primaryButton: {
     alignItems: "center",
-    backgroundColor: setupTheme.color.highlight,
-    borderColor: setupTheme.color.foreground,
+    backgroundColor: setupTheme.color.primary,
+    borderColor: setupTheme.color.primary,
     borderRadius: setupTheme.radius.control,
-    borderWidth: 2,
+    borderWidth: 1,
     justifyContent: "center",
     minHeight: 52,
     paddingHorizontal: setupTheme.spacing.section,
   },
   primaryButtonText: {
-    color: setupTheme.color.foreground,
+    color: setupTheme.color.onPrimary,
     fontSize: setupTheme.type.body,
-    fontWeight: "900",
+    fontWeight: "600",
   },
   mutedButton: {
     alignItems: "center",
-    backgroundColor: setupTheme.color.surfaceMuted,
-    borderColor: setupTheme.color.borderSoft,
+    backgroundColor: setupTheme.color.surface,
+    borderColor: setupTheme.color.border,
     borderRadius: setupTheme.radius.control,
     borderWidth: 1,
     justifyContent: "center",
@@ -215,135 +347,56 @@ export const marketplaceStyles = StyleSheet.create({
     paddingHorizontal: setupTheme.spacing.section,
   },
   mutedButtonText: {
-    color: setupTheme.color.muted,
+    color: setupTheme.color.foreground,
     fontSize: setupTheme.type.body,
-    fontWeight: "800",
+    fontWeight: "500",
   },
 });
 
 const styles = StyleSheet.create({
-  safeArea: { backgroundColor: setupTheme.color.background, flex: 1 },
-  topBar: {
-    alignItems: "center",
-    borderBottomColor: setupTheme.color.border,
-    borderBottomWidth: 2,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: setupTheme.spacing.section,
-    paddingVertical: setupTheme.spacing.compact,
-  },
-  brandRow: { alignItems: "center", flexDirection: "row", gap: 10 },
-  wordmark: {
-    color: setupTheme.color.foreground,
-    fontSize: setupTheme.type.label,
-    fontWeight: "900",
-    letterSpacing: 1.4,
-  },
-  brandRule: { backgroundColor: setupTheme.color.accent, height: 4, width: 24 },
-  brandNote: {
-    color: setupTheme.color.muted,
-    fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 1.1,
-  },
-  liveLabel: {
-    color: setupTheme.color.ready,
-    fontSize: 10,
-    fontWeight: "900",
-    letterSpacing: 0.8,
+  root: { flex: 1, backgroundColor: palette.bg },
+  body: {
+    flex: 1,
+    width: "100%",
+    maxWidth: size.contentMax,
+    alignSelf: "center",
   },
   content: {
-    gap: setupTheme.spacing.content,
-    padding: setupTheme.spacing.section,
-    paddingBottom: setupTheme.spacing.generous,
+    gap: space.md,
+    paddingHorizontal: size.screenPadding,
+    paddingTop: space.lg,
+    paddingBottom: space.xxl,
   },
-  heading: { gap: setupTheme.spacing.compact },
-  eyebrow: {
-    color: setupTheme.color.accent,
-    fontSize: setupTheme.type.label,
-    fontWeight: "900",
-    letterSpacing: 0.8,
+  fixedNotices: {
+    gap: space.sm,
+    paddingHorizontal: size.screenPadding,
+    paddingTop: space.sm,
   },
-  title: {
-    color: setupTheme.color.foreground,
-    fontSize: setupTheme.type.title,
-    fontWeight: "900",
-    letterSpacing: -1,
-    lineHeight: 40,
-  },
-  subtitle: {
-    color: setupTheme.color.muted,
-    fontSize: setupTheme.type.body,
-    lineHeight: 24,
-  },
-  modeSwitcher: {
-    backgroundColor: setupTheme.color.highlight,
-    borderColor: setupTheme.color.foreground,
-    borderRadius: setupTheme.radius.card,
-    borderWidth: 2,
-    flexDirection: "row",
-    gap: setupTheme.spacing.compact,
-    padding: setupTheme.spacing.compact,
-  },
-  modeButton: {
-    alignItems: "center",
-    borderRadius: setupTheme.radius.control,
-    flex: 1,
-    justifyContent: "center",
-    minHeight: 48,
-    paddingHorizontal: setupTheme.spacing.compact,
-  },
-  modeButtonSelected: { backgroundColor: setupTheme.color.foreground },
-  modeButtonText: {
-    color: setupTheme.color.foreground,
-    fontSize: setupTheme.type.body,
-    fontWeight: "800",
-  },
-  modeButtonTextSelected: { color: setupTheme.color.surface },
   errorPanel: {
-    backgroundColor: setupTheme.color.dangerSurface,
-    borderColor: setupTheme.color.danger,
-    borderRadius: setupTheme.radius.control,
-    borderWidth: 2,
-    gap: setupTheme.spacing.tight,
-    padding: setupTheme.spacing.section,
+    backgroundColor: status.danger.bg,
+    borderColor: status.danger.border,
+    borderRadius: radius.input,
+    borderWidth: 1,
+    padding: space.sm,
   },
-  errorTitle: {
-    color: setupTheme.color.danger,
-    fontSize: setupTheme.type.label,
-    fontWeight: "900",
-  },
-  errorText: { color: setupTheme.color.danger, fontSize: setupTheme.type.body },
-  busyRow: {
-    alignItems: "center",
+  busyRow: { alignItems: "center", flexDirection: "row", gap: space.xs },
+  option: {
     flexDirection: "row",
-    gap: setupTheme.spacing.compact,
-  },
-  busyText: {
-    color: setupTheme.color.muted,
-    fontSize: setupTheme.type.caption,
-    fontWeight: "700",
-  },
-  navigation: {
-    backgroundColor: setupTheme.color.surface,
-    borderTopColor: setupTheme.color.border,
-    borderTopWidth: 2,
-    flexDirection: "row",
-    gap: setupTheme.spacing.compact,
-    padding: setupTheme.spacing.compact,
-  },
-  navItem: {
     alignItems: "center",
-    borderRadius: setupTheme.radius.small,
-    flex: 1,
+    gap: space.sm,
+    padding: space.md,
+    borderRadius: radius.card,
+    borderWidth: 1,
+    borderColor: palette.border,
+    backgroundColor: palette.surface,
+  },
+  optionIcon: {
+    width: size.iconButton,
+    height: size.iconButton,
+    borderRadius: radius.pill,
+    backgroundColor: palette.lavender,
+    alignItems: "center",
     justifyContent: "center",
-    minHeight: 48,
   },
-  navItemActive: { backgroundColor: setupTheme.color.foreground },
-  navText: {
-    color: setupTheme.color.muted,
-    fontSize: setupTheme.type.caption,
-    fontWeight: "800",
-  },
-  navTextActive: { color: setupTheme.color.surface },
+  optionCopy: { flex: 1, gap: 2 },
 });

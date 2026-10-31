@@ -4,11 +4,16 @@ const appConfig: ExpoConfig = {
   name: "Do Well",
   slug: "do-well",
   version: "0.1.0",
+  icon: "./branding/do-well-app-logo.png",
   scheme: "dowell",
   orientation: "portrait",
   userInterfaceStyle: "automatic",
   android: {
     package: "com.anghulingpullrequest.dowell",
+    adaptiveIcon: {
+      foregroundImage: "./branding/do-well-adaptive-foreground.png",
+      backgroundColor: "#FFFFFF",
+    },
     predictiveBackGestureEnabled: false,
     permissions: [
       "ACCESS_COARSE_LOCATION",
@@ -21,6 +26,15 @@ const appConfig: ExpoConfig = {
   },
   plugins: [
     "expo-router",
+    [
+      "expo-splash-screen",
+      {
+        image: "./branding/do-well-app-logo.png",
+        imageWidth: 160,
+        resizeMode: "contain",
+        backgroundColor: "#FFFFFF",
+      },
+    ],
     [
       "expo-build-properties",
       {

@@ -3,7 +3,7 @@ import { ProfileRecoveryBoundary } from "@/features/profile/components/ProfileRe
 import { AuthenticatedProfileScreen } from "@/features/shell/components/AuthenticatedProfileScreen";
 
 export default function ProfileRoute() {
-  const { signOut, state } = useAuth();
+  const { refresh, signOut, state } = useAuth();
   const busy = state.status === "signingOut";
 
   if (!state.profile) {
@@ -12,8 +12,10 @@ export default function ProfileRoute() {
 
   return (
     <AuthenticatedProfileScreen
+      key={state.profile.id}
       busy={busy}
       onSignOut={signOut}
+      onUpdated={refresh}
       profile={state.profile}
     />
   );

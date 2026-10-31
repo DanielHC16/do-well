@@ -159,7 +159,7 @@ describe("EmployerGigDetailScreen", () => {
     });
 
     expect(screen.getByText("STATUS: DRAFT")).toBeVisible();
-    expect(screen.getByText("PHP 750")).toBeVisible();
+    expect(screen.getByText("₱750")).toBeVisible();
     expect(screen.getByText("Poblacion, Makati")).toBeVisible();
     expect(
       screen.getByRole("button", { name: "Publish to Noticeboard" }),
@@ -238,7 +238,7 @@ describe("EmployerGigDetailScreen", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText("APPLICANTS (1)")).toBeVisible();
+      expect(screen.getByText("Applicants (1)")).toBeVisible();
       expect(screen.getByText("Warren Worker")).toBeVisible();
       expect(
         screen.getByText(/"Experienced gardener with mower."/),
@@ -250,6 +250,11 @@ describe("EmployerGigDetailScreen", () => {
 
     await fireEvent.press(
       screen.getByRole("button", { name: "Select Warren Worker" }),
+    );
+
+    expect(applications.selectWorkerAtomic).not.toHaveBeenCalled();
+    await fireEvent.press(
+      screen.getByRole("button", { name: "Confirm selection" }),
     );
 
     await waitFor(() => {
@@ -276,7 +281,7 @@ describe("EmployerGigDetailScreen", () => {
 
     await waitFor(() => {
       expect(screen.getByText("STATUS: CLOSED")).toBeVisible();
-      expect(screen.getByText("ACTIVE ASSIGNMENT")).toBeVisible();
+      expect(screen.getByText("Active assignment")).toBeVisible();
       expect(
         screen.getByText("View and manage the agreed milestones below."),
       ).toBeVisible();
@@ -300,7 +305,7 @@ describe("EmployerGigDetailScreen", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText("NOTICE UNAVAILABLE")).toBeVisible();
+      expect(screen.getByText("Notice unavailable")).toBeVisible();
       expect(screen.getByText("Gig notice not found.")).toBeVisible();
     });
 
@@ -309,4 +314,56 @@ describe("EmployerGigDetailScreen", () => {
     );
     expect(mockReplace).toHaveBeenCalledWith("/(protected)/employer");
   });
+});
+
+it("distinguishes unavailable applicants from an empty list and retries", async () => {
+  const gateway = createMockGateway(mockPublishedGig);
+  const applications = createMockApplicationGateway();
+  jest
+    .mocked(applications.listGigApplicants)
+    .mockRejectedValueOnce(new Error("offline"));
+  const view = await render(
+    <EmployerGigDetailScreen
+      applications={applications}
+      gateway={gateway}
+      gigId={mockPublishedGig.id}
+    />,
+  );
+  await waitFor(() =>
+    expect(
+      view.getByText("Applicants could not be loaded. Try again."),
+    ).toBeVisible(),
+  );
+  expect(view.queryByText(/No workers have applied yet/)).toBeNull();
+  await fireEvent.press(
+    view.getByRole("button", { name: "Retry listing details" }),
+  );
+  await waitFor(() =>
+    expect(view.getByText(/No workers have applied yet/)).toBeVisible(),
+  );
+});
+
+it("leaves worker selection untouched when the confirmation is cancelled", async () => {
+  const applications = createMockApplicationGateway([mockApplicant]);
+  const view = await render(
+    <EmployerGigDetailScreen
+      applications={applications}
+      gateway={createMockGateway(mockPublishedGig)}
+      gigId={mockPublishedGig.id}
+    />,
+  );
+  await waitFor(() =>
+    expect(
+      view.getByRole("button", { name: "Select Warren Worker" }),
+    ).toBeVisible(),
+  );
+  await fireEvent.press(
+    view.getByRole("button", { name: "Select Warren Worker" }),
+  );
+  expect(
+    view.getByText(/rejects its other pending applications/),
+  ).toBeVisible();
+  await fireEvent.press(view.getByRole("button", { name: "Cancel" }));
+  expect(view.queryByRole("button", { name: "Confirm selection" })).toBeNull();
+  expect(applications.selectWorkerAtomic).not.toHaveBeenCalled();
 });

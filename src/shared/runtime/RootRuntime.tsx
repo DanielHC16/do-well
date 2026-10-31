@@ -5,6 +5,7 @@ import { ConnectivityProvider } from "@/features/connectivity/context/Connectivi
 import { DemoProvider } from "@/features/demo/context/DemoProvider";
 import { NotificationResponseObserver } from "@/features/notifications/components/NotificationResponseObserver";
 import { readAppRuntime, type AppRuntime } from "@/shared/config/app-runtime";
+import { DevelopmentToolsPresentation } from "./DevelopmentToolsPresentation";
 
 type RootRuntimeProps = PropsWithChildren<{
   runtime?: AppRuntime;
@@ -17,6 +18,7 @@ export function RootRuntime({
   if (runtime === "demo") {
     return (
       <ConnectivityProvider>
+        <DevelopmentToolsPresentation />
         <DemoProvider>{children}</DemoProvider>
       </ConnectivityProvider>
     );
@@ -24,6 +26,7 @@ export function RootRuntime({
 
   return (
     <ConnectivityProvider>
+      <DevelopmentToolsPresentation />
       <AuthProvider>
         <NotificationResponseObserver />
         {children}

@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
+import { Text, TextInput } from "@/shared/ui/Typography";
 
 import {
   onboardingProfileSchema,
@@ -76,91 +77,92 @@ export function OnboardingForm({
         </Text>
       </View>
 
-      <View style={styles.field}>
-        <Text nativeID="display-name-label" style={styles.label}>
-          Display name
-        </Text>
-        <TextInput
-          accessibilityLabel="Display name"
-          autoCapitalize="words"
-          autoComplete="name"
-          editable={!isSubmitting}
-          onChangeText={setDisplayName}
-          returnKeyType="next"
-          style={[
-            styles.input,
-            fieldErrors.displayName ? styles.inputError : null,
-          ]}
-          value={displayName}
-        />
-        {fieldErrors.displayName ? (
-          <Text accessibilityRole="alert" style={styles.errorText}>
-            {fieldErrors.displayName}
+      <View style={styles.detailsCard}>
+        <View style={styles.field}>
+          <Text nativeID="display-name-label" style={styles.label}>
+            Display name
           </Text>
-        ) : null}
-      </View>
+          <TextInput
+            accessibilityLabel="Display name"
+            autoCapitalize="words"
+            autoComplete="name"
+            editable={!isSubmitting}
+            onChangeText={setDisplayName}
+            returnKeyType="next"
+            style={[
+              styles.input,
+              fieldErrors.displayName ? styles.inputError : null,
+            ]}
+            value={displayName}
+          />
+          {fieldErrors.displayName ? (
+            <Text accessibilityRole="alert" style={styles.errorText}>
+              {fieldErrors.displayName}
+            </Text>
+          ) : null}
+        </View>
 
-      <View style={styles.field}>
-        <Text nativeID="home-area-label" style={styles.label}>
-          City or public area
-        </Text>
-        <TextInput
-          accessibilityLabel="City or public area"
-          autoCapitalize="words"
-          editable={!isSubmitting}
-          onChangeText={setHomeArea}
-          onSubmitEditing={() => void submit()}
-          returnKeyType="done"
-          style={[
-            styles.input,
-            fieldErrors.homeArea ? styles.inputError : null,
-          ]}
-          value={homeArea}
-        />
-        <Text style={styles.hint}>
-          Share only a city, municipality, or neighborhood - not your full
-          address.
-        </Text>
-        {fieldErrors.homeArea ? (
-          <Text accessibilityRole="alert" style={styles.errorText}>
-            {fieldErrors.homeArea}
+        <View style={styles.field}>
+          <Text nativeID="home-area-label" style={styles.label}>
+            City or public area
           </Text>
-        ) : null}
-      </View>
+          <TextInput
+            accessibilityLabel="City or public area"
+            autoCapitalize="words"
+            editable={!isSubmitting}
+            onChangeText={setHomeArea}
+            onSubmitEditing={() => void submit()}
+            returnKeyType="done"
+            style={[
+              styles.input,
+              fieldErrors.homeArea ? styles.inputError : null,
+            ]}
+            value={homeArea}
+          />
+          <Text style={styles.hint}>
+            Share only a city, municipality, or neighborhood - not your full
+            address.
+          </Text>
+          {fieldErrors.homeArea ? (
+            <Text accessibilityRole="alert" style={styles.errorText}>
+              {fieldErrors.homeArea}
+            </Text>
+          ) : null}
+        </View>
 
-      <View style={styles.field}>
-        <Text style={styles.label}>Start in a workspace</Text>
-        <Text style={styles.hint}>
-          Choose what you want to do first. You can switch at any time.
-        </Text>
-        <View accessibilityRole="radiogroup" style={styles.modeRow}>
-          {(["worker", "employer"] as const).map((mode) => {
-            const selected = preferredMode === mode;
-            const label = mode === "worker" ? "Find work" : "Offer work";
-            return (
-              <Pressable
-                accessibilityLabel={label}
-                accessibilityRole="radio"
-                accessibilityState={{ selected }}
-                disabled={isSubmitting}
-                key={mode}
-                onPress={() => setPreferredMode(mode)}
-                style={[styles.modeButton, selected && styles.modeSelected]}
-              >
-                <Text
-                  style={[
-                    styles.modeButtonText,
-                    selected && styles.modeSelectedText,
-                  ]}
+        <View style={styles.field}>
+          <Text style={styles.label}>Start in a workspace</Text>
+          <Text style={styles.hint}>
+            Choose what you want to do first. You can switch at any time.
+          </Text>
+          <View accessibilityRole="radiogroup" style={styles.modeRow}>
+            {(["worker", "employer"] as const).map((mode) => {
+              const selected = preferredMode === mode;
+              const label = mode === "worker" ? "Find work" : "Offer work";
+              return (
+                <Pressable
+                  accessibilityLabel={label}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected }}
+                  disabled={isSubmitting}
+                  key={mode}
+                  onPress={() => setPreferredMode(mode)}
+                  style={[styles.modeButton, selected && styles.modeSelected]}
                 >
-                  {label}
-                </Text>
-              </Pressable>
-            );
-          })}
+                  <Text
+                    style={[
+                      styles.modeButtonText,
+                      selected && styles.modeSelectedText,
+                    ]}
+                  >
+                    {label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
       </View>
-
       {hasSubmissionError ? (
         <Text
           accessibilityLabel={submissionError}
@@ -202,55 +204,71 @@ export function OnboardingForm({
 }
 
 const styles = StyleSheet.create({
+  detailsCard: {
+    backgroundColor: setupTheme.color.surface,
+    borderWidth: 1,
+    borderColor: setupTheme.color.border,
+    borderRadius: setupTheme.radius.card,
+    padding: setupTheme.spacing.section,
+    gap: setupTheme.spacing.section,
+  },
   form: {
-    gap: setupTheme.spacing.content,
+    gap: setupTheme.spacing.section,
     width: "100%",
   },
   introduction: {
     gap: setupTheme.spacing.compact,
   },
   title: {
-    color: setupTheme.color.foreground,
-    fontSize: setupTheme.type.title,
-    fontWeight: "700",
+    lineHeight: 28,
+    color: setupTheme.color.primary,
+    fontSize: setupTheme.type.heading,
+    fontWeight: "600",
   },
   description: {
     color: setupTheme.color.muted,
     fontSize: setupTheme.type.status,
-    lineHeight: setupTheme.spacing.content,
+    lineHeight: 22,
   },
   field: {
     gap: setupTheme.spacing.compact,
   },
   label: {
     color: setupTheme.color.foreground,
-    fontSize: setupTheme.type.status,
+    fontSize: setupTheme.type.caption,
     fontWeight: "600",
   },
   input: {
-    backgroundColor: setupTheme.color.background,
-    borderColor: setupTheme.color.muted,
-    borderRadius: setupTheme.spacing.compact,
+    fontWeight: "400",
+    minHeight: setupTheme.size.button,
+    backgroundColor: setupTheme.color.surface,
+    borderColor: setupTheme.color.borderSoft,
+    borderRadius: setupTheme.radius.control,
     borderWidth: 1,
     color: setupTheme.color.foreground,
     fontSize: setupTheme.type.status,
-    paddingHorizontal: setupTheme.spacing.content,
+    paddingHorizontal: setupTheme.spacing.section,
     paddingVertical: setupTheme.spacing.compact,
   },
   inputError: {
-    borderColor: setupTheme.color.foreground,
+    borderColor: setupTheme.color.danger,
   },
   hint: {
     color: setupTheme.color.muted,
-    fontSize: setupTheme.type.status,
+    fontSize: setupTheme.type.caption,
+    lineHeight: 20,
   },
   modeRow: {
+    flexWrap: "wrap",
     flexDirection: "row",
     gap: setupTheme.spacing.compact,
   },
   modeButton: {
+    backgroundColor: setupTheme.color.background,
+    padding: setupTheme.spacing.compact,
+    flexBasis: 120,
     alignItems: "center",
-    borderColor: setupTheme.color.foreground,
+    borderColor: setupTheme.color.border,
     borderRadius: setupTheme.radius.control,
     borderWidth: 1,
     flex: 1,
@@ -258,23 +276,27 @@ const styles = StyleSheet.create({
     minHeight: 48,
   },
   modeSelected: {
-    backgroundColor: setupTheme.color.foreground,
+    borderColor: setupTheme.color.secondary,
+    backgroundColor: setupTheme.color.accentSurface,
   },
   modeButtonText: {
+    textAlign: "center",
+    flexShrink: 1,
     color: setupTheme.color.foreground,
     fontSize: setupTheme.type.status,
-    fontWeight: "800",
+    fontWeight: "600",
   },
   modeSelectedText: {
-    color: setupTheme.color.surface,
+    color: setupTheme.color.primary,
   },
   errorText: {
-    color: setupTheme.color.foreground,
+    color: setupTheme.color.danger,
     fontSize: setupTheme.type.status,
   },
   button: {
+    minHeight: 52,
     alignItems: "center",
-    backgroundColor: setupTheme.color.foreground,
+    backgroundColor: setupTheme.color.primary,
     borderRadius: setupTheme.spacing.compact,
     justifyContent: "center",
     paddingHorizontal: setupTheme.spacing.content,
@@ -287,7 +309,7 @@ const styles = StyleSheet.create({
     opacity: 0.82,
   },
   buttonText: {
-    color: setupTheme.color.background,
+    color: setupTheme.color.onPrimary,
     fontSize: setupTheme.type.status,
     fontWeight: "700",
   },

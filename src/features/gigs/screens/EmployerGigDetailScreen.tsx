@@ -5,9 +5,9 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from "react-native";
+import { Text } from "@/shared/ui/Typography";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import {
@@ -19,6 +19,7 @@ import type {
   AssignmentRecord,
 } from "@/features/applications/model/application-schemas";
 import { setupTheme } from "@/features/setup/setupTheme";
+import { ConfirmationModal } from "@/shared/ui";
 
 import { gigGateway, type GigGateway } from "../data/gig-gateway";
 import { GIG_CATEGORY_LABELS, type GigRecord } from "../model/gig-schemas";
@@ -45,6 +46,10 @@ export function EmployerGigDetailScreen({
   >(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const [pendingApplicant, setPendingApplicant] =
+    useState<ApplicantSummary | null>(null);
+  const [applicantError, setApplicantError] = useState<string | null>(null);
+  const [assignmentError, setAssignmentError] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -60,9 +65,19 @@ export function EmployerGigDetailScreen({
           (gigData.status === "published" || gigData.status === "closed")
         ) {
           const [applicantsData, assignmentData] = await Promise.all([
-            applications.listGigApplicants(gigId).catch(() => []),
+            applications.listGigApplicants(gigId).catch(() => {
+              if (mounted)
+                setApplicantError("Applicants could not be loaded. Try again.");
+              return [];
+            }),
             gigData.status === "closed"
-              ? applications.getAssignmentForGig(gigId).catch(() => null)
+              ? applications.getAssignmentForGig(gigId).catch(() => {
+                  if (mounted)
+                    setAssignmentError(
+                      "The work agreement could not be loaded. Try again.",
+                    );
+                  return null;
+                })
               : Promise.resolve(null),
           ]);
           if (!mounted) return;
@@ -88,6 +103,8 @@ export function EmployerGigDetailScreen({
   }, [applications, gateway, gigId]);
 
   async function reloadGig() {
+    setApplicantError(null);
+    setAssignmentError(null);
     try {
       const gigData = await gateway.getGigById(gigId);
       setGig(gigData);
@@ -97,9 +114,17 @@ export function EmployerGigDetailScreen({
         (gigData.status === "published" || gigData.status === "closed")
       ) {
         const [applicantsData, assignmentData] = await Promise.all([
-          applications.listGigApplicants(gigId).catch(() => []),
+          applications.listGigApplicants(gigId).catch(() => {
+            setApplicantError("Applicants could not be loaded. Try again.");
+            return [];
+          }),
           gigData.status === "closed"
-            ? applications.getAssignmentForGig(gigId).catch(() => null)
+            ? applications.getAssignmentForGig(gigId).catch(() => {
+                setAssignmentError(
+                  "The work agreement could not be loaded. Try again.",
+                );
+                return null;
+              })
             : Promise.resolve(null),
         ]);
         setApplicants(applicantsData);
@@ -164,6 +189,7 @@ export function EmployerGigDetailScreen({
       );
     } finally {
       setSelectingApplicantId(null);
+      setPendingApplicant(null);
     }
   }
 
@@ -180,7 +206,7 @@ export function EmployerGigDetailScreen({
     return (
       <SafeAreaView style={styles.centerContainer}>
         <View style={styles.errorCard}>
-          <Text style={styles.errorTitle}>NOTICE UNAVAILABLE</Text>
+          <Text style={styles.errorTitle}>Notice unavailable</Text>
           <Text style={styles.errorText}>{errorMessage}</Text>
           <Pressable
             accessibilityRole="button"
@@ -211,7 +237,25 @@ export function EmployerGigDetailScreen({
         </Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={styles.content}
+      >
+        {applicantError || assignmentError ? (
+          <View accessibilityRole="alert" style={styles.errorBanner}>
+            <Text style={styles.errorBannerText}>
+              {applicantError ?? assignmentError}
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Retry listing details"
+              onPress={() => void reloadGig()}
+              style={styles.backButton}
+            >
+              <Text style={styles.backButtonText}>Try again</Text>
+            </Pressable>
+          </View>
+        ) : null}
         {actionSuccess ? (
           <View style={styles.successBanner}>
             <Text style={styles.successText}>{actionSuccess}</Text>
@@ -237,21 +281,22 @@ export function EmployerGigDetailScreen({
           </Text>
 
           <View style={styles.budgetRow}>
-            <Text style={styles.budgetKicker}>OFFERED COMPENSATION</Text>
+            <Text style={styles.budgetKicker}>Offered compensation</Text>
             <Text style={styles.budgetAmount}>
-              PHP {gig.budgetAmount.toLocaleString()}
+              ₱{gig.budgetAmount.toLocaleString("en-PH")}
             </Text>
           </View>
 
           {gig.publicArea ? (
             <View style={styles.areaRow}>
-              <Text style={styles.areaLabel}>NEIGHBORHOOD AREA</Text>
+              <Text style={styles.areaLabel}>Neighborhood area</Text>
               <Text style={styles.areaValue}>{gig.publicArea}</Text>
             </View>
           ) : null}
-
+        </View>
+        <View style={styles.detailCard}>
           <View style={styles.descriptionSection}>
-            <Text style={styles.sectionHeader}>INSTRUCTIONS</Text>
+            <Text style={styles.sectionHeader}>Instructions</Text>
             <Text style={styles.descriptionText}>{gig.description}</Text>
           </View>
         </View>
@@ -259,7 +304,7 @@ export function EmployerGigDetailScreen({
         {assignment ? (
           <View style={styles.assignmentCard}>
             <View style={styles.assignmentHeaderRow}>
-              <Text style={styles.assignmentKicker}>ACTIVE ASSIGNMENT</Text>
+              <Text style={styles.assignmentKicker}>Active assignment</Text>
               <Text style={styles.assignmentStatusBadge}>
                 {assignment.status.toUpperCase()}
               </Text>
@@ -295,11 +340,11 @@ export function EmployerGigDetailScreen({
           <View style={styles.applicantsSection}>
             <View style={styles.applicantsHeaderRow}>
               <Text style={styles.sectionHeader}>
-                APPLICANTS ({applicants.length})
+                Applicants ({applicants.length})
               </Text>
             </View>
 
-            {applicants.length === 0 ? (
+            {applicantError ? null : applicants.length === 0 ? (
               <View style={styles.emptyApplicantsCard}>
                 <Text style={styles.emptyApplicantsText}>
                   No workers have applied yet. Once workers apply, they will
@@ -311,7 +356,7 @@ export function EmployerGigDetailScreen({
                 {applicants.map((applicant) => (
                   <View key={applicant.id} style={styles.applicantCard}>
                     <View style={styles.applicantTopRow}>
-                      <View>
+                      <View style={styles.applicantIdentity}>
                         <Text style={styles.applicantName}>
                           {applicant.workerDisplayName}
                         </Text>
@@ -353,7 +398,7 @@ export function EmployerGigDetailScreen({
                         accessibilityRole="button"
                         accessibilityLabel={`Select ${applicant.workerDisplayName}`}
                         disabled={selectingApplicantId !== null}
-                        onPress={() => void handleSelectWorker(applicant.id)}
+                        onPress={() => setPendingApplicant(applicant)}
                         style={[
                           styles.selectWorkerButton,
                           selectingApplicantId !== null &&
@@ -418,11 +463,32 @@ export function EmployerGigDetailScreen({
           ) : null}
         </View>
       </ScrollView>
+      <ConfirmationModal
+        visible={pendingApplicant !== null}
+        title="Select this worker?"
+        message={`Propose an agreement to ${pendingApplicant?.workerDisplayName ?? "this worker"}. This closes the listing and rejects its other pending applications. The selected worker still needs to accept the agreement.`}
+        confirmLabel="Confirm selection"
+        busy={selectingApplicantId !== null}
+        onCancel={() => setPendingApplicant(null)}
+        onConfirm={() => {
+          if (pendingApplicant && selectingApplicantId === null)
+            void handleSelectWorker(pendingApplicant.id);
+        }}
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  applicantIdentity: { flex: 1, minWidth: 120 },
+  detailCard: {
+    backgroundColor: setupTheme.color.surface,
+    borderColor: setupTheme.color.border,
+    borderWidth: 1,
+    borderRadius: setupTheme.radius.card,
+    padding: setupTheme.spacing.section,
+    gap: setupTheme.spacing.section,
+  },
   safeArea: {
     backgroundColor: setupTheme.color.background,
     flex: 1,
@@ -442,28 +508,31 @@ const styles = StyleSheet.create({
   topBar: {
     alignItems: "center",
     borderBottomColor: setupTheme.color.border,
-    borderBottomWidth: 2,
+    borderBottomWidth: 1,
     flexDirection: "row",
     justifyContent: "space-between",
     paddingHorizontal: setupTheme.spacing.section,
     paddingVertical: setupTheme.spacing.compact,
   },
   backButton: {
+    minHeight: setupTheme.size.touchTarget,
     paddingVertical: setupTheme.spacing.compact,
   },
   backButtonText: {
     color: setupTheme.color.foreground,
     fontSize: setupTheme.type.body,
-    fontWeight: "800",
+    fontWeight: "600",
   },
   headerStatus: {
     color: setupTheme.color.accent,
     fontSize: setupTheme.type.label,
-    fontWeight: "900",
-    letterSpacing: 0.8,
+    fontWeight: "700",
   },
   content: {
-    gap: setupTheme.spacing.content,
+    alignSelf: "center",
+    maxWidth: setupTheme.size.contentMax,
+    width: "100%",
+    gap: setupTheme.spacing.section,
     padding: setupTheme.spacing.section,
     paddingBottom: setupTheme.spacing.generous,
   },
@@ -471,32 +540,32 @@ const styles = StyleSheet.create({
     backgroundColor: setupTheme.color.readySurface,
     borderColor: setupTheme.color.ready,
     borderRadius: setupTheme.radius.control,
-    borderWidth: 1.5,
+    borderWidth: 1,
     padding: setupTheme.spacing.section,
   },
   successText: {
     color: setupTheme.color.ready,
     fontSize: setupTheme.type.body,
-    fontWeight: "800",
+    fontWeight: "600",
   },
   errorBanner: {
     backgroundColor: setupTheme.color.dangerSurface,
     borderColor: setupTheme.color.danger,
     borderRadius: setupTheme.radius.control,
-    borderWidth: 1.5,
+    borderWidth: 1,
     padding: setupTheme.spacing.section,
   },
   errorBannerText: {
     color: setupTheme.color.danger,
     fontSize: setupTheme.type.body,
-    fontWeight: "800",
+    fontWeight: "600",
   },
   errorCard: {
     ...setupTheme.shadow.card,
     backgroundColor: setupTheme.color.surface,
     borderColor: setupTheme.color.danger,
     borderRadius: setupTheme.radius.card,
-    borderWidth: 2,
+    borderWidth: 1,
     gap: setupTheme.spacing.compact,
     padding: setupTheme.spacing.section,
     width: "100%",
@@ -504,7 +573,7 @@ const styles = StyleSheet.create({
   errorTitle: {
     color: setupTheme.color.danger,
     fontSize: setupTheme.type.label,
-    fontWeight: "900",
+    fontWeight: "700",
   },
   errorText: {
     color: setupTheme.color.danger,
@@ -515,68 +584,73 @@ const styles = StyleSheet.create({
     backgroundColor: setupTheme.color.surface,
     borderColor: setupTheme.color.border,
     borderRadius: setupTheme.radius.card,
-    borderWidth: 2,
-    gap: setupTheme.spacing.content,
+    borderWidth: 1,
+    gap: setupTheme.spacing.section,
     padding: setupTheme.spacing.section,
   },
   categoryRow: {
+    flexWrap: "wrap",
     flexDirection: "row",
     gap: setupTheme.spacing.compact,
   },
   categoryBadge: {
-    backgroundColor: setupTheme.color.surfaceMuted,
+    backgroundColor: setupTheme.color.accentSurface,
     borderColor: setupTheme.color.border,
     borderRadius: setupTheme.radius.status,
-    borderWidth: 1,
-    color: setupTheme.color.foreground,
+    borderWidth: 0,
+    color: setupTheme.color.primary,
     fontSize: setupTheme.type.caption,
-    fontWeight: "800",
+    fontWeight: "600",
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
   modeBadge: {
-    backgroundColor: setupTheme.color.surfaceMuted,
+    backgroundColor: setupTheme.color.background,
     borderColor: setupTheme.color.border,
     borderRadius: setupTheme.radius.status,
-    borderWidth: 1,
+    borderWidth: 0,
     color: setupTheme.color.muted,
     fontSize: setupTheme.type.caption,
-    fontWeight: "800",
+    fontWeight: "600",
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
   title: {
     color: setupTheme.color.foreground,
-    fontSize: setupTheme.type.title,
-    fontWeight: "900",
-    letterSpacing: -0.5,
-    lineHeight: 36,
+    fontSize: setupTheme.type.heading,
+    fontWeight: "600",
+    lineHeight: 28,
   },
   budgetRow: {
-    backgroundColor: setupTheme.color.surfaceMuted,
+    justifyContent: "space-between",
+    alignItems: "center",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    backgroundColor: setupTheme.color.accentSurface,
     borderColor: setupTheme.color.border,
     borderRadius: setupTheme.radius.control,
-    borderWidth: 1.5,
-    gap: 4,
-    padding: setupTheme.spacing.compact,
+    borderWidth: 0,
+    gap: setupTheme.spacing.compact,
+    padding: setupTheme.spacing.compact + setupTheme.spacing.tight,
   },
   budgetKicker: {
     color: setupTheme.color.muted,
     fontSize: setupTheme.type.caption,
-    fontWeight: "800",
+    fontWeight: "600",
   },
   budgetAmount: {
-    color: setupTheme.color.foreground,
+    color: setupTheme.color.primary,
     fontSize: setupTheme.type.heading,
-    fontWeight: "900",
+    fontWeight: "700",
   },
   areaRow: {
+    flexWrap: "wrap",
     gap: 4,
   },
   areaLabel: {
     color: setupTheme.color.muted,
     fontSize: setupTheme.type.label,
-    fontWeight: "800",
+    fontWeight: "600",
   },
   areaValue: {
     color: setupTheme.color.foreground,
@@ -585,15 +659,15 @@ const styles = StyleSheet.create({
   },
   descriptionSection: {
     borderTopColor: setupTheme.color.borderSoft,
-    borderTopWidth: 1,
+    borderTopWidth: 0,
     gap: setupTheme.spacing.compact,
-    paddingTop: setupTheme.spacing.section,
+    paddingTop: 0,
   },
   sectionHeader: {
-    color: setupTheme.color.muted,
-    fontSize: setupTheme.type.label,
-    fontWeight: "900",
-    letterSpacing: 0.8,
+    lineHeight: 24,
+    color: setupTheme.color.primary,
+    fontSize: setupTheme.type.section,
+    fontWeight: "600",
   },
   descriptionText: {
     color: setupTheme.color.foreground,
@@ -602,14 +676,15 @@ const styles = StyleSheet.create({
   },
   assignmentCard: {
     ...setupTheme.shadow.card,
-    backgroundColor: setupTheme.color.readySurface,
-    borderColor: setupTheme.color.ready,
+    backgroundColor: setupTheme.color.surface,
+    borderColor: setupTheme.color.border,
     borderRadius: setupTheme.radius.card,
-    borderWidth: 2,
+    borderWidth: 1,
     gap: setupTheme.spacing.compact,
     padding: setupTheme.spacing.section,
   },
   assignmentHeaderRow: {
+    flexWrap: "wrap",
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
@@ -617,8 +692,7 @@ const styles = StyleSheet.create({
   assignmentKicker: {
     color: setupTheme.color.ready,
     fontSize: setupTheme.type.label,
-    fontWeight: "900",
-    letterSpacing: 0.8,
+    fontWeight: "700",
   },
   assignmentStatusBadge: {
     backgroundColor: setupTheme.color.surface,
@@ -626,15 +700,16 @@ const styles = StyleSheet.create({
     borderRadius: setupTheme.radius.status,
     borderWidth: 1,
     color: setupTheme.color.ready,
-    fontSize: 10,
-    fontWeight: "900",
+    fontSize: setupTheme.type.caption,
+    fontWeight: "700",
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
   assignmentTitle: {
+    lineHeight: 24,
     color: setupTheme.color.foreground,
-    fontSize: setupTheme.type.heading,
-    fontWeight: "900",
+    fontSize: setupTheme.type.cardTitle,
+    fontWeight: "600",
   },
   assignmentAmount: {
     color: setupTheme.color.foreground,
@@ -651,13 +726,14 @@ const styles = StyleSheet.create({
     gap: setupTheme.spacing.compact,
   },
   applicantsHeaderRow: {
+    flexWrap: "wrap",
     paddingHorizontal: 4,
   },
   emptyApplicantsCard: {
     backgroundColor: setupTheme.color.surface,
     borderColor: setupTheme.color.borderSoft,
     borderRadius: setupTheme.radius.control,
-    borderWidth: 1.5,
+    borderWidth: 1,
     padding: setupTheme.spacing.section,
   },
   emptyApplicantsText: {
@@ -673,19 +749,21 @@ const styles = StyleSheet.create({
     backgroundColor: setupTheme.color.surface,
     borderColor: setupTheme.color.border,
     borderRadius: setupTheme.radius.control,
-    borderWidth: 2,
-    gap: setupTheme.spacing.compact,
+    borderWidth: 1,
+    gap: setupTheme.spacing.compact + setupTheme.spacing.tight,
     padding: setupTheme.spacing.section,
   },
   applicantTopRow: {
+    flexWrap: "wrap",
     alignItems: "flex-start",
     flexDirection: "row",
     justifyContent: "space-between",
   },
   applicantName: {
+    lineHeight: 24,
     color: setupTheme.color.foreground,
-    fontSize: setupTheme.type.body,
-    fontWeight: "900",
+    fontSize: setupTheme.type.cardTitle,
+    fontWeight: "600",
   },
   applicantArea: {
     color: setupTheme.color.muted,
@@ -695,8 +773,8 @@ const styles = StyleSheet.create({
   applicantStatusBadge: {
     borderRadius: setupTheme.radius.status,
     borderWidth: 1,
-    fontSize: 10,
-    fontWeight: "900",
+    fontSize: setupTheme.type.caption,
+    fontWeight: "700",
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
@@ -721,78 +799,90 @@ const styles = StyleSheet.create({
     color: setupTheme.color.muted,
   },
   applicantMessageBox: {
-    backgroundColor: setupTheme.color.surfaceMuted,
+    backgroundColor: setupTheme.color.background,
     borderColor: setupTheme.color.borderSoft,
-    borderRadius: setupTheme.radius.small,
-    borderWidth: 1,
-    padding: setupTheme.spacing.compact,
+    borderRadius: setupTheme.radius.control,
+    borderWidth: 0,
+    padding: setupTheme.spacing.compact + setupTheme.spacing.tight,
   },
   applicantMessageText: {
     color: setupTheme.color.foreground,
-    fontSize: setupTheme.type.caption,
+    fontSize: setupTheme.type.body,
     fontStyle: "italic",
-    lineHeight: 18,
+    lineHeight: 22,
   },
   selectWorkerButton: {
+    paddingHorizontal: setupTheme.spacing.section,
+    minHeight: setupTheme.size.button,
+    borderColor: setupTheme.color.primary,
     alignItems: "center",
-    backgroundColor: setupTheme.color.foreground,
+    backgroundColor: setupTheme.color.primary,
     borderRadius: setupTheme.radius.control,
     justifyContent: "center",
     marginTop: 4,
     paddingVertical: setupTheme.spacing.compact,
   },
   selectWorkerButtonText: {
-    color: setupTheme.color.surface,
-    fontSize: setupTheme.type.caption,
-    fontWeight: "900",
+    textAlign: "center",
+    color: setupTheme.color.onPrimary,
+    fontSize: setupTheme.type.body,
+    fontWeight: "600",
   },
   viewAssignmentButton: {
+    paddingHorizontal: setupTheme.spacing.section,
+    minHeight: setupTheme.size.button,
+    borderColor: setupTheme.color.primary,
     alignItems: "center",
-    backgroundColor: setupTheme.color.foreground,
+    backgroundColor: setupTheme.color.primary,
     borderRadius: setupTheme.radius.control,
     justifyContent: "center",
     marginTop: setupTheme.spacing.compact,
     paddingVertical: setupTheme.spacing.compact,
   },
   viewAssignmentText: {
-    color: setupTheme.color.surface,
+    textAlign: "center",
+    color: setupTheme.color.onPrimary,
     fontSize: setupTheme.type.body,
-    fontWeight: "700",
+    fontWeight: "600",
   },
   actionCard: {
     ...setupTheme.shadow.card,
     backgroundColor: setupTheme.color.surface,
     borderColor: setupTheme.color.border,
     borderRadius: setupTheme.radius.card,
-    borderWidth: 2,
+    borderWidth: 1,
     gap: setupTheme.spacing.section,
     padding: setupTheme.spacing.section,
   },
   primaryAction: {
+    paddingHorizontal: setupTheme.spacing.section,
+    minHeight: setupTheme.size.button,
+    borderColor: setupTheme.color.primary,
     alignItems: "center",
-    backgroundColor: setupTheme.color.foreground,
+    backgroundColor: setupTheme.color.primary,
     borderRadius: setupTheme.radius.control,
     justifyContent: "center",
     paddingVertical: setupTheme.spacing.section,
   },
   primaryActionText: {
-    color: setupTheme.color.surface,
+    textAlign: "center",
+    color: setupTheme.color.onPrimary,
     fontSize: setupTheme.type.body,
-    fontWeight: "900",
+    fontWeight: "600",
   },
   dangerAction: {
     alignItems: "center",
     backgroundColor: setupTheme.color.dangerSurface,
     borderColor: setupTheme.color.danger,
     borderRadius: setupTheme.radius.control,
-    borderWidth: 2,
+    borderWidth: 1,
     justifyContent: "center",
     paddingVertical: setupTheme.spacing.section,
   },
   dangerActionText: {
     color: setupTheme.color.danger,
     fontSize: setupTheme.type.body,
-    fontWeight: "900",
+    fontWeight: "700",
   },
   terminalNotice: {
     alignItems: "center",

@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { setupTheme } from "../../setup/setupTheme";
+import { BrandLogo } from "@/shared/ui";
 
 type AuthBoundaryScreenProps = Readonly<{
   message: string;
@@ -15,6 +16,7 @@ export function AuthBoundaryScreen({
   return (
     <SafeAreaView style={styles.screen}>
       <View style={styles.content}>
+        <BrandLogo size={120} />
         <Text accessibilityRole="header" style={styles.title}>
           Do Well
         </Text>

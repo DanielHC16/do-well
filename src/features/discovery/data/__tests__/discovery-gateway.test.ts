@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/types/database.generated";
+import type { CacheStore } from "@/shared/persistence/cache-store";
 
 import { createDiscoveryGateway } from "../discovery-gateway";
 
@@ -10,10 +11,11 @@ jest.mock("@react-native-async-storage/async-storage", () => ({
   removeItem: jest.fn(),
 }));
 
-function createFakeSupabase() {
+function createFakeSupabase(status: "published" | "closed" = "published") {
   const fakeRow = {
     id: "81000000-0000-4000-8000-000000000001",
     employer_id: "80000000-0000-4000-8000-000000000001",
+    employer: { display_name: "Maya Santos" },
     title: "Makati House Deep Cleaning",
     description:
       "Deep clean master bedroom, kitchen counters, and mop living room tile floor.",
@@ -24,13 +26,20 @@ function createFakeSupabase() {
     public_longitude: 121.0244,
     budget_amount: 1200,
     currency: "PHP",
-    status: "published" as const,
+    status,
     distance_km: 2.8,
+    due_at: "2026-11-02T09:00:00.000Z",
+    application_deadline: "2026-11-01T09:00:00.000Z",
     published_at: "2026-10-25T01:00:00.000Z",
     created_at: "2026-10-25T00:00:00.000Z",
     reasons: ["Within 5 km of you", "Recently posted"],
   };
 
+  const readResult = jest
+    .fn()
+    .mockResolvedValue({ data: fakeRow, error: null });
+  const query = { eq: jest.fn(() => ({ maybeSingle: readResult })) };
+  const select = jest.fn(() => query);
   const client = {
     rpc: jest.fn(async (fnName: string, params: Record<string, unknown>) => {
       if (fnName === "discover_gigs") {
@@ -42,20 +51,164 @@ function createFakeSupabase() {
       return { data: null, error: new Error("Unknown RPC") };
     }),
     from: jest.fn(() => ({
-      select: jest.fn(() => ({
-        eq: jest.fn(() => ({
-          eq: jest.fn(() => ({
-            maybeSingle: jest.fn(async () => ({ data: fakeRow, error: null })),
-          })),
-        })),
-      })),
+      select,
     })),
   } as unknown as SupabaseClient<Database>;
 
-  return { client, fakeRow };
+  return { client, fakeRow, query, readResult, select };
 }
 
 describe("discovery gateway", () => {
+  it("reads only the employer display name through the verified gig relationship", async () => {
+    const { client, select } = createFakeSupabase();
+    const gig = await createDiscoveryGateway(client).getPublicGig(
+      "81000000-0000-4000-8000-000000000001",
+    );
+    expect(select).toHaveBeenCalledWith(
+      "*, employer:profiles!gigs_employer_id_fkey(display_name)",
+    );
+    expect(gig?.employerDisplayName).toBe("Maya Santos");
+  });
+
+  it("keeps the gig readable when the optional employer relation is absent", async () => {
+    const { client, fakeRow, readResult } = createFakeSupabase();
+    readResult.mockResolvedValue({
+      data: { ...fakeRow, employer: null },
+      error: null,
+    });
+    const gig = await createDiscoveryGateway(client).getPublicGig(fakeRow.id);
+    expect(gig?.title).toBe(fakeRow.title);
+    expect(gig?.employerDisplayName).toBeNull();
+  });
+  it.each(["permission", "other account", "wrong gig", "invalid payload"])(
+    "rejects a cached detail after %s boundary failure",
+    async (failure) => {
+      const { client, readResult } = createFakeSupabase("closed");
+      const cache: CacheStore = {
+        get: jest.fn(),
+        set: jest.fn(),
+        remove: jest.fn(),
+        purgeUser: jest.fn(),
+        clearAll: jest.fn(),
+      };
+      const gateway = createDiscoveryGateway(client, cache);
+      const gigId = "81000000-0000-4000-8000-000000000001";
+      const gig = await gateway.getPublicGig(gigId);
+      jest.mocked(cache.get).mockResolvedValue({
+        data:
+          failure === "wrong gig"
+            ? { ...gig, id: "81000000-0000-4000-8000-000000000002" }
+            : failure === "invalid payload"
+              ? { id: gigId }
+              : gig,
+        userId: failure === "other account" ? "worker-2" : "worker-1",
+        key: `gig:detail:${gigId}`,
+        version: 1,
+        cachedAt: "2026-10-31T00:00:00.000Z",
+        byteSize: 100,
+      });
+      const error =
+        failure === "permission"
+          ? { code: "42501", message: "permission denied" }
+          : { code: "", message: "Network request failed" };
+      readResult.mockResolvedValue({ data: null, error });
+      await expect(gateway.getPublicGig(gigId, "worker-1")).rejects.toEqual(
+        error,
+      );
+      if (failure === "permission") expect(cache.get).not.toHaveBeenCalled();
+    },
+  );
+
+  it("uses a validated same-user detail snapshot for network failure", async () => {
+    const { client, readResult } = createFakeSupabase("closed");
+    const cache: CacheStore = {
+      get: jest.fn(),
+      set: jest.fn(),
+      remove: jest.fn(),
+      purgeUser: jest.fn(),
+      clearAll: jest.fn(),
+    };
+    const gateway = createDiscoveryGateway(client, cache);
+    const gigId = "81000000-0000-4000-8000-000000000001";
+    const gig = await gateway.getPublicGig(gigId);
+    jest.mocked(cache.get).mockResolvedValue({
+      data: gig,
+      userId: "worker-1",
+      key: `gig:detail:${gigId}`,
+      version: 1,
+      cachedAt: "2026-10-31T00:00:00.000Z",
+      byteSize: 100,
+    });
+    readResult.mockResolvedValue({
+      data: null,
+      error: { code: "", message: "Network request failed" },
+    });
+    await expect(gateway.getPublicGig(gigId, "worker-1")).resolves.toEqual(gig);
+    expect(cache.get).toHaveBeenCalledWith("worker-1", `gig:detail:${gigId}`);
+  });
+  it("never persists related gig details in a shared anonymous cache", async () => {
+    const { client } = createFakeSupabase("closed");
+    const cache: CacheStore = {
+      get: jest.fn(),
+      set: jest.fn(),
+      remove: jest.fn(),
+      purgeUser: jest.fn(),
+      clearAll: jest.fn(),
+    };
+    const gateway = createDiscoveryGateway(client, cache);
+    await gateway.getPublicGig("81000000-0000-4000-8000-000000000001");
+    expect(cache.set).not.toHaveBeenCalled();
+    await gateway.getPublicGig(
+      "81000000-0000-4000-8000-000000000001",
+      "worker-1",
+    );
+    expect(cache.set).toHaveBeenCalledWith(
+      "worker-1",
+      expect.stringContaining("gig:detail:"),
+      expect.objectContaining({ status: "closed" }),
+    );
+  });
+  it("allows RLS-authorized related closed gigs without applying a published-only filter", async () => {
+    const { client, query } = createFakeSupabase("closed");
+    const gig = await createDiscoveryGateway(client).getPublicGig(
+      "81000000-0000-4000-8000-000000000001",
+    );
+    expect(gig?.status).toBe("closed");
+    expect(query.eq).toHaveBeenCalledTimes(1);
+    expect(query.eq).toHaveBeenCalledWith(
+      "id",
+      "81000000-0000-4000-8000-000000000001",
+    );
+  });
+  it("partitions saved feeds by location and pagination to avoid showing unrelated nearby results offline", async () => {
+    const { client } = createFakeSupabase();
+    const cache: CacheStore = {
+      get: jest.fn(),
+      set: jest.fn().mockResolvedValue(undefined),
+      remove: jest.fn(),
+      purgeUser: jest.fn(),
+      clearAll: jest.fn(),
+    };
+    const gateway = createDiscoveryGateway(client, cache);
+    await gateway.discoverGigsWithMetadata(
+      { workerLatitude: 14.55, workerLongitude: 121.02 },
+      "worker-1",
+    );
+    await gateway.discoverGigsWithMetadata(
+      { workerLatitude: 14.6, workerLongitude: 121.03 },
+      "worker-1",
+    );
+    await gateway.discoverGigsWithMetadata(
+      { workerLatitude: 14.55, workerLongitude: 121.02, offset: 20 },
+      "worker-1",
+    );
+    await gateway.discoverGigsWithMetadata(
+      { workerLatitude: 14.55, workerLongitude: 121.02, limit: 10 },
+      "worker-1",
+    );
+    const savedKeys = jest.mocked(cache.set).mock.calls.map((call) => call[1]);
+    expect(new Set(savedKeys).size).toBe(4);
+  });
   it("calls discover_gigs RPC with mapped filter parameters", async () => {
     const { client } = createFakeSupabase();
     const gateway = createDiscoveryGateway(client);
@@ -122,6 +275,8 @@ describe("discovery gateway", () => {
     expect(gig).not.toBeNull();
     expect(gig?.id).toBe("81000000-0000-4000-8000-000000000001");
     expect(gig?.title).toBe("Makati House Deep Cleaning");
+    expect(gig?.dueAt).toBe("2026-11-02T09:00:00.000Z");
+    expect(gig?.applicationDeadline).toBe("2026-11-01T09:00:00.000Z");
   });
 
   it("writes to cache on successful discoverGigs call", async () => {

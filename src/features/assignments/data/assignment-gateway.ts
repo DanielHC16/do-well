@@ -102,6 +102,41 @@ export type AssignmentGateway = Readonly<{
   markActivityRead: (eventId: string) => Promise<ActivityEventRecord>;
 }>;
 
+function validateDetailIdentity(
+  data: unknown,
+  assignmentId: string,
+  userId?: string,
+): AssignmentDetail {
+  const detail = AssignmentDetailSchema.parse(data);
+  const { assignment, employer, worker, gig } = detail;
+  if (
+    assignment.id !== assignmentId ||
+    assignment.employerId !== employer.id ||
+    assignment.workerId !== worker.id ||
+    assignment.gigId !== gig.id ||
+    (userId !== undefined && userId !== employer.id && userId !== worker.id)
+  ) {
+    throw new Error("Assignment identity mismatch.");
+  }
+  return detail;
+}
+
+function isTransientReadFailure(error: unknown): boolean {
+  if (typeof error !== "object" || error === null) return false;
+  // Explicit database/Auth/PostgREST errors cannot authorize an offline read.
+  if ("code" in error && error.code !== undefined && error.code !== "")
+    return false;
+  if ("status" in error && (error.status === 401 || error.status === 403))
+    return false;
+  return (
+    "message" in error &&
+    typeof error.message === "string" &&
+    /network|failed to fetch|fetch failed|timeout|timed out|connection lost/i.test(
+      error.message,
+    )
+  );
+}
+
 export function createAssignmentGateway(
   client: SupabaseClient<Database>,
   cache: CacheStore = cacheStore,
@@ -210,45 +245,55 @@ export function createAssignmentGateway(
       assignmentId: string,
       userId?: string,
     ): Promise<AssignmentDetailResult> {
-      const safeUser = userId || "anonymous";
       const cacheKey = `assignment:detail:${assignmentId}`;
 
+      async function cachedReadOrThrow(
+        error: unknown,
+      ): Promise<AssignmentDetailResult> {
+        // Private records are never persisted/read without an explicit identity.
+        if (userId && isTransientReadFailure(error)) {
+          try {
+            const cached = await cache.get<unknown>(userId, cacheKey);
+            if (cached?.userId === userId) {
+              return {
+                detail: validateDetailIdentity(
+                  cached.data,
+                  assignmentId,
+                  userId,
+                ),
+                isFromCache: true,
+                cachedAt: cached.cachedAt,
+              };
+            }
+          } catch {
+            // Corrupt, mismatched, or inaccessible snapshots fail closed.
+          }
+        }
+        throw new Error(
+          "Assignment details could not be loaded. Check your connection or access and try again.",
+        );
+      }
+
+      let result: Readonly<{ data: unknown; error: unknown }>;
       try {
-        const { data, error } = await client.rpc("get_assignment_detail", {
+        result = await client.rpc("get_assignment_detail", {
           p_assignment_id: assignmentId,
         });
-
-        if (error) {
-          throw new Error(error.message);
-        }
-
-        if (!data) {
-          throw new Error("Assignment details not found.");
-        }
-
-        const parsed = AssignmentDetailSchema.parse(data);
-        try {
-          await cache.set(safeUser, cacheKey, parsed);
-        } catch {
-          // Best effort
-        }
-
-        return { detail: parsed, isFromCache: false, cachedAt: null };
-      } catch (err) {
-        try {
-          const cached = await cache.get<AssignmentDetail>(safeUser, cacheKey);
-          if (cached?.data) {
-            return {
-              detail: cached.data,
-              isFromCache: true,
-              cachedAt: cached.cachedAt,
-            };
-          }
-        } catch {
-          // Best effort
-        }
-        throw err;
+      } catch (error) {
+        return cachedReadOrThrow(error);
       }
+      if (result.error) return cachedReadOrThrow(result.error);
+      if (!result.data) throw new Error("Assignment details not found.");
+
+      const parsed = validateDetailIdentity(result.data, assignmentId, userId);
+      if (userId) {
+        try {
+          await cache.set(userId, cacheKey, parsed);
+        } catch {
+          // Best effort
+        }
+      }
+      return { detail: parsed, isFromCache: false, cachedAt: null };
     },
 
     async getAssignmentDetail(

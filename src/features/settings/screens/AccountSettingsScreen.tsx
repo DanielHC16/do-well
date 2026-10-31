@@ -1,12 +1,7 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
+import { Text } from "@/shared/ui/Typography";
 
 import type { AuthProfile } from "@/features/auth/model/auth-state";
 import { setupTheme } from "@/features/setup/setupTheme";
@@ -16,6 +11,8 @@ import {
 } from "@/features/shell/components/MarketplaceShell";
 import { useShellMode } from "@/features/shell/context/useShellMode";
 import type { ShellMode } from "@/features/shell/model/shell-mode";
+import { ProfileAvatar } from "@/shared/ui";
+import { AppIcon } from "@/shared/ui/AppIcon";
 
 export type AccountCapabilities = Readonly<{ isAdmin: boolean }>;
 
@@ -68,15 +65,21 @@ export function AccountSettingsScreen({
   return (
     <MarketplaceShell
       activeSection="profile"
-      subtitle="Manage how you work, what the app can access, and the account signed in on this device."
+      subtitle="Your workspace preferences, privacy, and account."
       title="Account settings"
     >
       <View style={marketplaceStyles.card}>
-        <Text style={marketplaceStyles.cardKicker}>SIGNED-IN IDENTITY</Text>
-        <Text style={marketplaceStyles.cardTitle}>{profile.displayName}</Text>
-        <Text style={marketplaceStyles.body}>
-          {profile.homeArea ?? "Public home area not set"}
-        </Text>
+        <View style={styles.identityRow}>
+          <ProfileAvatar name={profile.displayName} size={40} />
+          <View style={styles.identityCopy}>
+            <Text style={marketplaceStyles.cardTitle}>
+              {profile.displayName}
+            </Text>
+            <Text style={marketplaceStyles.body}>
+              {profile.homeArea ?? "Public home area not set"}
+            </Text>
+          </View>
+        </View>
         {capabilities.isAdmin ? (
           <View style={styles.adminBadge}>
             <Text style={styles.adminBadgeText}>Platform administrator</Text>
@@ -87,8 +90,7 @@ export function AccountSettingsScreen({
       <View style={marketplaceStyles.card}>
         <Text style={styles.sectionTitle}>Default workspace</Text>
         <Text style={marketplaceStyles.body}>
-          Choose where DO-WELL opens. You can still use both sides of the
-          marketplace at any time.
+          Choose where Do Well opens. You can switch workspaces anytime.
         </Text>
         <View accessibilityRole="radiogroup" style={styles.optionList}>
           <WorkspaceOption
@@ -128,12 +130,14 @@ export function AccountSettingsScreen({
 
       <View style={styles.summaryGrid}>
         <View style={styles.summaryCard}>
+          <AppIcon name="bell" size={20} color={setupTheme.color.primary} />
           <Text style={styles.summaryTitle}>Notifications</Text>
           <Text style={styles.summaryText}>
             Local activity alerts can be enabled from Activity.
           </Text>
         </View>
         <View style={styles.summaryCard}>
+          <AppIcon name="shield" size={20} color={setupTheme.color.primary} />
           <Text style={styles.summaryTitle}>Location & privacy</Text>
           <Text style={styles.summaryText}>
             Location is requested only while finding nearby work. Exact
@@ -146,8 +150,7 @@ export function AccountSettingsScreen({
         <View style={styles.adminCard}>
           <Text style={styles.adminTitle}>Admin Console</Text>
           <Text style={styles.adminBody}>
-            Review marketplace reports and see operational activity protected by
-            server authorization.
+            Review marketplace reports and recent platform activity.
           </Text>
           <Pressable
             accessibilityLabel="Open Admin Console"
@@ -227,59 +230,66 @@ function WorkspaceOption({
 }
 
 const styles = StyleSheet.create({
+  identityRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: setupTheme.spacing.compact,
+  },
+  identityCopy: { flex: 1, gap: setupTheme.spacing.tight },
   adminBadge: {
     alignSelf: "flex-start",
-    backgroundColor: setupTheme.color.highlight,
+    backgroundColor: setupTheme.color.accentSurface,
     borderColor: setupTheme.color.foreground,
     borderRadius: setupTheme.radius.status,
-    borderWidth: 1,
+    borderWidth: 0,
     paddingHorizontal: setupTheme.spacing.compact,
     paddingVertical: setupTheme.spacing.tight,
   },
   adminBadgeText: {
-    color: setupTheme.color.foreground,
+    color: setupTheme.color.primary,
     fontSize: setupTheme.type.caption,
-    fontWeight: "900",
+    fontWeight: "600",
   },
   sectionTitle: {
-    color: setupTheme.color.foreground,
-    fontSize: setupTheme.type.heading,
-    fontWeight: "900",
+    lineHeight: 24,
+    color: setupTheme.color.primary,
+    fontSize: setupTheme.type.section,
+    fontWeight: "600",
   },
   optionList: { gap: setupTheme.spacing.compact },
   option: {
     alignItems: "center",
-    backgroundColor: setupTheme.color.surfaceMuted,
-    borderColor: setupTheme.color.borderSoft,
+    backgroundColor: setupTheme.color.background,
+    borderColor: setupTheme.color.border,
     borderRadius: setupTheme.radius.control,
     borderWidth: 1,
     flexDirection: "row",
     gap: setupTheme.spacing.compact,
     minHeight: 64,
-    padding: setupTheme.spacing.compact,
+    padding: setupTheme.spacing.compact + setupTheme.spacing.tight,
   },
   optionSelected: {
-    backgroundColor: setupTheme.color.highlightSurface,
-    borderColor: setupTheme.color.foreground,
-    borderWidth: 2,
+    backgroundColor: setupTheme.color.accentSurface,
+    borderColor: setupTheme.color.secondary,
+    borderWidth: 1,
   },
   radio: {
     borderColor: setupTheme.color.foreground,
     borderRadius: setupTheme.radius.status,
-    borderWidth: 2,
+    borderWidth: 1,
     height: 20,
     width: 20,
   },
   radioSelected: {
-    backgroundColor: setupTheme.color.foreground,
-    borderColor: setupTheme.color.highlight,
+    backgroundColor: setupTheme.color.primary,
+    borderColor: setupTheme.color.accentSurface,
     borderWidth: 5,
   },
   optionCopy: { flex: 1, gap: setupTheme.spacing.tight },
   optionTitle: {
     color: setupTheme.color.foreground,
     fontSize: setupTheme.type.body,
-    fontWeight: "900",
+    fontWeight: "700",
   },
   optionDescription: {
     color: setupTheme.color.muted,
@@ -295,21 +305,27 @@ const styles = StyleSheet.create({
     color: setupTheme.color.muted,
     fontSize: setupTheme.type.caption,
   },
-  successText: { color: setupTheme.color.ready, fontWeight: "800" },
-  errorText: { color: setupTheme.color.danger, fontWeight: "800" },
-  summaryGrid: { gap: setupTheme.spacing.compact },
+  successText: { color: setupTheme.color.ready, fontWeight: "600" },
+  errorText: { color: setupTheme.color.danger, fontWeight: "600" },
+  summaryGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: setupTheme.spacing.compact,
+  },
   summaryCard: {
+    flex: 1,
+    flexBasis: 150,
     backgroundColor: setupTheme.color.surface,
-    borderColor: setupTheme.color.borderSoft,
+    borderColor: setupTheme.color.border,
     borderRadius: setupTheme.radius.control,
     borderWidth: 1,
-    gap: setupTheme.spacing.tight,
+    gap: setupTheme.spacing.compact,
     padding: setupTheme.spacing.section,
   },
   summaryTitle: {
     color: setupTheme.color.foreground,
     fontSize: setupTheme.type.body,
-    fontWeight: "900",
+    fontWeight: "700",
   },
   summaryText: {
     color: setupTheme.color.muted,
@@ -318,20 +334,20 @@ const styles = StyleSheet.create({
   },
   adminCard: {
     ...setupTheme.shadow.card,
-    backgroundColor: setupTheme.color.foreground,
-    borderColor: setupTheme.color.highlight,
+    backgroundColor: setupTheme.color.accentSurface,
+    borderColor: setupTheme.color.border,
     borderRadius: setupTheme.radius.card,
-    borderWidth: 3,
+    borderWidth: 1,
     gap: setupTheme.spacing.compact,
     padding: setupTheme.spacing.section,
   },
   adminTitle: {
-    color: setupTheme.color.highlight,
-    fontSize: setupTheme.type.heading,
-    fontWeight: "900",
+    color: setupTheme.color.primary,
+    fontSize: setupTheme.type.section,
+    fontWeight: "600",
   },
   adminBody: {
-    color: setupTheme.color.surface,
+    color: setupTheme.color.muted,
     fontSize: setupTheme.type.body,
     lineHeight: 22,
   },
@@ -339,14 +355,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderColor: setupTheme.color.danger,
     borderRadius: setupTheme.radius.control,
-    borderWidth: 2,
+    borderWidth: 1,
     justifyContent: "center",
     minHeight: 52,
   },
   signOutText: {
     color: setupTheme.color.danger,
     fontSize: setupTheme.type.body,
-    fontWeight: "900",
+    fontWeight: "700",
   },
   disabled: { opacity: 0.5 },
 });

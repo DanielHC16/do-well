@@ -32,6 +32,7 @@ export type DiscoveryFilters = z.infer<typeof DiscoveryFiltersSchema>;
 export const DiscoveryGigCardSchema = z.object({
   id: z.string().uuid(),
   employerId: z.string().uuid(),
+  employerDisplayName: z.string().trim().min(1).max(80).nullable().optional(),
   title: z.string().trim().min(1),
   description: z.string().trim().min(1),
   category: z.enum(GIG_CATEGORIES),
@@ -45,6 +46,12 @@ export const DiscoveryGigCardSchema = z.object({
   distanceKm: z.number().nullable(),
   publishedAt: z.string().datetime({ offset: true }).nullable(),
   createdAt: z.string().datetime({ offset: true }),
+  dueAt: z.string().datetime({ offset: true }).nullable().optional(),
+  applicationDeadline: z
+    .string()
+    .datetime({ offset: true })
+    .nullable()
+    .optional(),
   reasons: z.array(z.string()).default([]),
 });
 

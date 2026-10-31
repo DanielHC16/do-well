@@ -18,6 +18,82 @@ jest.mock("@react-native-async-storage/async-storage", () => ({
   removeItem: jest.fn(async () => undefined),
 }));
 
+it("shows a recoverable milestone failure instead of claiming no milestones exist", async () => {
+  const gateway = createMockGateway();
+  jest
+    .mocked(gateway.listMilestones)
+    .mockRejectedValueOnce(new Error("offline"));
+  const view = await render(
+    <WorkerAssignmentDetailScreen
+      assignmentId={mockAssignmentDetail.assignment.id}
+      gateway={gateway}
+      submissionsGateway={createMockSubmissionsGateway()}
+    />,
+  );
+  await waitFor(() =>
+    expect(
+      view.getByText(
+        "Milestones or submissions could not be loaded. Try again.",
+      ),
+    ).toBeVisible(),
+  );
+  expect(view.queryByText(/No structured milestones/)).toBeNull();
+  await fireEvent.press(
+    view.getByRole("button", { name: "Retry work details" }),
+  );
+  await waitFor(() =>
+    expect(view.getByText(/No structured milestones/)).toBeVisible(),
+  );
+});
+
+it("passes the authenticated identity to private assignment reads", async () => {
+  const gateway = createMockGateway();
+  await render(
+    <WorkerAssignmentDetailScreen
+      assignmentId={mockAssignmentDetail.assignment.id}
+      userId={mockAssignmentDetail.worker.id}
+      gateway={gateway}
+      submissionsGateway={createMockSubmissionsGateway()}
+    />,
+  );
+  await waitFor(() =>
+    expect(gateway.getAssignmentDetail).toHaveBeenCalledWith(
+      mockAssignmentDetail.assignment.id,
+      mockAssignmentDetail.worker.id,
+    ),
+  );
+});
+
+it("shows approved progress excluding cancelled milestones and the real deadline", async () => {
+  const detail: AssignmentDetail = {
+    ...mockAssignmentDetail,
+    assignment: {
+      ...mockAssignmentDetail.assignment,
+      dueAt: "2026-11-04T09:00:00.000Z",
+    },
+  };
+  const milestones: MilestoneRecord[] = [
+    { ...mockMilestone, status: "approved", dueAt: "2026-11-03T09:00:00.000Z" },
+    {
+      ...mockMilestone,
+      id: "94000000-0000-4000-8000-000000000002",
+      status: "cancelled",
+    },
+  ];
+  const view = await render(
+    <WorkerAssignmentDetailScreen
+      assignmentId={detail.assignment.id}
+      gateway={createMockGateway(detail, milestones)}
+      submissionsGateway={createMockSubmissionsGateway()}
+    />,
+  );
+  await waitFor(() =>
+    expect(view.getByText("1 of 1 milestones approved")).toBeVisible(),
+  );
+  expect(view.getByText(/Work deadline:/)).toBeVisible();
+  expect(view.getByText(/Milestone deadline:/)).toBeVisible();
+});
+
 jest.mock("@/features/submissions/data/submission-gateway", () => ({
   submissionGateway: {
     submitAssignmentWork: jest.fn(async () => ({
@@ -240,7 +316,7 @@ describe("WorkerAssignmentDetailScreen", () => {
       expect(view.getByText("Office Desk Assembly")).toBeVisible();
       expect(view.getByText("Elena Employer")).toBeVisible();
       expect(view.getByText("₱2,500")).toBeVisible();
-      expect(view.getByText("REVIEW AND CONFIRM")).toBeVisible();
+      expect(view.getByText("Review and confirm")).toBeVisible();
       expect(view.getByText("Accept Agreement")).toBeVisible();
       expect(view.getByText("Decline")).toBeVisible();
     });
@@ -350,7 +426,7 @@ describe("WorkerAssignmentDetailScreen", () => {
     );
 
     await waitFor(() => {
-      expect(view.getByText("SUBMIT COMPLETED WORK")).toBeVisible();
+      expect(view.getByText("Submit completed work")).toBeVisible();
       expect(view.getByText("Submit Work for Review")).toBeVisible();
     });
 
@@ -397,7 +473,7 @@ describe("WorkerAssignmentDetailScreen", () => {
     );
 
     await waitFor(() => {
-      expect(view.getAllByText("REVISION REQUESTED")[0]).toBeVisible();
+      expect(view.getAllByText("Revision requested")[0]).toBeVisible();
       expect(
         view.getByText('"Desk 3 has loose screws. Please tighten."'),
       ).toBeVisible();
@@ -425,7 +501,7 @@ describe("WorkerAssignmentDetailScreen", () => {
     );
 
     await waitFor(() => {
-      expect(view.getByText("WORK SUBMITTED · UNDER REVIEW")).toBeVisible();
+      expect(view.getByText("Work submitted · under review")).toBeVisible();
       expect(
         view.getByText(
           '"All desks assembled and arranged in conference room."',
@@ -459,7 +535,7 @@ describe("WorkerAssignmentDetailScreen", () => {
     );
 
     await waitFor(() => {
-      expect(view.getByText("CONTRACT COMPLETED")).toBeVisible();
+      expect(view.getByText("Contract completed")).toBeVisible();
       expect(view.getByText('"Verified and accepted."')).toBeVisible();
     });
   });
