@@ -1,7 +1,15 @@
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
-import { Text } from "@/shared/ui/Typography";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
+
+import {
+  EmptyState,
+  ErrorState,
+  IconButton,
+  PressableScale,
+  Skeleton,
+  Txt,
+} from "@/components/ui";
 
 import {
   assignmentGateway,
@@ -15,10 +23,17 @@ import {
   notificationService,
   type NotificationService,
 } from "@/features/notifications";
-import { setupTheme } from "@/features/setup/setupTheme";
-import { EmptyState, ErrorState, LoadingSkeleton } from "@/shared/ui";
-import { AppIcon } from "@/shared/ui/AppIcon";
+import { useConnectivity } from "@/features/connectivity/context/ConnectivityProvider";
 import { useShellMode } from "@/features/shell/context/useShellMode";
+import { invalidateUnreadActivity } from "@/features/shell/context/useUnreadActivity";
+import { classifyLoadError, type LoadErrorKind } from "@/shared/api/load-error";
+import {
+  formatShortDate,
+  formatTime,
+  formatUpdatedAt,
+} from "@/shared/format/format";
+import { AppIcon, type AppIconName } from "@/shared/ui/AppIcon";
+import { palette, radius, size, space, status, type StatusTone } from "@/theme";
 
 import { MarketplaceShell } from "./MarketplaceShell";
 
@@ -152,6 +167,101 @@ function formatEventDescription(event: ActivityEventRecord): string {
   }
 }
 
+type EventStyle = Readonly<{ icon: AppIconName; tone: StatusTone }>;
+
+const EVENT_STYLES: Readonly<Record<string, EventStyle>> = {
+  gig_application_received: { icon: "file", tone: "info" },
+  gig_application_withdrawn: { icon: "close", tone: "neutral" },
+  gig_applicant_selected: { icon: "check", tone: "success" },
+  assignment_confirmed: { icon: "check", tone: "success" },
+  assignment_declined: { icon: "close", tone: "danger" },
+  assignment_cancelled: { icon: "close", tone: "danger" },
+  milestone_created: { icon: "flag", tone: "info" },
+  milestone_started: { icon: "clock", tone: "info" },
+  work_submitted: { icon: "file", tone: "warning" },
+  revision_requested: { icon: "edit", tone: "danger" },
+  assignment_completed: { icon: "check", tone: "success" },
+};
+
+function eventStyle(eventType: string): EventStyle {
+  return EVENT_STYLES[eventType] ?? { icon: "bell", tone: "info" };
+}
+
+function isToday(iso: string, now: Date = new Date()): boolean {
+  const date = new Date(iso);
+  return (
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate()
+  );
+}
+
+/** Splits newest-first events into Today / Earlier groups (empty groups omitted). */
+export function groupActivity(
+  events: readonly ActivityEventRecord[],
+  now: Date = new Date(),
+): { title: string; events: ActivityEventRecord[] }[] {
+  const today = events.filter((event) => isToday(event.createdAt, now));
+  const earlier = events.filter((event) => !isToday(event.createdAt, now));
+  return [
+    { title: "Today", events: today },
+    { title: "Earlier", events: earlier },
+  ].filter((group) => group.events.length > 0);
+}
+
+// Session-scoped so the banner stays dismissed across tab switches.
+const dismissedAlertBanners = new Set<string>();
+
+function ActivityRow({
+  event,
+  showDivider,
+  onPress,
+}: Readonly<{
+  event: ActivityEventRecord;
+  showDivider: boolean;
+  onPress: (event: ActivityEventRecord) => void;
+}>) {
+  const unread = event.readAt === null;
+  const { icon, tone } = eventStyle(event.eventType);
+  const colors = status[tone];
+  const time = isToday(event.createdAt)
+    ? formatTime(event.createdAt)
+    : formatShortDate(event.createdAt);
+  return (
+    <PressableScale
+      accessibilityLabel={`${unread ? "Unread. " : ""}${formatEventTitle(event)}. ${formatEventDescription(event)}`}
+      accessibilityRole="button"
+      accessibilityHint={
+        event.assignmentId ? "Opens the task agreement." : undefined
+      }
+      onPress={() => onPress(event)}
+      style={[styles.row, showDivider && styles.divider]}
+    >
+      <View style={[styles.iconCircle, { backgroundColor: colors.bg }]}>
+        <AppIcon name={icon} size={size.iconSmall} color={colors.fg} />
+      </View>
+      <View style={styles.rowCopy}>
+        <View style={styles.rowTop}>
+          <Txt
+            variant={unread ? "bodyStrong" : "body"}
+            numberOfLines={1}
+            style={styles.rowTitle}
+          >
+            {formatEventTitle(event)}
+          </Txt>
+          <Txt variant="micro" tone="secondary">
+            {time}
+          </Txt>
+        </View>
+        <Txt variant="caption" tone="secondary" numberOfLines={2}>
+          {formatEventDescription(event)}
+        </Txt>
+      </View>
+      {unread ? <View style={styles.unreadDot} /> : null}
+    </PressableScale>
+  );
+}
+
 export function AuthenticatedActivityScreen({
   userId,
   gateway = assignmentGateway,
@@ -160,14 +270,20 @@ export function AuthenticatedActivityScreen({
 }: AuthenticatedActivityScreenProps) {
   const router = useRouter();
   const { mode } = useShellMode();
+  const { reportRequestOutcome } = useConnectivity();
   const [events, setEvents] = useState<ActivityEventRecord[]>([]);
   const [settledRequest, setSettledRequest] = useState<string | null>(null);
   const [reload, setReload] = useState(0);
   const requestKey = `${userId}:${reload}`;
   const busy = settledRequest !== requestKey;
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorKind, setErrorKind] = useState<LoadErrorKind | null>(null);
+  const [updatedAt, setUpdatedAt] = useState<string | null>(null);
+  const [pulling, setPulling] = useState(false);
   const [alertsEnabled, setAlertsEnabled] = useState(false);
   const [alertsBusy, setAlertsBusy] = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(() =>
+    dismissedAlertBanners.has(userId),
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -192,21 +308,26 @@ export function AuthenticatedActivityScreen({
       .then((data) => {
         if (!mounted) return;
         setEvents(data);
-        setErrorMessage(null);
+        setErrorKind(null);
+        setUpdatedAt(new Date().toISOString());
+        reportRequestOutcome("ok");
       })
-      .catch(() => {
+      .catch((cause: unknown) => {
         if (!mounted) return;
-        setErrorMessage("We couldn't load your activity. Try again.");
+        const kind = classifyLoadError(cause);
+        reportRequestOutcome(kind);
+        setErrorKind(kind);
       })
       .finally(() => {
         if (!mounted) return;
         setSettledRequest(requestKey);
+        setPulling(false);
       });
 
     return () => {
       mounted = false;
     };
-  }, [gateway, requestKey]);
+  }, [gateway, requestKey, reportRequestOutcome]);
 
   useEffect(() => {
     if (!alertsEnabled || busy) return;
@@ -252,11 +373,17 @@ export function AuthenticatedActivityScreen({
     }
   }
 
+  function dismissBanner() {
+    dismissedAlertBanners.add(userId);
+    setBannerDismissed(true);
+  }
+
   async function handlePressEvent(event: ActivityEventRecord) {
     if (event.readAt === null) {
       try {
         const updated = await gateway.markActivityRead(event.id);
         setEvents((prev) => prev.map((e) => (e.id === event.id ? updated : e)));
+        invalidateUnreadActivity(userId);
       } catch {
         // Optimistic / non-blocking
       }
@@ -271,246 +398,166 @@ export function AuthenticatedActivityScreen({
     }
   }
 
+  const groups = groupActivity(events);
+
   return (
     <MarketplaceShell
       activeSection="activity"
-      compactHeader
-      subtitle="Applications, work updates, and decisions in one place."
       title="Activity"
+      refreshing={pulling}
+      onRefresh={() => {
+        setPulling(true);
+        setReload((value) => value + 1);
+      }}
     >
-      <View style={styles.listHeader}>
-        <Text accessibilityRole="header" style={styles.listTitle}>
-          Recent activity
-        </Text>
-        <Pressable
-          accessibilityLabel="Refresh activity"
-          accessibilityRole="button"
-          accessibilityState={{ busy, disabled: busy }}
-          disabled={busy}
-          onPress={() => setReload((value) => value + 1)}
-          style={styles.refreshButton}
-        >
-          {busy ? (
-            <ActivityIndicator color={setupTheme.color.primary} />
-          ) : (
-            <AppIcon name="refresh" size={20} />
-          )}
-        </Pressable>
-      </View>
-      {busy ? (
-        <LoadingSkeleton label="Loading activity…" />
-      ) : errorMessage ? (
-        <ErrorState
-          message={errorMessage}
-          onRetry={() => setReload((value) => value + 1)}
-        />
-      ) : events.length === 0 ? (
-        <EmptyState
-          kind="activity"
-          title="No activity yet"
-          message="Your application and work updates appear here."
-        />
-      ) : (
-        <View style={styles.eventList}>
-          {events.map((event) => {
-            const isUnread = event.readAt === null;
-            return (
-              <Pressable
-                accessibilityLabel={`${isUnread ? "Unread. " : ""}${formatEventTitle(event)}. ${formatEventDescription(event)}`}
-                accessibilityRole="button"
-                accessibilityHint={
-                  event.assignmentId ? "Opens the task agreement." : undefined
-                }
-                key={event.id}
-                onPress={() => void handlePressEvent(event)}
-                style={[styles.eventCard, isUnread && styles.unreadEventCard]}
-              >
-                <View style={styles.eventIcon}>
-                  <AppIcon
-                    name={event.assignmentId ? "briefcase" : "bell"}
-                    size={20}
-                    color={setupTheme.color.primary}
-                  />
-                </View>
-                <View style={styles.eventContent}>
-                  <View style={styles.eventTopRow}>
-                    <View style={styles.eventBadgeGroup}>
-                      {isUnread ? (
-                        <View style={styles.newPill}>
-                          <Text style={styles.newPillText}>New</Text>
-                        </View>
-                      ) : null}
-                      <Text style={styles.eventTitle}>
-                        {formatEventTitle(event)}
-                      </Text>
-                    </View>
-                    <Text style={styles.eventTime}>
-                      {new Date(event.createdAt).toLocaleDateString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </Text>
-                  </View>
-                  <Text style={styles.eventDescription}>
-                    {formatEventDescription(event)}
-                  </Text>
-                </View>
-              </Pressable>
-            );
-          })}
-        </View>
-      )}
-      {!alertsEnabled ? (
-        <View style={styles.alertBanner}>
-          <AppIcon name="bell" size={20} />
-          <View style={styles.alertCopy}>
-            <Text style={styles.alertTitle}>Device alerts</Text>
-            <Text style={styles.alertDescription}>
-              Optional work notifications.
-            </Text>
+      {!alertsEnabled && !bannerDismissed ? (
+        <View style={styles.banner}>
+          <View style={styles.bannerIcon}>
+            <AppIcon name="bell" size={size.iconSmall} color={palette.navy} />
           </View>
-          <Pressable
+          <View style={styles.bannerCopy}>
+            <Txt variant="caption" style={styles.bannerTitle}>
+              Turn on device alerts
+            </Txt>
+            <Txt variant="micro" tone="secondary">
+              Optional work updates.
+            </Txt>
+          </View>
+          <PressableScale
             accessibilityLabel="Enable local activity alerts"
             accessibilityRole="button"
             accessibilityState={{ busy: alertsBusy, disabled: alertsBusy }}
             disabled={alertsBusy}
             onPress={() => void handleEnableAlerts()}
-            style={styles.alertAction}
+            style={styles.bannerAction}
           >
             {alertsBusy ? (
-              <ActivityIndicator color={setupTheme.color.primary} />
-            ) : null}
-            <Text style={styles.alertActionText}>Enable</Text>
-          </Pressable>
+              <ActivityIndicator color={palette.purple} />
+            ) : (
+              <Txt variant="caption" style={styles.bannerActionText}>
+                Enable
+              </Txt>
+            )}
+          </PressableScale>
+          <IconButton
+            icon="close"
+            variant="muted"
+            accessibilityLabel="Dismiss device alerts suggestion"
+            onPress={dismissBanner}
+          />
         </View>
       ) : null}
+      {updatedAt && !busy && !errorKind ? (
+        <Txt variant="micro" tone="secondary" style={styles.updated}>
+          {formatUpdatedAt(updatedAt)}
+        </Txt>
+      ) : null}
+      {busy && !pulling ? (
+        <Skeleton shape="row" count={4} label="Loading activity" />
+      ) : errorKind ? (
+        <ErrorState
+          kind={errorKind}
+          message="We couldn't load your activity. Try again."
+          onRetry={() => setReload((value) => value + 1)}
+        />
+      ) : events.length === 0 ? (
+        <EmptyState
+          compact
+          icon="bell"
+          title="No activity yet"
+          message="Applications, selections and reviews will appear here."
+        />
+      ) : (
+        groups.map((group) => (
+          <View key={group.title} style={styles.group}>
+            <Txt variant="title" accessibilityRole="header">
+              {group.title}
+            </Txt>
+            <View style={styles.card}>
+              {group.events.map((event, index) => (
+                <ActivityRow
+                  key={event.id}
+                  event={event}
+                  showDivider={index > 0}
+                  onPress={(pressed) => void handlePressEvent(pressed)}
+                />
+              ))}
+            </View>
+          </View>
+        ))
+      )}
     </MarketplaceShell>
   );
 }
 
 const styles = StyleSheet.create({
-  listHeader: {
+  banner: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: setupTheme.spacing.compact,
+    gap: space.sm,
+    paddingVertical: space.xs,
+    paddingLeft: space.sm,
+    paddingRight: space.xxs,
+    borderRadius: radius.input,
+    backgroundColor: palette.lavender,
   },
-  listTitle: {
-    flex: 1,
-    fontSize: setupTheme.type.cardTitle,
-    fontWeight: "600",
-    color: setupTheme.color.foreground,
-  },
-  refreshButton: {
-    minHeight: setupTheme.size.touchTarget,
-    minWidth: setupTheme.size.touchTarget,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: setupTheme.radius.control,
-    backgroundColor: setupTheme.color.accentSurface,
-  },
-  alertBanner: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "center",
-    gap: setupTheme.spacing.compact,
-    padding: setupTheme.spacing.compact + setupTheme.spacing.tight,
-    borderRadius: setupTheme.radius.card,
-    backgroundColor: setupTheme.color.accentSurface,
-  },
-  alertCopy: { flex: 1, minWidth: 120, gap: setupTheme.spacing.tight },
-  alertTitle: {
-    color: setupTheme.color.foreground,
-    fontSize: setupTheme.type.caption,
-    fontWeight: "600",
-  },
-  alertDescription: {
-    color: setupTheme.color.muted,
-    fontSize: setupTheme.type.caption,
-    lineHeight: 18,
-  },
-  alertAction: {
-    minHeight: setupTheme.size.touchTarget,
-    minWidth: setupTheme.size.touchTarget,
-    flexDirection: "row",
-    gap: setupTheme.spacing.tight,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: setupTheme.spacing.compact,
-  },
-  alertActionText: {
-    color: setupTheme.color.primary,
-    fontWeight: "600",
-    fontSize: setupTheme.type.body,
-  },
-  eventIcon: {
-    minHeight: 36,
-    width: 36,
-    borderRadius: setupTheme.radius.control,
-    backgroundColor: setupTheme.color.accentSurface,
+  bannerIcon: {
+    width: size.iconButton - space.xs,
+    height: size.iconButton - space.xs,
+    borderRadius: radius.pill,
+    backgroundColor: palette.surface,
     alignItems: "center",
     justifyContent: "center",
   },
-  eventContent: { flex: 1, gap: setupTheme.spacing.compact },
-  eventList: {
-    gap: setupTheme.spacing.compact,
+  bannerCopy: { flex: 1, minWidth: 0 },
+  bannerTitle: { color: palette.text, fontWeight: "600" },
+  bannerAction: {
+    minHeight: size.touchTarget,
+    paddingHorizontal: space.sm,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radius.pill,
   },
-  eventCard: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    ...setupTheme.shadow.card,
-    backgroundColor: setupTheme.color.surface,
-    borderColor: setupTheme.color.border,
-    borderRadius: setupTheme.radius.card,
+  bannerActionText: { color: palette.purple, fontWeight: "600" },
+  updated: { alignSelf: "flex-end" },
+  group: { gap: space.xs },
+  card: {
+    borderRadius: radius.card,
     borderWidth: 1,
-    gap: setupTheme.spacing.compact + setupTheme.spacing.tight,
-    padding: setupTheme.spacing.compact + setupTheme.spacing.tight,
+    borderColor: palette.border,
+    backgroundColor: palette.surface,
+    overflow: "hidden",
   },
-  unreadEventCard: {
-    backgroundColor: setupTheme.color.surface,
-    borderColor: setupTheme.color.border,
-    borderLeftWidth: 3,
-    borderLeftColor: setupTheme.color.primary,
-    borderWidth: 1,
-  },
-  eventTopRow: {
-    flexWrap: "wrap",
-    alignItems: "center",
+  row: {
     flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  eventBadgeGroup: {
-    flex: 1,
     alignItems: "center",
+    gap: space.sm,
+    paddingHorizontal: space.md,
+    paddingVertical: space.sm,
+    minHeight: size.primaryButton + space.md,
+  },
+  divider: { borderTopWidth: 1, borderTopColor: palette.border },
+  iconCircle: {
+    width: size.avatar,
+    height: size.avatar,
+    borderRadius: radius.pill,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  rowCopy: { flex: 1, minWidth: 0, gap: 2 },
+  rowTop: {
     flexDirection: "row",
-    gap: 6,
+    alignItems: "center",
+    gap: space.xs,
   },
-  newPill: {
-    backgroundColor: setupTheme.color.accentSurface,
-    borderRadius: setupTheme.radius.status,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  newPillText: {
-    color: setupTheme.color.primary,
-    fontSize: setupTheme.type.caption,
-    fontWeight: "600",
-  },
-  eventTitle: {
-    flexShrink: 1,
-    lineHeight: 22,
-    color: setupTheme.color.foreground,
-    fontSize: setupTheme.type.cardTitle,
-    fontWeight: "600",
-  },
-  eventTime: {
-    color: setupTheme.color.muted,
-    fontSize: setupTheme.type.caption,
-    fontWeight: "600",
-  },
-  eventDescription: {
-    color: setupTheme.color.muted,
-    fontSize: setupTheme.type.body,
-    lineHeight: 20,
+  rowTitle: { flex: 1 },
+  unreadDot: {
+    width: size.dot + 4,
+    height: size.dot + 4,
+    borderRadius: radius.pill,
+    backgroundColor: palette.mint,
+    // Mint alone is ~1.5:1 on white; the ring keeps the indicator visible.
+    borderWidth: 1.5,
+    borderColor: status.success.fg,
   },
 });

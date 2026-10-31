@@ -1,7 +1,15 @@
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useRef, useState } from "react";
-import { StyleSheet, View } from "react-native";
-import { Text } from "@/shared/ui/Typography";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
+
+import {
+  Avatar,
+  ErrorState,
+  PressableScale,
+  SecondaryButton,
+  Skeleton,
+  Txt,
+} from "@/components/ui";
 
 import type { AuthProfile } from "@/features/auth/model/auth-state";
 import { ProfileEditor } from "@/features/profile/components/ProfileEditor";
@@ -10,17 +18,12 @@ import {
   type EditableProfile,
   type ProfileEditorGateway,
 } from "@/features/profile/data/profile-editor-gateway";
-import {
-  AppButton,
-  ErrorState,
-  LoadingSkeleton,
-  ProfileAvatar,
-  SectionHeader,
-  setupTheme,
-} from "@/shared/ui";
-import { AppIcon } from "@/shared/ui/AppIcon";
+import { AppIcon, type AppIconName } from "@/shared/ui/AppIcon";
+import { palette, radius, size, space, status } from "@/theme";
 
-import { MarketplaceShell, marketplaceStyles } from "./MarketplaceShell";
+import { useShellMode } from "../context/useShellMode";
+import { useWorkCounts, type HomeStatsSources } from "../data/home-stats";
+import { MarketplaceShell } from "./MarketplaceShell";
 
 type AuthenticatedProfileScreenProps = Readonly<{
   busy: boolean;
@@ -28,6 +31,7 @@ type AuthenticatedProfileScreenProps = Readonly<{
   onSignOut: () => Promise<void>;
   onUpdated?: () => Promise<void>;
   editorGateway?: ProfileEditorGateway;
+  stats?: HomeStatsSources;
 }>;
 
 export function AuthenticatedProfileScreen({
@@ -36,8 +40,11 @@ export function AuthenticatedProfileScreen({
   onUpdated,
   profile,
   editorGateway = profileEditorGateway,
+  stats: statSources,
 }: AuthenticatedProfileScreenProps) {
   const router = useRouter();
+  const { mode } = useShellMode();
+  const [refreshKey, setRefreshKey] = useState(0);
   const [editable, setEditable] = useState<EditableProfile | null>(null);
   const [saved, setSaved] = useState<EditableProfile | null>(null);
   const [loading, setLoading] = useState(false);
@@ -73,6 +80,23 @@ export function AuthenticatedProfileScreen({
       };
     }, [editorGateway, profile.id]),
   );
+
+  async function reloadProfile() {
+    const request = ++generation.current;
+    setLoading(true);
+    setError(null);
+    try {
+      const current = await editorGateway.read(profile.id);
+      if (request === generation.current) setSaved(current);
+    } catch {
+      if (request === generation.current)
+        setError(
+          "We couldn't load your profile. Check your connection and try again.",
+        );
+    } finally {
+      if (request === generation.current) setLoading(false);
+    }
+  }
 
   async function openEditor() {
     if (loadingLock.current) return;
@@ -111,38 +135,73 @@ export function AuthenticatedProfileScreen({
       });
   }
 
+  const counts = useWorkCounts(profile.id, mode, refreshKey, statSources);
+  const area = shown.homeArea?.trim();
+
   return (
     <MarketplaceShell
       activeSection="profile"
       title="Profile"
-      subtitle="Your introduction to the people you work with."
+      refreshing={loading && refreshKey > 0}
+      onRefresh={() => {
+        setRefreshKey((value) => value + 1);
+        void reloadProfile();
+      }}
     >
-      <View style={[marketplaceStyles.card, styles.identity]}>
-        <ProfileAvatar name={shown.displayName} size={56} />
-        <View style={styles.identityCopy}>
-          <Text
-            accessibilityRole="header"
-            style={[marketplaceStyles.cardTitle, styles.identityName]}
-          >
-            {shown.displayName}
-          </Text>
-          <View style={styles.areaRow}>
-            <AppIcon name="pin" size={16} color={setupTheme.color.muted} />
-            <Text style={[marketplaceStyles.body, styles.identityArea]}>
-              {shown.homeArea ?? "Add your public work area"}
-            </Text>
-          </View>
+      <View style={styles.identity}>
+        <Avatar name={shown.displayName} diameter={size.avatarHero} />
+        <Txt variant="h1" accessibilityRole="header" style={styles.centered}>
+          {shown.displayName}
+        </Txt>
+        <View style={styles.areaRow}>
+          <AppIcon
+            name="pin"
+            size={size.iconSmall}
+            color={palette.textSecondary}
+          />
+          <Txt tone="secondary">{area || "Add your public work area"}</Txt>
         </View>
+        {/* TODO(data): skills, rating and availability have no profile columns yet. */}
       </View>
+
+      <View style={styles.stats} accessibilityRole="summary">
+        {counts.map((count, index) => (
+          <View
+            key={count.key}
+            accessible
+            accessibilityLabel={`${count.value} ${count.label}`}
+            style={[styles.stat, index > 0 && styles.statDivider]}
+          >
+            <Txt variant="h2" style={styles.statValue}>
+              {count.value}
+            </Txt>
+            <Txt variant="caption" tone="secondary">
+              {count.label}
+            </Txt>
+          </View>
+        ))}
+      </View>
+
       {updated ? (
-        <Text accessibilityLiveRegion="polite" style={styles.success}>
+        <Txt
+          accessibilityLiveRegion="polite"
+          variant="bodyStrong"
+          style={{ color: status.success.fg }}
+        >
           Profile updated
-        </Text>
+        </Txt>
       ) : null}
       {error ? (
-        <ErrorState message={error} onRetry={() => void openEditor()} />
+        <ErrorState
+          compact
+          message={error}
+          onRetry={() => {
+            // Retry reloads the page data; it never opens the editor implicitly.
+            setRefreshKey((value) => value + 1);
+            void reloadProfile();
+          }}
+        />
       ) : null}
-      {loading ? <LoadingSkeleton label="Loading your profile…" /> : null}
       {editable ? (
         <ProfileEditor
           key={editable.id}
@@ -153,81 +212,144 @@ export function AuthenticatedProfileScreen({
         />
       ) : (
         <>
-          {saved?.bio ? (
-            <View style={marketplaceStyles.card}>
-              <SectionHeader title="About you" />
-              <Text style={marketplaceStyles.body}>{saved.bio}</Text>
+          {loading && !saved ? (
+            <Skeleton shape="row" count={1} label="Loading your profile" />
+          ) : saved?.bio ? (
+            <View style={styles.card}>
+              <Txt variant="title" accessibilityRole="header">
+                About
+              </Txt>
+              <Txt tone="secondary">{saved.bio}</Txt>
             </View>
           ) : null}
-          <AppButton
+          <SecondaryButton
             label="Edit profile"
-            icon="user"
+            icon="edit"
             onPress={() => void openEditor()}
             loading={loading}
             disabled={busy}
           />
-          <View style={marketplaceStyles.card}>
-            <SectionHeader
-              title="Your work"
-              description="Applications, ongoing assignments, and completed work."
-            />
-            <AppButton
-              label="View my work"
-              icon="briefcase"
-              variant="secondary"
-              onPress={() => router.push("/(protected)/work")}
-            />
-          </View>
         </>
       )}
-      <View style={marketplaceStyles.card}>
-        <SectionHeader
-          title="Your account"
-          description="Manage your preferences and account access."
+
+      <View style={styles.card}>
+        <SettingsRow
+          icon="briefcase"
+          label="My work"
+          onPress={() => router.push("/(protected)/work")}
         />
-        <AppButton
-          label="Settings"
+        <SettingsRow
           icon="shield"
-          variant="secondary"
+          label="Settings"
+          divider
           onPress={() => router.push("/(protected)/settings")}
         />
-        <AppButton
-          label={busy ? "Signing out..." : "Sign out"}
+        <SettingsRow
           icon="lock"
+          label={busy ? "Signing out..." : "Sign out"}
           accessibilityLabel={busy ? "Signing out" : "Sign out"}
+          tone="danger"
+          divider
+          busy={busy}
           onPress={() => void onSignOut()}
-          loading={busy}
-          variant="danger"
         />
       </View>
     </MarketplaceShell>
   );
 }
 
+function SettingsRow({
+  icon,
+  label,
+  accessibilityLabel,
+  onPress,
+  tone = "default",
+  divider = false,
+  busy = false,
+}: Readonly<{
+  icon: AppIconName;
+  label: string;
+  accessibilityLabel?: string;
+  onPress: () => void;
+  tone?: "default" | "danger";
+  divider?: boolean;
+  busy?: boolean;
+}>) {
+  const color = tone === "danger" ? status.danger.fg : palette.navy;
+  return (
+    <PressableScale
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
+      accessibilityState={{ disabled: busy, busy }}
+      disabled={busy}
+      onPress={onPress}
+      style={[styles.row, divider && styles.rowDivider]}
+    >
+      <View
+        style={[
+          styles.rowIcon,
+          tone === "danger" && { backgroundColor: status.danger.bg },
+        ]}
+      >
+        <AppIcon name={icon} size={size.iconSmall} color={color} />
+      </View>
+      <Txt variant="title" style={[styles.rowLabel, { color }]}>
+        {label}
+      </Txt>
+      {busy ? (
+        <ActivityIndicator color={color} />
+      ) : tone === "danger" ? null : (
+        <AppIcon
+          name="chevronRight"
+          size={size.icon}
+          color={palette.textSecondary}
+        />
+      )}
+    </PressableScale>
+  );
+}
+
 const styles = StyleSheet.create({
-  identity: {
-    backgroundColor: setupTheme.color.accentSurface,
-    borderColor: setupTheme.color.border,
+  identity: { alignItems: "center", gap: space.xs, paddingTop: space.xs },
+  centered: { textAlign: "center" },
+  areaRow: { flexDirection: "row", alignItems: "center", gap: space.xxs },
+  stats: {
+    flexDirection: "row",
+    paddingVertical: space.md,
+    borderRadius: radius.card,
+    borderWidth: 1,
+    borderColor: palette.border,
+    backgroundColor: palette.surface,
+  },
+  stat: { flex: 1, alignItems: "center", gap: 2 },
+  statDivider: { borderLeftWidth: 1, borderLeftColor: palette.border },
+  statValue: { color: palette.navy },
+  card: {
+    gap: space.xs,
+    padding: space.md,
+    borderRadius: radius.card,
+    borderWidth: 1,
+    borderColor: palette.border,
+    backgroundColor: palette.surface,
+  },
+  row: {
     flexDirection: "row",
     alignItems: "center",
-    gap: setupTheme.spacing.compact + setupTheme.spacing.tight,
+    gap: space.sm,
+    minHeight: size.touchTarget + space.xs,
   },
-  identityCopy: { flex: 1, gap: setupTheme.spacing.compact },
-  identityName: {
-    color: setupTheme.color.primary,
-    fontSize: setupTheme.type.section,
-    fontWeight: "600",
+  rowDivider: {
+    borderTopWidth: 1,
+    borderTopColor: palette.border,
+    paddingTop: space.xs,
   },
-  identityArea: { color: setupTheme.color.muted, flexShrink: 1 },
-  areaRow: {
-    flexWrap: "wrap",
-    flexDirection: "row",
+  rowIcon: {
+    width: size.iconButton - space.xxs,
+    height: size.iconButton - space.xxs,
+    borderRadius: radius.pill,
+    backgroundColor: palette.lavender,
     alignItems: "center",
-    gap: setupTheme.spacing.tight,
+    justifyContent: "center",
   },
-  success: {
-    color: setupTheme.color.ready,
-    fontSize: setupTheme.type.body,
-    fontWeight: "600",
-  },
+  rowLabel: { flex: 1 },
 });

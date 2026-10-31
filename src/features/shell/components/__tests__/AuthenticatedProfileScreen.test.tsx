@@ -61,6 +61,72 @@ describe("AuthenticatedProfileScreen", () => {
     expect(gateway.read).toHaveBeenCalledWith(profile.id);
   });
 
+  it("shows a centered identity, real work counts and a settings list without page eyebrows", async () => {
+    const list = jest
+      .fn()
+      .mockResolvedValueOnce(new Array(3).fill(null))
+      .mockResolvedValueOnce(new Array(1).fill(null))
+      .mockResolvedValueOnce(new Array(20).fill(null));
+    const view = await render(
+      <AuthenticatedProfileScreen
+        busy={false}
+        onSignOut={jest.fn()}
+        profile={profile}
+        editorGateway={{
+          read: jest.fn(async () => ({
+            id: profile.id,
+            displayName: profile.displayName,
+            homeArea: "Makati",
+            bio: "",
+          })),
+          save: jest.fn(),
+        }}
+        stats={{
+          pageSize: 20,
+          work: { list },
+          applicants: { listGigApplicants: jest.fn() },
+        }}
+      />,
+    );
+    expect(view.getByRole("header", { name: "Ari Santos" })).toBeVisible();
+    expect(view.queryByText("FIND WORK")).toBeNull();
+    expect(
+      view.queryByText("Your introduction to the people you work with."),
+    ).toBeNull();
+    expect(await view.findByLabelText("3 Applications")).toBeVisible();
+    expect(view.getByLabelText("1 Active")).toBeVisible();
+    expect(view.getByLabelText("20+ Completed")).toBeVisible();
+    expect(list).toHaveBeenCalledWith(profile.id, "worker", "applications");
+    await fireEvent.press(view.getByRole("button", { name: "My work" }));
+    expect(mockPush).toHaveBeenCalledWith("/(protected)/work");
+  });
+
+  it("retries a failed profile read in place without opening the editor", async () => {
+    const read = jest
+      .fn()
+      .mockRejectedValueOnce(new Error("offline"))
+      .mockResolvedValueOnce({
+        id: profile.id,
+        displayName: profile.displayName,
+        homeArea: "Makati",
+        bio: "Back online",
+      });
+    const view = await render(
+      <AuthenticatedProfileScreen
+        busy={false}
+        onSignOut={jest.fn()}
+        profile={profile}
+        editorGateway={{ read, save: jest.fn() }}
+      />,
+    );
+    await fireEvent.press(
+      await view.findByRole("button", { name: "Try again" }),
+    );
+    expect(await view.findByText("Back online")).toBeVisible();
+    expect(read).toHaveBeenCalledTimes(2);
+    expect(view.queryByText("Display name")).toBeNull();
+  });
+
   it("renders profile details and dispatches sign out when requested", async () => {
     const onSignOut = jest.fn(async () => undefined);
     const view = await render(
