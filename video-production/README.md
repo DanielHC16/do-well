@@ -1,6 +1,6 @@
 # DO WELL competition film
 
-This isolated production workspace implements the owner's 31 October 2026 video brief. It does not change application features or app dependency versions.
+This isolated production workspace implements the owner's 31 October 2026 video brief and subsequent real-app recut. PR #45 also includes the assignment-detail snake_case parsing fix discovered during that capture; mobile dependency versions are unchanged.
 
 ## Resume production
 
@@ -16,7 +16,7 @@ The required deliverable is `output/DO-WELL-UMAK-2026-FINAL.mp4`. `output/techni
 
 ## Editorial boundaries
 
-The captured fallback is a genuine Android recording of the **isolated synthetic offline demo**, with fictional Maya Santos/Alex Reyes and local data. Its dedicated demo screens differ from the redesigned production dashboards. It does not verify hosted authentication, cross-device synchronization, private Storage, RLS or remote push. The production design is discussed separately from observed demo behavior. No administrator or hosted-data provisioning is authorized by this production task.
+The current script uses recordings of the redesigned production app with two hosted test identities and five listings, as recorded in the later 1 November checkpoint. The owner authorized that earlier account provisioning; it grants no blanket permission for new hosted mutations. Earlier synthetic offline captures remain historical fallback material and use a separate interface. Neither footage nor narration establishes complete authentication/device acceptance, private image Storage, RLS or remote push. The recorded GPS and camera limitations remain explicit in the checkpoint and acceptance issue #46.
 
 The default Brief Builder is deterministic assistance. Payments/escrow are absent. No employment outcomes or worker verification are claimed. Third-party broadcaster content is excluded; an original English hook narrated from cited PSA figures replaces the proposed GMA opening. Exact competition rubric weights and official duration rules were not independently corroborated; the export follows the owner's requested 7:30–8:30 window.
 
@@ -24,4 +24,4 @@ Voice generation is local. All narration uses Kokoro-82M (Apache-2.0); the earli
 
 ## Artifact policy
 
-Local models, Python environment, raw captures, audio, render chunks and exports are ignored. Source code, citations, checkpoint and license notices can be reviewed in Git. The root `.gitignore` and `expo-env.d.ts` contained owner changes before this task and are preserved. No merge is authorized.
+Local models, Python environment, raw captures, audio, render chunks and exports are ignored. Source code, citations, checkpoint and license notices can be reviewed in Git. The root `.gitignore` and `expo-env.d.ts` contained owner changes before this task and are preserved. On 2 November the owner authorized PR fixes and merging after verification. This does not establish that a final recut export passed QA.

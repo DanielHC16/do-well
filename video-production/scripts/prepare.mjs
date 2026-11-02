@@ -39,13 +39,13 @@ const measured=script.chapters.map(c=>{
 const allMeasured=measured.every(Boolean);
 if(finalMode&&!allMeasured)throw new Error('Final preparation requires all measured narration chapters');
 // pad: extra seconds of footage under music after a chapter's narration.
-const chapterFrames=i=>Math.ceil((measured[i].duration+.35+(script.chapters[i].pad??0))*30);
-const rawFrames=allMeasured?script.chapters.reduce((n,_,i)=>n+chapterFrames(i),0):script.duration*30;
+const chapterFrames=i=>allMeasured?Math.ceil((measured[i].duration+.35+(script.chapters[i].pad??0))*30):Math.round(script.chapters[i].duration*30);
+const rawFrames=script.chapters.reduce((n,_,i)=>n+chapterFrames(i),0);
 const targetFrames=Math.max(450*30,rawFrames);
 if(finalMode&&targetFrames>510*30)throw new Error(`Measured edit exceeds 8:30: ${targetFrames/30}s`);
 const extraFrames=targetFrames-rawFrames;
 const chapters=script.chapters.map((c,i)=>{
- const frames=allMeasured?chapterFrames(i)+(i===script.chapters.length-1?extraFrames:0):Math.round(c.duration*30);
+ const frames=chapterFrames(i)+(i===script.chapters.length-1?extraFrames:0);
  const start=cursorFrames/30;
  const duration=frames/30;
  cursorFrames+=frames;
@@ -95,6 +95,7 @@ mkdirSync(path.join(base,'composition','src'),{recursive:true});
 writeFileSync(path.join(base,'composition','src','data.json'),JSON.stringify(data,null,2));
 console.log(JSON.stringify({seconds:data.duration,shots:shots.length,captions:captions.length,measuredTiming:allMeasured,audioReady,missingFootage},null,2));
 const stamp=f=>{const ms=Math.round(f/30*1000);return `${String(Math.floor(ms/3600000)).padStart(2,'0')}:${String(Math.floor(ms/60000)%60).padStart(2,'0')}:${String(Math.floor(ms/1000)%60).padStart(2,'0')},${String(ms%1000).padStart(3,'0')}`;};
+mkdirSync(path.join(base,'output'),{recursive:true});
 writeFileSync(path.join(base,'output','DO-WELL-UMAK-2026-EN.srt'),captions.map((c,i)=>`${i+1}\n${stamp(c.from)} --> ${stamp(c.to)}\n${c.text}\n`).join('\n'));
 
 // Research source manifest is copied from the reviewed research artifact verbatim.

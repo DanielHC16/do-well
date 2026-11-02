@@ -1,5 +1,15 @@
 # Session Handoff
 
+## Verified current work — 2026-11-02
+
+The owner authorized fixing the latest PR, issue closeout, merging to main, and a zero-cost demo APK. GitHub CLI and connector access are working. PR #44 (redesign) is merged at `2078bca`; the current open PR is [#45](https://github.com/DanielHC16/do-well/pull/45), `feat/competition-video-production`, including assignment-detail snake_case parsing fix `6dffca3` and video workspace `93082f0`.
+
+PR #45 review's fresh-checkout subtitle-directory failure was reproduced with a failing regression and fixed. Mobile TypeScript now excludes the independent video project; root CI installs only mobile dependencies. A second review identified short unmeasured draft padding; its426s regression failed with timeline-bounds error, then passed after consistent last-chapter padding. Fresh focused verification:2 suites/26 tests pass (preparation + assignment gateway); mobile typecheck and lint passed. Independent re-review: LGTM. Remote full checks remain the merge gate. Existing owner edits to `.gitignore` and `expo-env.d.ts` remain uncommitted and must be preserved.
+
+Issue [#4](https://github.com/DanielHC16/do-well/issues/4) is closed for completed M03A scope after transferring the entire unfinished hosted/device acceptance checklist to [#46](https://github.com/DanielHC16/do-well/issues/46). This is a tracking split, not a claim of M03B completion. Later 1 November video checkpoint records two hosted test identities and real app footage; older claims that no hosted rehearsal occurred are superseded. GPS/photo/auth/device matrix remain incomplete.
+
+Demo-readiness follow-up is being prepared separately: restore missing Settings/Admin routes and existing server-backed integrations, correct misleading demo instructions, and produce fresh standalone local APKs. Existing approved M17/M18 contracts and RPC/RLS remain authoritative; no schema or hosted provisioning change is authorized by these fixes. APK results must be recorded after actual compilation/signature/install/launch checks. Earlier sections below are historical evidence.
+
 ## Competition video production — in progress — 2026-10-31
 
 Owner-authorized autonomous video production is isolated under [`video-production/`](../video-production/README.md), with a persistent [checkpoint](../video-production/CHECKPOINT.md), on `feat/competition-video-production` from `2078bca`. The requested redesign is already merged in this local main revision. Existing `.gitignore` and `expo-env.d.ts` changes are preserved. Research verifies the PSA August 2026 figures; copyrighted news footage is excluded. Android capture uses the visibly disclosed synthetic offline fallback because a hosted two-principal rehearsal is unavailable. Do not treat the video as hosted acceptance or mark product milestones complete. Final MP4/render QA remains pending until the checkpoint records verified export evidence. No app feature change, hosted provisioning, commit, push, or merge is claimed.
