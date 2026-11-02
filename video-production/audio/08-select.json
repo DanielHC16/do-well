@@ -1,0 +1,45 @@
+{
+  "id": "08-select",
+  "file": "audio/08-select.wav",
+  "duration": 29.5564,
+  "sampleRate": 24000,
+  "language": "en",
+  "engine": "Kokoro-82M v1.0 af_heart / Apache-2.0",
+  "textSha256": "88de7c42f4b0cb26aa645bb17a4a19b068f329f67d63ea49564ccb50d4faf3b7",
+  "cues": [
+    {
+      "text": "On Maya's phone, the Activity feed reports a new application.",
+      "start": 0.2,
+      "end": 4.2447
+    },
+    {
+      "text": "She turns on device alerts, and Android asks for notification permission at the moment it is useful, not at launch.",
+      "start": 5.0947,
+      "end": 12.5011
+    },
+    {
+      "text": "Maya reads Alex's note and selects him.",
+      "start": 13.3511,
+      "end": 15.9002
+    },
+    {
+      "text": "Do Well explains exactly what happens next: the listing closes, other pending applications are declined, and an agreement is proposed.",
+      "start": 16.7502,
+      "end": 25.3882
+    },
+    {
+      "text": "Nothing is final until Alex accepts.",
+      "start": 26.2382,
+      "end": 28.7064
+    }
+  ],
+  "normalization": {
+    "targetLUFS": -19,
+    "targetTruePeakDB": -3,
+    "actualLUFS": -19.43,
+    "actualTruePeakDB": -2.96,
+    "sampleCount": 709354,
+    "preservedSampleCount": true,
+    "rawFile": "audio\\raw\\08-select.wav"
+  }
+}

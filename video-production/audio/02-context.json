@@ -1,0 +1,45 @@
+{
+  "id": "02-context",
+  "file": "audio/02-context.wav",
+  "duration": 24.8804,
+  "sampleRate": 24000,
+  "language": "en",
+  "engine": "Kokoro-82M v1.0 af_heart / Apache-2.0",
+  "textSha256": "1a125f344a45ffe07b2dd1f628a77184912419a8a40c3e546a4116cba1131a2e",
+  "cues": [
+    {
+      "text": "Underemployment means a person is employed, but wants more hours, another job, or a job with longer hours.",
+      "start": 0.2,
+      "end": 7.5919
+    },
+    {
+      "text": "In August, that described eleven point nine percent of employed Filipinos.",
+      "start": 7.9119,
+      "end": 12.702
+    },
+    {
+      "text": "Unemployment was five point three percent: lower than July, but higher than August last year.",
+      "start": 13.022,
+      "end": 19.1098
+    },
+    {
+      "text": "These are different measures.",
+      "start": 19.4298,
+      "end": 20.8953
+    },
+    {
+      "text": "Together, they show why access to suitable work matters.",
+      "start": 21.2153,
+      "end": 24.5604
+    }
+  ],
+  "normalization": {
+    "targetLUFS": -19,
+    "targetTruePeakDB": -3,
+    "actualLUFS": -19.19,
+    "actualTruePeakDB": -2.99,
+    "sampleCount": 597129,
+    "preservedSampleCount": true,
+    "rawFile": "audio\\raw\\02-context.wav"
+  }
+}

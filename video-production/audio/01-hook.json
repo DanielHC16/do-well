@@ -1,0 +1,47 @@
+{
+  "id": "01-hook",
+  "file": "audio/01-hook.wav",
+  "duration": 23.649,
+  "sampleRate": 24000,
+  "language": "en",
+  "engine": "Kokoro-82M v1.0 am_michael / Apache-2.0",
+  "textSha256": "5f2dd47eb3ea92c6e6da8069e288969e85c70645c3c8216385c6869302bb0a4f",
+  "cues": [
+    {
+      "text": "Five point nine million Filipinos.",
+      "start": 0.2,
+      "end": 2.94
+    },
+    {
+      "text": "Employed, and still looking for more work.",
+      "start": 3.49,
+      "end": 6.1156
+    },
+    {
+      "text": "That was August 2026, according to the Philippine Statistics Authority.",
+      "start": 6.6656,
+      "end": 12.8265
+    },
+    {
+      "text": "Unemployment eased from July, but it is still higher than a year ago.",
+      "start": 13.3765,
+      "end": 18.1857
+    },
+    {
+      "text": "People want to work.",
+      "start": 18.7357,
+      "end": 20.2068
+    },
+    {
+      "text": "The question is: can they find it?",
+      "start": 20.7568,
+      "end": 23.099
+    }
+  ],
+  "normalization": {
+    "targetLUFS": -19,
+    "targetTruePeakDB": -3,
+    "method": "highpass 70Hz, 2.5:1 compression, linear gain, sample-peak limiter; sample count preserved",
+    "actualLUFS": -19.01, "actualTruePeakDB": -3.36
+  }
+}

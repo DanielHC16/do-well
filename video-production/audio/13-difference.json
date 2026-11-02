@@ -1,0 +1,45 @@
+{
+  "id": "13-difference",
+  "file": "audio/13-difference.wav",
+  "duration": 27.0472,
+  "sampleRate": 24000,
+  "language": "en",
+  "engine": "Kokoro-82M v1.0 af_heart / Apache-2.0",
+  "textSha256": "1a73a0b3577a9c4655c5fcc610bcf81645122882315a88883d1423464457e9eb",
+  "cues": [
+    {
+      "text": "So what makes Do Well different?",
+      "start": 0.2,
+      "end": 1.929
+    },
+    {
+      "text": "A structured brief instead of a vague post.",
+      "start": 2.779,
+      "end": 5.3772
+    },
+    {
+      "text": "Discovery that explains itself.",
+      "start": 6.2272,
+      "end": 8.3099
+    },
+    {
+      "text": "An agreement both sides confirm, milestones both can see, and a clear finish.",
+      "start": 9.1599,
+      "end": 14.1596
+    },
+    {
+      "text": "For judging, that means innovation in the workflow, a native Android experience, privacy first security, complete functionality, and a calm, consistent user experience.",
+      "start": 15.0096,
+      "end": 26.1972
+    }
+  ],
+  "normalization": {
+    "targetLUFS": -19,
+    "targetTruePeakDB": -3,
+    "actualLUFS": -19.31,
+    "actualTruePeakDB": -2.99,
+    "sampleCount": 649133,
+    "preservedSampleCount": true,
+    "rawFile": "audio\\raw\\13-difference.wav"
+  }
+}

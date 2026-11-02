@@ -1,0 +1,66 @@
+{
+  "checkedOn": "2026-10-31",
+  "timezone": "Asia/Manila",
+  "sources": [
+    {
+      "id": "PSA-AUG2026",
+      "title": "August 2026 Labor Force Survey, reference 2026-325",
+      "publisher": "Philippine Statistics Authority",
+      "url": "https://psa.gov.ph/statistics/labor-force-survey/press-release/node/1684084287",
+      "publicationDate": "2026-10-07",
+      "verified": true,
+      "license": "CC BY 4.0 unless otherwise stated, per page footer",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "use": "Original attributed motion graphics and factual paraphrase",
+      "timeline": ["00:00-00:18", "00:18-00:50", "07:40-08:00"],
+      "figures": {"underemployedMillions": 5.90, "underemploymentPercent": 11.9, "unemployedMillions": 2.77, "unemploymentPercent": 5.3},
+      "locator": "Underemployment section, web lines 398-408; unemployment section, web lines 344-347"
+    },
+    {
+      "id": "NEWS5-AUG2026",
+      "title": "Unemployment, underemployment decline in August",
+      "publisher": "News5",
+      "url": "https://news.tv5.com.ph/breaking/read/unemployment-underemployment-decline-in-august",
+      "publicationDate": "2026-10-07",
+      "verified": true,
+      "license": "All rights reserved; no media or prose reused",
+      "use": "Research cross-check only",
+      "timeline": []
+    },
+    {
+      "id": "DOLE-AUG2026",
+      "title": "DOLE welcomes August labor market improvement, strengthens pathways to sustainable work",
+      "publisher": "Department of Labor and Employment",
+      "url": "https://dole.gov.ph/news/dole-welcomes-august-labor-market-improvement-strengthens-pathways-to-sustainable-work/",
+      "publicationDate": "2026-10-07",
+      "verified": "Search-index text only; direct HTTP 403",
+      "license": "Not established; no media or prose reused",
+      "use": "Context only; count differs slightly from PSA, so prefer PSA",
+      "timeline": []
+    },
+    {
+      "id": "PIDS-PN2025-15",
+      "title": "Building a Strong and Sustainable Pathway for Middle-Skilled Workers",
+      "publisher": "Philippine Institute for Development Studies",
+      "url": "https://pids.gov.ph/publication/policy-notes/building-a-strong-and-sustainable-pathway-for-middle-skilled-workers",
+      "doi": "https://doi.org/10.62986/pn2025.15",
+      "publicationDate": "2025-09-29",
+      "verified": true,
+      "license": "Exact redistribution license not established; no report media reused",
+      "use": "Optional concise paraphrase of skills/training mismatch context",
+      "timeline": ["00:50-01:27"]
+    },
+    {
+      "id": "GMA-NOT-CLEARED",
+      "title": "24 Oras Express, original broadcast reference supplied by user",
+      "publisher": "GMA Integrated News",
+      "url": "https://www.dailymotion.com/video/xbji77u",
+      "publicationDate": "2026-10-07",
+      "verified": false,
+      "license": "No explicit reuse permission or license established",
+      "use": "Excluded; replaced with original Tagalog narration",
+      "referenceTimestamps": ["17:13-17:52", "19:22-19:36"],
+      "timeline": []
+    }
+  ]
+}

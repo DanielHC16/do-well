@@ -1,5 +1,21 @@
 # Session Handoff
 
+## Verified current work — 2026-11-02
+
+The owner authorized fixing the latest PR, issue closeout, merging to main, and a zero-cost demo APK. GitHub CLI and connector access are working. PR #44 (redesign) is merged at `2078bca`; the current open PR is [#45](https://github.com/DanielHC16/do-well/pull/45), `feat/competition-video-production`, including assignment-detail snake_case parsing fix `6dffca3` and video workspace `93082f0`.
+
+PR #45 review's fresh-checkout subtitle-directory failure was reproduced with a failing regression and fixed. Mobile TypeScript now excludes the independent video project; root CI installs only mobile dependencies. A second review identified short unmeasured draft padding; its426s regression failed with timeline-bounds error, then passed after consistent last-chapter padding. Fresh focused verification:2 suites/26 tests pass (preparation + assignment gateway); mobile typecheck and lint passed. Independent re-review: LGTM. Remote full checks remain the merge gate. Existing owner edits to `.gitignore` and `expo-env.d.ts` remain uncommitted and must be preserved.
+
+Issue [#4](https://github.com/DanielHC16/do-well/issues/4) is closed for completed M03A scope after transferring the entire unfinished hosted/device acceptance checklist to [#46](https://github.com/DanielHC16/do-well/issues/46). This is a tracking split, not a claim of M03B completion. Later 1 November video checkpoint records two hosted test identities and real app footage; older claims that no hosted rehearsal occurred are superseded. GPS/photo/auth/device matrix remain incomplete.
+
+Demo-readiness follow-up is being prepared separately: restore missing Settings/Admin routes and existing server-backed integrations, correct misleading demo instructions, and produce fresh standalone local APKs. Existing approved M17/M18 contracts and RPC/RLS remain authoritative; no schema or hosted provisioning change is authorized by these fixes. APK results must be recorded after actual compilation/signature/install/launch checks. Earlier sections below are historical evidence.
+
+The first updated remote run passed formatting/lint/typecheck, all111 app suites/693 tests, database migrations/policies and secret checks, then exposed six SDK patch mismatches in Expo Doctor. Aligned only the reported compatible patch ranges (@expo/ui58.0.26, expo58.0.22, build-properties58.0.12, dev-client58.0.18, router58.0.29, screens4.30.1), with lockfile refreshed using npm10.9.9/Node22.23.2. Fresh local Expo Doctor passes20/20. Native build is being regenerated against these patches; no old APK is a current release artifact. The separate local HTTP suite could not run because the Docker engine pipe is absent; remote database CI passed, but is not HTTP acceptance.
+
+## Competition video production — in progress — 2026-10-31
+
+Owner-authorized autonomous video production is isolated under [`video-production/`](../video-production/README.md), with a persistent [checkpoint](../video-production/CHECKPOINT.md), on `feat/competition-video-production` from `2078bca`. The requested redesign is already merged in this local main revision. Existing `.gitignore` and `expo-env.d.ts` changes are preserved. Research verifies the PSA August 2026 figures; copyrighted news footage is excluded. Android capture uses the visibly disclosed synthetic offline fallback because a hosted two-principal rehearsal is unavailable. Do not treat the video as hosted acceptance or mark product milestones complete. Final MP4/render QA remains pending until the checkpoint records verified export evidence. No app feature change, hosted provisioning, commit, push, or merge is claimed.
+
 ## Redesign — committed — 2026-10-31
 
 Committed on `feat/frontend-redesign-soft-productivity` as `0c99972` (design system + shell), `65f959b` (Home), `4b510cd` (My Work), `530d96f` (Activity + Profile); each typechecked in isolation, final state 110 suites / 690 tests. Full analysis with before/after screenshots: [brand redesign report](reports/2026-10-31-brand-redesign.md). Remaining: task workspace, gig details/applicants, Post a gig builder, auth restyle, legacy `setupTheme`/Inter cleanup. `gh` CLI is not authenticated, so the PR must be opened from the GitHub web compare page.

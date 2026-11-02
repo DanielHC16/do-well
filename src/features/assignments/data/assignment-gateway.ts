@@ -102,6 +102,24 @@ export type AssignmentGateway = Readonly<{
   markActivityRead: (eventId: string) => Promise<ActivityEventRecord>;
 }>;
 
+// get_assignment_detail returns the assignment as to_jsonb(row), i.e. snake_case
+// table columns, while its participant and gig objects are already camelCase.
+function normalizeDetailPayload(data: unknown): unknown {
+  if (typeof data !== "object" || data === null) return data;
+  const assignment = (data as { assignment?: unknown }).assignment;
+  if (
+    typeof assignment === "object" &&
+    assignment !== null &&
+    "gig_id" in assignment
+  ) {
+    return {
+      ...data,
+      assignment: mapAssignmentRow(assignment as AssignmentRow),
+    };
+  }
+  return data;
+}
+
 function validateDetailIdentity(
   data: unknown,
   assignmentId: string,
@@ -285,7 +303,11 @@ export function createAssignmentGateway(
       if (result.error) return cachedReadOrThrow(result.error);
       if (!result.data) throw new Error("Assignment details not found.");
 
-      const parsed = validateDetailIdentity(result.data, assignmentId, userId);
+      const parsed = validateDetailIdentity(
+        normalizeDetailPayload(result.data),
+        assignmentId,
+        userId,
+      );
       if (userId) {
         try {
           await cache.set(userId, cacheKey, parsed);

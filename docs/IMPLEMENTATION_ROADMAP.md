@@ -1,5 +1,15 @@
 # Do Well Implementation Plan and Roadmap
 
+## Current reconciliation — 2026-11-02
+
+GitHub access is operational. Redesign PR #44 is merged; latest PR #45 is undergoing reproduced video-preparation/CI fixes and review. The owner explicitly authorized merge after verification. Settings and Admin screen components were found unreachable because their routes/gateways are missing; restoring the existing approved M17/M18 behavior is a separate demo-readiness follow-up, not a new milestone.
+
+Issue #4 is closed for completed M03A foundation scope; all unfinished M03B/M16 hosted authentication and physical-device acceptance moved to [#46](https://github.com/DanielHC16/do-well/issues/46). The later 1 November checkpoint records real hosted test-account footage, which is partial rehearsal evidence only. Historical implementation completion does not establish full hosted/device acceptance. Local standalone APK build and corrected demo runbooks are in progress; no current APK success is claimed here.
+
+The M15–M20 references below point to implementation PRs, not nonexistent tracking issues. Earlier dated paragraphs retain historical verification totals and constraints.
+
+Owner-authorized competition video production (2026-10-31) is **IN PROGRESS**, isolated from product implementation on `feat/competition-video-production` from merged-redesign revision `2078bca`. See the [production checkpoint](../video-production/CHECKPOINT.md). This task does not close hosted authentication/device acceptance or alter milestone completion statuses; a final export must pass actual technical and editorial QA before delivery.
+
 Latest M21 content-first refinement prioritizes gigs/work/activity, adds compact headers and feedback states while preserving contracts/branding. Verification: formatting, lint, strict TypeScript, **103 suites / 628 tests**, plus final filter-scrollbar focused checks. See [current report](reports/2026-10-31-content-first-composition.md). Milestone remains in progress pending owner/workflow/device acceptance; no commit/push/merge.
 
 Latest M21 lavender reference refinement: compact marketplace composition, softer layered cards/navigation, locally bundled licensed Inter, and owner-authorized current-logo Expo icon/splash references. No generated native changes or rebuild; backend/contracts remain intact. Verification: **103 suites / 617 tests**, formatting, lint, strict typecheck; focused tests passed after final layout/label adjustments. Worker/employer dashboards inspected at 360dp/150%; settings restored. See [latest report](reports/2026-10-31-lavender-visual-refinement.md). Status remains in progress pending owner and workflow/native-artwork acceptance.
@@ -67,7 +77,7 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 | M01       | Expo initialization, pinned tooling, CI, Android development build        | **COMPLETED**   | [#2](https://github.com/DanielHC16/do-well/issues/2)   |
 | M02       | Supabase local config, schema foundations, migrations and generated types | **COMPLETED**   | [#3](https://github.com/DanielHC16/do-well/issues/3)   |
 | M03A      | Authentication and profile foundation                                     | **COMPLETED**   | [#4](https://github.com/DanielHC16/do-well/issues/4)   |
-| M03B      | Hosted auth and physical-device acceptance                                | **DEFERRED**    | [#4](https://github.com/DanielHC16/do-well/issues/4)   |
+| M03B      | Hosted auth and physical-device acceptance                                | **IN PROGRESS** | [#46](https://github.com/DanielHC16/do-well/issues/46) |
 | D01       | Offline Demo Preview: complete local gig lifecycle                        | **COMPLETED**   | [#23](https://github.com/DanielHC16/do-well/issues/23)  |
 | M04       | Shared shell and worker/employer navigation                               | **COMPLETED**   | [#5](https://github.com/DanielHC16/do-well/issues/5)   |
 | M05       | Gig creation and employer management                                      | **COMPLETED**   | [#6](https://github.com/DanielHC16/do-well/issues/6)   |
@@ -80,13 +90,13 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 | M12       | Local notifications and image evidence integration                        | **COMPLETED**   | [#13](https://github.com/DanielHC16/do-well/issues/13) |
 | M13       | Connectivity resilience, cached reads and offline drafts                  | **COMPLETED**   | [#14](https://github.com/DanielHC16/do-well/issues/14) |
 | M14       | Security verification, end-to-end tests and competition build             | **COMPLETED**   | [#15](https://github.com/DanielHC16/do-well/issues/15) |
-| M15       | Repository truth, zero-secret CI workflow, and productization reset       | **COMPLETED**   | [#40](https://github.com/DanielHC16/do-well/issues/40) |
-| M16       | Hosted backend parity and Google authentication acceptance                | **IN PROGRESS** | [#41](https://github.com/DanielHC16/do-well/issues/41) |
-| M17       | Settings, workspace preference persistence, and admin capability foundation| **COMPLETED**   | [#42](https://github.com/DanielHC16/do-well/issues/42) |
-| M18       | Functional reporting and moderation console                               | **COMPLETED**   | [#43](https://github.com/DanielHC16/do-well/issues/43) |
-| M19       | Presentation refinement and honest production copy                        | **IN PROGRESS** | [#44](https://github.com/DanielHC16/do-well/issues/44) |
-| M20       | Live demo environment, dual-identity scenario, and release proof           | **IN PROGRESS** | [#45](https://github.com/DanielHC16/do-well/issues/45) |
-| M21       | Frontend marketplace branding, discovery, navigation, and work refinement | **IN PROGRESS** | Owner-authorized task, 2026-10-31; GitHub authentication unavailable |
+| M15       | Repository truth, zero-secret CI workflow, and productization reset       | **COMPLETED**   | [PR #40](https://github.com/DanielHC16/do-well/pull/40) |
+| M16       | Hosted backend parity and Google authentication acceptance                | **IN PROGRESS** | [Acceptance #46](https://github.com/DanielHC16/do-well/issues/46) |
+| M17       | Settings, workspace preference persistence, and admin capability foundation| **IN PROGRESS** | [PR #40](https://github.com/DanielHC16/do-well/pull/40); missing route integration under repair |
+| M18       | Functional reporting and moderation console                               | **IN PROGRESS** | [PR #41](https://github.com/DanielHC16/do-well/pull/41); admin integration under repair |
+| M19       | Presentation refinement and honest production copy                        | **IN PROGRESS** | [PR #41](https://github.com/DanielHC16/do-well/pull/41), [PR #44](https://github.com/DanielHC16/do-well/pull/44) |
+| M20       | Live demo environment, dual-identity scenario, and release proof           | **IN PROGRESS** | [PR #42](https://github.com/DanielHC16/do-well/pull/42); remaining acceptance #46 |
+| M21       | Frontend marketplace branding, discovery, navigation, and work refinement | **IN PROGRESS** | [Merged redesign PR #44](https://github.com/DanielHC16/do-well/pull/44); remaining device acceptance #46 |
 
 ## M00 — Secure repository and approve architecture
 

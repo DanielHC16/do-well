@@ -444,6 +444,39 @@ describe("AssignmentGateway", () => {
     expect(detail.employer.displayName).toBe("Elena Employer");
   });
 
+  it("fetches assignment detail when the RPC returns the snake_case table row", async () => {
+    // Mirrors get_assignment_detail: 'assignment', to_jsonb(v_assignment).
+    const rpcMock = jest.fn(async () => ({
+      data: {
+        assignment: mockRawAssignment,
+        employer: {
+          id: mockRawAssignment.employer_id,
+          displayName: "Elena Employer",
+          homeArea: "Makati",
+        },
+        worker: {
+          id: mockRawAssignment.worker_id,
+          displayName: "Warren Worker",
+          homeArea: "Makati",
+        },
+        gig: {
+          id: mockRawAssignment.gig_id,
+          title: "Office Furniture Assembly",
+          category: "assembly",
+          workMode: "onsite",
+          publicArea: "Makati",
+        },
+      },
+      error: null,
+    }));
+    const client = { rpc: rpcMock } as unknown as SupabaseClient<Database>;
+    const gateway = createAssignmentGateway(client);
+
+    const detail = await gateway.getAssignmentDetail(mockRawAssignment.id);
+    expect(detail.assignment.gigId).toBe(mockRawAssignment.gig_id);
+    expect(detail.assignment.agreedAmount).toBe(2500);
+  });
+
   it("writes to cache on successful getAssignmentDetail call", async () => {
     const mockDetailData = {
       assignment: {

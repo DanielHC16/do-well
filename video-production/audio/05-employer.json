@@ -1,0 +1,55 @@
+{
+  "id": "05-employer",
+  "file": "audio/05-employer.wav",
+  "duration": 40.2163,
+  "sampleRate": 24000,
+  "language": "en",
+  "engine": "Kokoro-82M v1.0 af_heart / Apache-2.0",
+  "textSha256": "4b46920307041a9615a94474f847811b2a4c6227b8df2a1cff69bfba45173f79",
+  "cues": [
+    {
+      "text": "Maya needs help setting up a weekend community event.",
+      "start": 0.2,
+      "end": 3.6938
+    },
+    {
+      "text": "Instead of a vague post, she opens the Job Brief Builder.",
+      "start": 4.5438,
+      "end": 8.2449
+    },
+    {
+      "text": "She describes the task in one sentence, then picks a category, the work mode, a general area and her budget.",
+      "start": 9.0949,
+      "end": 15.9485
+    },
+    {
+      "text": "The builder turns that into a structured brief: a clear title, the scope, step by step tasks with acceptance criteria, and safety notes.",
+      "start": 16.7985,
+      "end": 25.8429
+    },
+    {
+      "text": "Maya applies it to the form, sets the title and her six hundred peso offer, and publishes.",
+      "start": 26.6929,
+      "end": 32.4732
+    },
+    {
+      "text": "Within seconds, the gig is live.",
+      "start": 33.3232,
+      "end": 35.4567
+    },
+    {
+      "text": "Every field stays editable before it goes live.",
+      "start": 36.3067,
+      "end": 39.3663
+    }
+  ],
+  "normalization": {
+    "targetLUFS": -19,
+    "targetTruePeakDB": -3,
+    "actualLUFS": -19.29,
+    "actualTruePeakDB": -2.99,
+    "sampleCount": 965191,
+    "preservedSampleCount": true,
+    "rawFile": "audio\\raw\\05-employer.wav"
+  }
+}

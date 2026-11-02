@@ -1,0 +1,40 @@
+{
+  "id": "10-submit",
+  "file": "audio/10-submit.wav",
+  "duration": 20.583,
+  "sampleRate": 24000,
+  "language": "en",
+  "engine": "Kokoro-82M v1.0 af_heart / Apache-2.0",
+  "textSha256": "da0f61300e776f0b5c711ec2c8f5e5257f8d06241d3af322b34be939cec68420",
+  "cues": [
+    {
+      "text": "On Saturday, Alex starts each milestone, so Maya can follow the progress.",
+      "start": 0.2,
+      "end": 4.9036
+    },
+    {
+      "text": "When the work is done, he writes a completion note.",
+      "start": 5.7536,
+      "end": 8.5539
+    },
+    {
+      "text": "He can attach up to three photos from the gallery or the camera, and Android asks for camera access only when he taps.",
+      "start": 9.4039,
+      "end": 16.8433
+    },
+    {
+      "text": "Then he submits the work for review.",
+      "start": 17.6933,
+      "end": 19.733
+    }
+  ],
+  "normalization": {
+    "targetLUFS": -19,
+    "targetTruePeakDB": -3,
+    "actualLUFS": -19.13,
+    "actualTruePeakDB": -2.99,
+    "sampleCount": 493992,
+    "preservedSampleCount": true,
+    "rawFile": "audio\\raw\\10-submit.wav"
+  }
+}

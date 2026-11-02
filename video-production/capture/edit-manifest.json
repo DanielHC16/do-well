@@ -1,0 +1,115 @@
+[
+  {
+    "name": "01-demo-home",
+    "raw": "public\\footage\\01-demo-home.mp4",
+    "raw_duration": 8.377644,
+    "edit": "public\\footage\\edit\\01-demo-home.mp4",
+    "trim_start": 0,
+    "omitted_source_ranges": [],
+    "speed": 1,
+    "edit_duration": 9,
+    "fps": 30,
+    "edit_policy": "Only authentic Android frames; typing accelerated only in creation; verified final true frame held, never looped."
+  },
+  {
+    "name": "02-employer-create",
+    "raw": "public\\footage\\02-employer-create.mp4",
+    "raw_duration": 46.8286,
+    "edit": "public\\footage\\edit\\02-employer-create.mp4",
+    "trim_start": 0,
+    "omitted_source_ranges": [],
+    "speed": 1.5,
+    "edit_duration": 37,
+    "fps": 30,
+    "edit_policy": "Only authentic Android frames; typing accelerated only in creation; verified final true frame held, never looped."
+  },
+  {
+    "name": "03-worker-discovery",
+    "raw": "public\\footage\\03-worker-discovery.mp4",
+    "raw_duration": 20.654967,
+    "edit": "public\\footage\\edit\\03-worker-discovery.mp4",
+    "trim_start": 4,
+    "omitted_source_ranges": [
+      [
+        13,
+        16
+      ]
+    ],
+    "speed": 1,
+    "edit_duration": 19,
+    "fps": 30,
+    "edit_policy": "Only authentic Android frames; typing accelerated only in creation; verified final true frame held, never looped."
+  },
+  {
+    "name": "04-worker-apply",
+    "raw": "public\\footage\\04-worker-apply.mp4",
+    "raw_duration": 12.058978,
+    "edit": "public\\footage\\edit\\04-worker-apply.mp4",
+    "trim_start": 0,
+    "omitted_source_ranges": [],
+    "speed": 1,
+    "edit_duration": 35,
+    "fps": 30,
+    "edit_policy": "Only authentic Android frames; typing accelerated only in creation; verified final true frame held, never looped."
+  },
+  {
+    "name": "05-employer-select",
+    "raw": "public\\footage\\05-employer-select.mp4",
+    "raw_duration": 21.806233,
+    "edit": "public\\footage\\edit\\05-employer-select.mp4",
+    "trim_start": 3.5,
+    "omitted_source_ranges": [],
+    "speed": 1,
+    "edit_duration": 42,
+    "fps": 30,
+    "edit_policy": "Only authentic Android frames; typing accelerated only in creation; verified final true frame held, never looped."
+  },
+  {
+    "name": "06-worker-submit",
+    "raw": "public\\footage\\06-worker-submit.mp4",
+    "raw_duration": 16.373278,
+    "edit": "public\\footage\\edit\\06-worker-submit.mp4",
+    "trim_start": 0,
+    "omitted_source_ranges": [],
+    "speed": 1,
+    "edit_duration": 38,
+    "fps": 30,
+    "edit_policy": "Only authentic Android frames; typing accelerated only in creation; verified final true frame held, never looped."
+  },
+  {
+    "name": "07-employer-approve",
+    "raw": "public\\footage\\07-employer-approve.mp4",
+    "raw_duration": 4.688278,
+    "edit": "public\\footage\\edit\\07-employer-approve.mp4",
+    "trim_start": 0,
+    "omitted_source_ranges": [],
+    "speed": 1,
+    "edit_duration": 16,
+    "fps": 30,
+    "edit_policy": "Only authentic Android frames; typing accelerated only in creation; verified final true frame held, never looped."
+  },
+  {
+    "name": "08-activity",
+    "raw": "public\\footage\\08-activity.mp4",
+    "raw_duration": 2.861544,
+    "edit": "public\\footage\\edit\\08-activity.mp4",
+    "trim_start": 0,
+    "omitted_source_ranges": [],
+    "speed": 1,
+    "edit_duration": 14,
+    "fps": 30,
+    "edit_policy": "Only authentic Android frames; typing accelerated only in creation; verified final true frame held, never looped."
+  },
+  {
+    "name": "09-remote",
+    "raw": "public\\footage\\09-remote.mp4",
+    "raw_duration": 9.126489,
+    "edit": "public\\footage\\edit\\09-remote.mp4",
+    "trim_start": 0,
+    "omitted_source_ranges": [],
+    "speed": 1,
+    "edit_duration": 17,
+    "fps": 30,
+    "edit_policy": "Only authentic Android frames; typing accelerated only in creation; verified final true frame held, never looped."
+  }
+]

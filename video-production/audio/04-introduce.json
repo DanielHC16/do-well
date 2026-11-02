@@ -1,0 +1,50 @@
+{
+  "id": "04-introduce",
+  "file": "audio/04-introduce.wav",
+  "duration": 23.3842,
+  "sampleRate": 24000,
+  "language": "en",
+  "engine": "Kokoro-82M v1.0 af_heart / Apache-2.0",
+  "textSha256": "16b512c1da7a33f48fc0e5cd390b4d10e9781a6ba9b68e831fb9faae29d2902b",
+  "cues": [
+    {
+      "text": "This is Do Well.",
+      "start": 0.2,
+      "end": 1.361
+    },
+    {
+      "text": "Find nearby work.",
+      "start": 2.211,
+      "end": 3.6473
+    },
+    {
+      "text": "Get it done well.",
+      "start": 4.4973,
+      "end": 5.5953
+    },
+    {
+      "text": "A native Android app for short-term local and remote gigs, running on a live cloud backend.",
+      "start": 6.4452,
+      "end": 12.3095
+    },
+    {
+      "text": "Meet Maya, who runs a café in Makati, and Alex, a student looking for extra work.",
+      "start": 13.1595,
+      "end": 18.7728
+    },
+    {
+      "text": "Everything you are about to see is the real app.",
+      "start": 19.6227,
+      "end": 22.5342
+    }
+  ],
+  "normalization": {
+    "targetLUFS": -19,
+    "targetTruePeakDB": -3,
+    "actualLUFS": -19.44,
+    "actualTruePeakDB": -2.96,
+    "sampleCount": 561220,
+    "preservedSampleCount": true,
+    "rawFile": "audio\\raw\\04-introduce.wav"
+  }
+}

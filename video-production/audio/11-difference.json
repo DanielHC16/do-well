@@ -1,0 +1,60 @@
+{
+  "id": "11-difference",
+  "file": "audio/11-difference.wav",
+  "duration": 35.2931,
+  "sampleRate": 24000,
+  "language": "en",
+  "engine": "Kokoro-82M v1.0 af_heart / Apache-2.0",
+  "textSha256": "a1a90a109d5c8bc0e0a8c96ffd9a519d6f6899038824dc4fe2bea522ade996f7",
+  "cues": [
+    {
+      "text": "Our contribution is the connection between discovery and completion.",
+      "start": 0.2,
+      "end": 4.43
+    },
+    {
+      "text": "Innovation in a focused workflow.",
+      "start": 4.75,
+      "end": 6.8986
+    },
+    {
+      "text": "Android as the working platform.",
+      "start": 7.2186,
+      "end": 9.3885
+    },
+    {
+      "text": "Security through server-side authorization and access rules in the production design.",
+      "start": 9.7085,
+      "end": 15.2109
+    },
+    {
+      "text": "Functionality across the task lifecycle.",
+      "start": 15.5309,
+      "end": 18.3013
+    },
+    {
+      "text": "And user experience that makes the next step understandable.",
+      "start": 18.6213,
+      "end": 22.3566
+    },
+    {
+      "text": "These are design and engineering commitments, not measured employment outcomes.",
+      "start": 22.6766,
+      "end": 27.4682
+    },
+    {
+      "text": "The next test is the same journey with real accounts, on real devices, under real connectivity conditions.",
+      "start": 27.7882,
+      "end": 34.9731
+    }
+  ],
+  "normalization": {
+    "targetLUFS": -19,
+    "targetTruePeakDB": -3,
+    "actualLUFS": -19.54,
+    "actualTruePeakDB": -2.95,
+    "sampleCount": 847035,
+    "preservedSampleCount": true,
+    "rawFile": "audio\\raw\\11-difference.wav"
+  }
+}

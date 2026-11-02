@@ -1,0 +1,115 @@
+{
+  "chapters": [
+    {
+      "id": "01-hook",
+      "duration": 20.1116,
+      "peakDBFS": -3.0,
+      "rmsDBFS": -18.59,
+      "longestSilenceSeconds": 0.6,
+      "cueCount": 3,
+      "pass": true
+    },
+    {
+      "id": "02-context",
+      "duration": 31.658,
+      "peakDBFS": -2.99,
+      "rmsDBFS": -19.32,
+      "longestSilenceSeconds": 0.5,
+      "cueCount": 6,
+      "pass": true
+    },
+    {
+      "id": "03-problem",
+      "duration": 36.5098,
+      "peakDBFS": -2.96,
+      "rmsDBFS": -19.55,
+      "longestSilenceSeconds": 0.5,
+      "cueCount": 8,
+      "pass": true
+    },
+    {
+      "id": "04-introduce",
+      "duration": 23.9748,
+      "peakDBFS": -2.99,
+      "rmsDBFS": -19.83,
+      "longestSilenceSeconds": 0.6,
+      "cueCount": 7,
+      "pass": true
+    },
+    {
+      "id": "05-employer",
+      "duration": 51.178,
+      "peakDBFS": -2.94,
+      "rmsDBFS": -19.53,
+      "longestSilenceSeconds": 0.5,
+      "cueCount": 9,
+      "pass": true
+    },
+    {
+      "id": "06-discover",
+      "duration": 55.36,
+      "peakDBFS": -2.99,
+      "rmsDBFS": -19.68,
+      "longestSilenceSeconds": 0.8,
+      "cueCount": 9,
+      "pass": true
+    },
+    {
+      "id": "07-apply",
+      "duration": 41.2402,
+      "peakDBFS": -2.99,
+      "rmsDBFS": -19.65,
+      "longestSilenceSeconds": 0.5,
+      "cueCount": 9,
+      "pass": true
+    },
+    {
+      "id": "08-select",
+      "duration": 64.447,
+      "peakDBFS": -2.97,
+      "rmsDBFS": -19.58,
+      "longestSilenceSeconds": 0.8,
+      "cueCount": 11,
+      "pass": true
+    },
+    {
+      "id": "09-submit",
+      "duration": 60.7171,
+      "peakDBFS": -2.97,
+      "rmsDBFS": -19.57,
+      "longestSilenceSeconds": 0.5,
+      "cueCount": 12,
+      "pass": true
+    },
+    {
+      "id": "10-complete",
+      "duration": 40.925,
+      "peakDBFS": -2.98,
+      "rmsDBFS": -19.55,
+      "longestSilenceSeconds": 0.5,
+      "cueCount": 7,
+      "pass": true
+    },
+    {
+      "id": "11-difference",
+      "duration": 35.2931,
+      "peakDBFS": -2.95,
+      "rmsDBFS": -19.81,
+      "longestSilenceSeconds": 0.5,
+      "cueCount": 8,
+      "pass": true
+    },
+    {
+      "id": "12-close",
+      "duration": 21.602,
+      "peakDBFS": -3.0,
+      "rmsDBFS": -19.97,
+      "longestSilenceSeconds": 0.6,
+      "cueCount": 7,
+      "pass": true
+    }
+  ],
+  "narrationSeconds": 483.0166,
+  "passed": true,
+  "limits": "Signal, timing and file verification; does not constitute subjective listening review."
+}

@@ -1,0 +1,80 @@
+{
+  "id": "09-submit",
+  "file": "audio/09-submit.wav",
+  "duration": 60.7171,
+  "sampleRate": 24000,
+  "language": "en",
+  "engine": "Kokoro-82M v1.0 af_heart / Apache-2.0",
+  "textSha256": "b5a8c298862ab263f2ab2f8f289777674d5d479ae25eeb0b1e0dd01a333eb0fc",
+  "cues": [
+    {
+      "text": "For Alex, the next question is no longer where to find work.",
+      "start": 0.2,
+      "end": 3.7658
+    },
+    {
+      "text": "It is what to deliver.",
+      "start": 4.0858,
+      "end": 5.5127
+    },
+    {
+      "text": "He opens the assigned task, checks the original request, and describes the work completed.",
+      "start": 5.8327,
+      "end": 11.8421
+    },
+    {
+      "text": "In our cafe example, the tables are prepared and the event supplies arranged.",
+      "start": 12.1621,
+      "end": 17.1276
+    },
+    {
+      "text": "The submission gives Maya a checkpoint for review.",
+      "start": 17.4476,
+      "end": 20.3568
+    },
+    {
+      "text": "This makes Do Well a productivity application as well as a marketplace: it follows the work beyond the application.",
+      "start": 20.6768,
+      "end": 28.0014
+    },
+    {
+      "text": "The production implementation includes milestones and optional image attachments.",
+      "start": 28.3214,
+      "end": 33.3334
+    },
+    {
+      "text": "Those are not available in this isolated demo, so the recording uses text.",
+      "start": 33.6534,
+      "end": 38.365
+    },
+    {
+      "text": "A photo, where supported, provides supporting information, not automatic proof that every requirement was satisfied.",
+      "start": 38.685,
+      "end": 46.0184
+    },
+    {
+      "text": "The employer still reviews the result.",
+      "start": 46.3384,
+      "end": 48.5092
+    },
+    {
+      "text": "Local demo actions stay local.",
+      "start": 48.8292,
+      "end": 51.0394
+    },
+    {
+      "text": "Production cached views and saved drafts help during weak connectivity; they do not mean every action silently synchronizes in the background.",
+      "start": 51.3594,
+      "end": 60.3971
+    }
+  ],
+  "normalization": {
+    "targetLUFS": -19,
+    "targetTruePeakDB": -3,
+    "actualLUFS": -19.29,
+    "actualTruePeakDB": -2.97,
+    "sampleCount": 1457210,
+    "preservedSampleCount": true,
+    "rawFile": "audio\\raw\\09-submit.wav"
+  }
+}

@@ -1,0 +1,476 @@
+{
+  "title": "DO WELL · Opportunity to completion",
+  "fps": 30,
+  "duration": 426,
+  "runtime": "Live Do Well Android app · hosted backend · two accounts",
+  "revision": "2078bca",
+  "chapters": [
+    {
+      "id": "01-hook",
+      "start": 0,
+      "duration": 18,
+      "lang": "en",
+      "narration": "Five point nine million Filipinos. Employed, and still looking for more work. That was August 2026, according to the Philippine Statistics Authority. Unemployment eased from July, but it is still higher than a year ago. People want to work. The question is: can they find it?",
+      "beats": [
+        {
+          "at": 0,
+          "kind": "stat",
+          "kicker": "AUGUST 2026 · PHILIPPINES",
+          "title": "5.90",
+          "unit": "MILLION",
+          "body": "employed Filipinos wanted additional work",
+          "source": "PSA · August 2026 Labor Force Survey · 7 October 2026"
+        },
+        {
+          "at": 10,
+          "kind": "hook",
+          "kicker": "THE PHILIPPINE WORK PICTURE",
+          "title": "People want to work.\nCan they find it?",
+          "body": "Unemployment in August 2026: 5.3%.\nA year earlier: 3.9%.",
+          "source": "PSA · August 2026 Labor Force Survey · 7 October 2026"
+        }
+      ],
+      "voice": "am_michael",
+      "speed": 0.9,
+      "gap": 0.55
+    },
+    {
+      "id": "02-context",
+      "start": 18,
+      "duration": 32,
+      "lang": "en",
+      "narration": "Underemployment means a person is employed, but wants more hours, another job, or a job with longer hours. In August, that described eleven point nine percent of employed Filipinos. Unemployment was five point three percent: lower than July, but higher than August last year. These are different measures. Together, they show why access to suitable work matters.",
+      "beats": [
+        {
+          "at": 0,
+          "kind": "definition",
+          "kicker": "EMPLOYED, BUT SEEKING MORE WORK",
+          "title": "Underemployment",
+          "body": "More hours. An additional job.\nA job with longer hours.",
+          "source": "PSA · August 2026 Labor Force Survey · 7 October 2026"
+        },
+        {
+          "at": 10,
+          "kind": "comparison",
+          "kicker": "TWO DIFFERENT MEASURES",
+          "title": "11.9%",
+          "body": "underemployment rate",
+          "secondary": "5.3%",
+          "secondaryLabel": "unemployment rate",
+          "source": "PSA · August 2026 Labor Force Survey · 7 October 2026"
+        },
+        {
+          "at": 22,
+          "kind": "trend",
+          "kicker": "THE DIRECTION NEEDS CONTEXT",
+          "title": "Lower than July.\nHigher than last year.",
+          "body": "Unemployment: 6.0% in July 2026 → 5.3% in August 2026\nAugust 2025: 3.9%",
+          "source": "PSA · August 2026 Labor Force Survey · 7 October 2026"
+        }
+      ],
+      "pad": 3
+    },
+    {
+      "id": "03-problem",
+      "duration": 28,
+      "lang": "en",
+      "narration": "Think of a student who wants a few paid hours around class, or someone already working who needs more. On the other side, a small café needs extra hands for one busy weekend. Both sides face the same three questions. Where is the right work? What exactly needs to be done? And how do both people know the job is finished?",
+      "beats": [
+        {
+          "at": 0,
+          "kind": "people",
+          "kicker": "TWO SIDES OF A SHORT-TERM NEED",
+          "title": "Time to contribute.\nWork to get done.",
+          "body": "",
+          "cue": 0
+        },
+        {
+          "at": 13,
+          "kind": "questions",
+          "kicker": "THREE QUESTIONS",
+          "title": "Find it.\nDefine it.\nFinish it.",
+          "body": "Relevant opportunities → clear expectations → a visible outcome",
+          "cue": 2
+        }
+      ],
+      "pad": 4,
+      "voice": "af_heart",
+      "speed": 0.96,
+      "gap": 0.85
+    },
+    {
+      "id": "04-introduce",
+      "duration": 22,
+      "lang": "en",
+      "narration": "This is Do Well. Find nearby work. Get it done well. A native Android app for short-term local and remote gigs, running on a live cloud backend. Meet Maya, who runs a café in Makati, and Alex, a student looking for extra work. Everything you are about to see is the real app.",
+      "beats": [
+        {
+          "at": 0,
+          "kind": "reveal",
+          "kicker": "ANDROID · PRODUCTIVITY",
+          "title": "DO WELL",
+          "body": "Find nearby work. Get it done well.",
+          "cue": 0
+        },
+        {
+          "at": 10,
+          "kind": "phone",
+          "kicker": "MEET THE PEOPLE",
+          "title": "Maya posts.\nAlex delivers.",
+          "body": "Two accounts. One live marketplace.",
+          "clip": "e04b",
+          "step": 0,
+          "cue": 4
+        }
+      ],
+      "pad": 3,
+      "voice": "af_heart",
+      "speed": 0.96,
+      "gap": 0.85
+    },
+    {
+      "id": "05-employer",
+      "duration": 40,
+      "lang": "en",
+      "narration": "Maya needs help setting up a weekend community event. Instead of a vague post, she opens the Job Brief Builder. She describes the task in one sentence, then picks a category, the work mode, a general area and her budget. The builder turns that into a structured brief: a clear title, the scope, step by step tasks with acceptance criteria, and safety notes. Maya applies it to the form, sets the title and her six hundred peso offer, and publishes. Within seconds, the gig is live. Every field stays editable before it goes live.",
+      "beats": [
+        {
+          "at": 0,
+          "kind": "phone",
+          "kicker": "01 · EMPLOYER · MAYA",
+          "title": "Start with a\nclear brief.",
+          "body": "Job Brief Builder: one sentence in,\na structured brief out.",
+          "clip": "e05a",
+          "step": 0,
+          "cue": 0
+        },
+        {
+          "at": 17,
+          "kind": "phone",
+          "kicker": "JOB BRIEF BUILDER",
+          "title": "Tasks you can\ncheck off.",
+          "body": "Steps with acceptance criteria\nand safety notes.",
+          "clip": "e05b",
+          "step": 0,
+          "cue": 3
+        },
+        {
+          "at": 28,
+          "kind": "phone",
+          "kicker": "PUBLISHED",
+          "title": "Live in\nseconds.",
+          "body": "Weekend cafe event setup\nLegaspi Village, Makati · ₱600",
+          "clip": "e05c",
+          "step": 0,
+          "cue": 4
+        }
+      ],
+      "pad": 10,
+      "voice": "af_heart",
+      "speed": 0.96,
+      "gap": 0.85
+    },
+    {
+      "id": "06-discover",
+      "duration": 38,
+      "lang": "en",
+      "narration": "Now Alex. His home screen lists open gigs, with filters for on site and remote work. Location is optional. When Alex looks for nearby work, Android shows its own permission prompt, and Do Well asks only for approximate location, while the app is in use. There is no background tracking, and exact addresses are never shared. Alex can also skip GPS entirely, and pick a Metro Manila hub and a search radius. Every result shows a rounded distance and a plain reason why it fits.",
+      "beats": [
+        {
+          "at": 0,
+          "kind": "phone",
+          "kicker": "02 · WORKER · ALEX",
+          "title": "Discover\nnearby work.",
+          "body": "On-site and remote filters\nin one feed.",
+          "clip": "e06a",
+          "step": 1,
+          "cue": 0
+        },
+        {
+          "at": 11,
+          "kind": "phone",
+          "kicker": "ANDROID · LOCATION",
+          "title": "Approximate.\nWhile in use.",
+          "body": "Native permission prompt.\nNo background tracking.",
+          "clip": "e06b",
+          "step": 1,
+          "cue": 2
+        },
+        {
+          "at": 25,
+          "kind": "phone",
+          "kicker": "NO GPS NEEDED",
+          "title": "Pick a hub.\nSee why it fits.",
+          "body": "Rounded distance and a reason\non every card.",
+          "clip": "e06c",
+          "step": 1,
+          "cue": 5
+        }
+      ],
+      "pad": 9,
+      "voice": "af_heart",
+      "speed": 0.96,
+      "gap": 0.85
+    },
+    {
+      "id": "07-apply",
+      "duration": 26,
+      "lang": "en",
+      "narration": "Alex opens the café gig. He sees the pay, the general area, and the full brief. Meeting details are agreed directly with the employer, never posted publicly. He applies with a short note that only Maya can read, and the application appears in his work list right away. If his plans change, he can withdraw it.",
+      "beats": [
+        {
+          "at": 0,
+          "kind": "phone",
+          "kicker": "03 · APPLY",
+          "title": "Apply with\na short note.",
+          "body": "Pay, area and scope are clear\nbefore applying.",
+          "clip": "e07a",
+          "step": 1,
+          "cue": 0
+        },
+        {
+          "at": 16,
+          "kind": "phone",
+          "kicker": "MY WORK",
+          "title": "Tracked from\nthe first tap.",
+          "body": "Applied · pending review",
+          "clip": "e07b",
+          "step": 1,
+          "cue": 3
+        }
+      ],
+      "pad": 8,
+      "voice": "af_heart",
+      "speed": 0.96,
+      "gap": 0.85
+    },
+    {
+      "id": "08-select",
+      "duration": 36,
+      "lang": "en",
+      "narration": "On Maya's phone, the Activity feed reports a new application. She turns on device alerts, and Android asks for notification permission at the moment it is useful, not at launch. Maya reads Alex's note and selects him. Do Well explains exactly what happens next: the listing closes, other pending applications are declined, and an agreement is proposed. Nothing is final until Alex accepts.",
+      "beats": [
+        {
+          "at": 0,
+          "kind": "phone",
+          "kicker": "04 · EMPLOYER REVIEW",
+          "title": "Alerts, when\nthey matter.",
+          "body": "Notification permission,\nasked in context.",
+          "clip": "e08a",
+          "step": 2,
+          "cue": 0
+        },
+        {
+          "at": 15,
+          "kind": "phone",
+          "kicker": "SELECTION",
+          "title": "The employer\nmakes the choice.",
+          "body": "Listing closes.\nAn agreement is proposed.",
+          "clip": "e08b",
+          "step": 2,
+          "cue": 2
+        }
+      ],
+      "pad": 9,
+      "voice": "af_heart",
+      "speed": 0.96,
+      "gap": 0.85
+    },
+    {
+      "id": "09-agreement",
+      "duration": 38,
+      "lang": "en",
+      "narration": "Alex sees the update in his own Activity feed. He opens the task agreement, reviews the terms and the agreed amount, and accepts. The agreement is now active. Maya then breaks the job into milestones: arranging tables and chairs, setting out supplies, and tidying up afterwards. Both of them now share one checklist, so expectations are clear before the work begins.",
+      "beats": [
+        {
+          "at": 0,
+          "kind": "phone",
+          "kicker": "05 · AGREEMENT",
+          "title": "Both sides\nconfirm.",
+          "body": "Proposed → accepted → active",
+          "clip": "e09a",
+          "step": 2,
+          "cue": 0
+        },
+        {
+          "at": 18,
+          "kind": "phone",
+          "kicker": "MILESTONES",
+          "title": "One shared\nchecklist.",
+          "body": "Arrange tables · Set out supplies\n· Tidy up",
+          "clip": "e09b",
+          "step": 2,
+          "cue": 3
+        }
+      ],
+      "pad": 9,
+      "voice": "af_heart",
+      "speed": 0.96,
+      "gap": 0.85
+    },
+    {
+      "id": "10-submit",
+      "duration": 32,
+      "lang": "en",
+      "narration": "On Saturday, Alex starts each milestone, so Maya can follow the progress. When the work is done, he writes a completion note. He can attach up to three photos from the gallery or the camera, and Android asks for camera access only when he taps. Then he submits the work for review.",
+      "beats": [
+        {
+          "at": 0,
+          "kind": "phone",
+          "kicker": "06 · WORKER DELIVERY",
+          "title": "Progress you\ncan follow.",
+          "body": "Each milestone moves\nto in progress.",
+          "clip": "e10a",
+          "step": 3,
+          "cue": 0
+        },
+        {
+          "at": 14,
+          "kind": "phone",
+          "kicker": "ANDROID · CAMERA",
+          "title": "Evidence,\nwith permission.",
+          "body": "Up to three photos\n· camera or gallery",
+          "clip": "e10b",
+          "step": 3,
+          "cue": 2
+        }
+      ],
+      "pad": 10,
+      "voice": "af_heart",
+      "speed": 0.96,
+      "gap": 0.85
+    },
+    {
+      "id": "11-approve",
+      "duration": 30,
+      "lang": "en",
+      "narration": "Maya's phone lights up with Android notifications: the agreement confirmed, each milestone started, and the work submitted. She opens the submission, reads Alex's note, and approves it. She could also request a revision. All three milestones are marked approved, and the task agreement is complete. The completed agreement keeps a record of the six hundred pesos they agreed on.",
+      "beats": [
+        {
+          "at": 0,
+          "kind": "phone",
+          "kicker": "07 · NOTIFICATIONS",
+          "title": "Real Android\nnotifications.",
+          "body": "Grouped alerts for every\nstep of the job.",
+          "clip": "e11a",
+          "step": 4,
+          "cue": 0
+        },
+        {
+          "at": 13,
+          "kind": "phone",
+          "kicker": "REVIEW & APPROVE",
+          "title": "Approved.\nCompleted.",
+          "body": "3 of 3 milestones approved",
+          "clip": "e11b",
+          "step": 4,
+          "cue": 1
+        }
+      ],
+      "pad": 9,
+      "voice": "af_heart",
+      "speed": 0.96,
+      "gap": 0.85
+    },
+    {
+      "id": "12-android",
+      "duration": 38,
+      "lang": "en",
+      "narration": "Do Well is built for the way Android phones are really used. Connections drop, so the app watches network state. When Alex goes offline, it switches to a saved snapshot and says so clearly, then refreshes once he reconnects. Permissions are requested in context and kept to a minimum. And when Maya approves, Alex gets his own notification, and the job moves to completed in his work list and profile.",
+      "beats": [
+        {
+          "at": 0,
+          "kind": "android",
+          "kicker": "BUILT FOR ANDROID",
+          "title": "Native where\nit counts.",
+          "body": "",
+          "items": [
+            "Approximate, in-use location",
+            "Runtime permissions in context",
+            "Notification channels",
+            "Camera & gallery evidence",
+            "Network-aware offline mode",
+            "Saved snapshots & drafts"
+          ],
+          "cue": 0
+        },
+        {
+          "at": 9,
+          "kind": "phone",
+          "kicker": "ANDROID · CONNECTIVITY",
+          "title": "Offline?\nStill useful.",
+          "body": "Saved snapshot · clear status\n· refresh on reconnect",
+          "clip": "e12a",
+          "step": 4,
+          "cue": 1
+        },
+        {
+          "at": 23,
+          "kind": "phone",
+          "kicker": "08 · COMPLETE",
+          "title": "Done, on\nboth phones.",
+          "body": "Alex sees the approval\nand a completed job.",
+          "clip": "e12b",
+          "step": 4,
+          "cue": 4
+        }
+      ],
+      "pad": 8,
+      "voice": "af_heart",
+      "speed": 0.96,
+      "gap": 0.85
+    },
+    {
+      "id": "13-difference",
+      "duration": 28,
+      "lang": "en",
+      "narration": "So what makes Do Well different? A structured brief instead of a vague post. Discovery that explains itself. An agreement both sides confirm, milestones both can see, and a clear finish. For judging, that means innovation in the workflow, a native Android experience, privacy first security, complete functionality, and a calm, consistent user experience.",
+      "beats": [
+        {
+          "at": 0,
+          "kind": "pillars",
+          "kicker": "WHY DO WELL",
+          "title": "One connection.\nA complete workflow.",
+          "body": "Brief → Discover → Apply → Agree → Deliver → Approve",
+          "cue": 0
+        },
+        {
+          "at": 13,
+          "kind": "criteria",
+          "kicker": "FIVE LENSES FOR EVALUATION",
+          "title": "Built to be assessed.",
+          "body": "",
+          "cue": 4
+        }
+      ],
+      "pad": 4,
+      "voice": "af_heart",
+      "speed": 0.96,
+      "gap": 0.85
+    },
+    {
+      "id": "14-close",
+      "start": 460,
+      "duration": 20,
+      "lang": "en",
+      "narration": "Opportunity starts with a connection. Progress comes from getting the work done. Do Well. Find nearby work. Get it done well. Presented by Ang Huling Pull Request: Daniel Hardy Camacho, Hershey Anne Dalangin, and Carla Mabutas. UMAK IT Skills Olympics, twenty twenty six.",
+      "beats": [
+        {
+          "at": 0,
+          "kind": "closing",
+          "kicker": "OPPORTUNITY TO COMPLETION",
+          "title": "Opportunity starts\nwith a connection.",
+          "body": "Progress comes from getting the work done."
+        },
+        {
+          "at": 7,
+          "kind": "credits",
+          "kicker": "ANG HULING PULL REQUEST",
+          "title": "DO WELL",
+          "body": "Find nearby work. Get it done well.",
+          "note": "Daniel Hardy Camacho · Hershey Anne P. Dalangin · Carla R. Mabutas"
+        }
+      ]
+    }
+  ]
+}
