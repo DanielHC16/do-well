@@ -34,7 +34,7 @@ describe("AccountSettingsScreen", () => {
   it("shows identity, account preferences, and privacy settings", async () => {
     const view = await render(
       <AccountSettingsScreen
-        capabilities={{ isAdmin: false }}
+        capabilities={{ isAdmin: false, preferredMode: "worker" }}
         onPersistPreferredMode={jest.fn(async () => undefined)}
         onSignOut={jest.fn(async () => undefined)}
         profile={profile}
@@ -56,7 +56,7 @@ describe("AccountSettingsScreen", () => {
     const persist = jest.fn(async () => undefined);
     const view = await render(
       <AccountSettingsScreen
-        capabilities={{ isAdmin: false }}
+        capabilities={{ isAdmin: false, preferredMode: "worker" }}
         onPersistPreferredMode={persist}
         onSignOut={jest.fn(async () => undefined)}
         profile={profile}
@@ -80,7 +80,7 @@ describe("AccountSettingsScreen", () => {
     });
     const view = await render(
       <AccountSettingsScreen
-        capabilities={{ isAdmin: false }}
+        capabilities={{ isAdmin: false, preferredMode: "worker" }}
         onPersistPreferredMode={persist}
         onSignOut={jest.fn(async () => undefined)}
         profile={profile}
@@ -102,7 +102,7 @@ describe("AccountSettingsScreen", () => {
   it("shows server-authorized admin access without a role editor", async () => {
     const view = await render(
       <AccountSettingsScreen
-        capabilities={{ isAdmin: true }}
+        capabilities={{ isAdmin: true, preferredMode: "worker" }}
         onPersistPreferredMode={jest.fn(async () => undefined)}
         onSignOut={jest.fn(async () => undefined)}
         profile={profile}
@@ -121,7 +121,7 @@ describe("AccountSettingsScreen", () => {
     const onSignOut = jest.fn(async () => undefined);
     const view = await render(
       <AccountSettingsScreen
-        capabilities={{ isAdmin: false }}
+        capabilities={{ isAdmin: false, preferredMode: "worker" }}
         onPersistPreferredMode={jest.fn(async () => undefined)}
         onSignOut={onSignOut}
         profile={profile}
@@ -130,5 +130,48 @@ describe("AccountSettingsScreen", () => {
 
     await fireEvent.press(view.getByRole("button", { name: "Sign out" }));
     await waitFor(() => expect(onSignOut).toHaveBeenCalledTimes(1));
+  });
+
+  it("selects the server default independently from the active workspace", async () => {
+    const persist = jest.fn(async () => undefined);
+    const view = await render(
+      <AccountSettingsScreen
+        capabilities={{ isAdmin: false, preferredMode: "employer" }}
+        onPersistPreferredMode={persist}
+        onSignOut={jest.fn()}
+        profile={profile}
+      />,
+    );
+    expect(
+      view.getByRole("radio", { name: "Use Offer work by default" }),
+    ).toBeChecked();
+    expect(
+      view.getByRole("radio", { name: "Use Find work by default" }),
+    ).not.toBeChecked();
+
+    await fireEvent.press(
+      view.getByRole("radio", { name: "Use Find work by default" }),
+    );
+    await waitFor(() => expect(persist).toHaveBeenCalledWith("worker"));
+    expect(mockSwitchMode).not.toHaveBeenCalled();
+  });
+
+  it("reports when the default saves but active workspace activation fails", async () => {
+    mockSwitchMode.mockResolvedValueOnce(false);
+    const view = await render(
+      <AccountSettingsScreen
+        capabilities={{ isAdmin: false, preferredMode: "worker" }}
+        onPersistPreferredMode={jest.fn(async () => undefined)}
+        onSignOut={jest.fn()}
+        profile={profile}
+      />,
+    );
+    await fireEvent.press(
+      view.getByRole("radio", { name: "Use Offer work by default" }),
+    );
+    expect(await view.findByRole("alert")).toHaveTextContent(
+      "Default workspace saved, but this view couldn't switch. Try switching from the header.",
+    );
+    expect(view.queryByText("Default workspace updated.")).toBeNull();
   });
 });

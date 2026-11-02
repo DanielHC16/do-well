@@ -1,87 +1,43 @@
-# Competition Demo Runbook & Judging Script
+# Competition demo script
 
-**Document:** `docs/DEMO_RUNBOOK.md`  
-**Application:** DO-WELL (Neighborhood Gig Marketplace)  
-**Target Duration:** 3 to 5 minutes  
-**Target Audience:** Competition Judges & Technical Reviewers  
-**Fallback Strategy:** Offline Demo Mode (Zero-network fail-safe)  
+Use [DEMO_GUIDE.md](DEMO_GUIDE.md) for APK installation, emulator commands, build details, and current verification. Rehearse the exact APK you will present.
 
----
+## Choose the demonstration
 
-## 1. Executive Pitch (30 Seconds)
+The **live APK** runs the current marketplace interface against the configured Supabase project. It requires internet and separate employer and worker accounts. The **offline demo APK** starts directly in a disclosed synthetic sandbox, with fictional Maya and Alex presenters and local persistence. Its interface is separate from the redesigned marketplace. Runtime selection is compiled into the APK; there is no sign-in-screen “Demo Preview” switch.
 
-> "In the Philippines, millions of informal workers and household employers rely on word-of-mouth or unvetted social media groups to find neighborhood gigs. Informal gigs lack safety, clear deliverables, fair agreed rates, and reliable payment proof.
-> 
-> **DO-WELL** is a privacy-first, zero-external-cost Android marketplace built for real Philippine community conditions. It features an AI-assisted structured job brief builder with 100% deterministic local fallbacks, explainable nearby noticeboard ranking, atomic contracts with milestone evidence, and weak-connectivity resilience that functions even on spotty mobile data."
+Do not call the offline sandbox proof of hosted authentication, RLS, image upload, AI inference, payments, or remote notifications. No payment processing is implemented. Switching Find/Offer mode in the live app changes the current account's workspace; it does not sign in as another person.
 
----
+## Reliable offline script: 3–4 minutes
 
-## 2. Live Walkthrough Script (3–4 Minutes)
+1. **Introduce (20 seconds).** “Do Well helps people organize neighborhood work from a clear gig to an approved result. This demonstration uses fictional people and data stored on this device.” Point to the persistent demo disclosure.
+2. **Post (40 seconds).** Start as **Maya · Employer**. Tap **＋ POST** (accessibility label: **Create and publish a gig**). Use title “Prepare community event checklist”, a description longer than 20 characters, category `admin`, Remote, and PHP 500. Tap **Create and publish**. This is a synthetic listing, not a hosted write.
+3. **Apply (30 seconds).** Return home, choose **Alex · Worker**, open the new listing, enter a short message about helping, and submit the application.
+4. **Select (30 seconds).** Return home, choose **Maya · Employer**, manage that listing, and select Alex. Open the assignment to show its active state.
+5. **Submit (30 seconds).** Return home, choose **Alex · Worker**, open the assignment, enter a work note of at least 10 characters, and tap **Submit work**. This sandbox uses text notes, not uploaded photo evidence.
+6. **Approve (30 seconds).** Return home, choose **Maya · Employer**, open the assignment, and tap **Approve completed work**. Show **Demo lifecycle complete** and the local activity timeline.
+7. **Close (20 seconds).** “The live app extends this workflow with authenticated accounts, server-authorized operations, and private submission evidence. Hosted and physical-device acceptance are tracked separately.”
 
-### Act 1: Zero-Cost AI Job Brief Builder (Employer Maya)
-1. **Open App**: Tap the **DO-WELL** icon. Show clean high-contrast dark theme optimized for readability and battery life.
-2. **Post Notice**: Tap `+ Post Notice`.
-3. **Trigger AI Assistant**: Tap `"Use AI Brief Assistant"`.
-4. **Input Natural Task**: Type:
-   > *"Need help queueing early for DFA passport renewal at SM Megamall tomorrow morning at 7 AM. Budget 500 pesos."*
-5. **Generate Brief**: Tap `"Generate Structured Brief"`.
-   - *Highlight for Judges:* Point out that the brief is generated instantaneously using deterministic structured heuristics with zero external LLM API cost, zero subscription dependencies, and zero privacy leakage.
-6. **Review & Publish**: Tap `"Apply Draft to Form"`, select location `"Ortigas Center, Mandaluyong"`, and tap `"Post Notice"`.
+Use **Reset the local demo** (accessibility label: **Reset demo data**), then confirm **Reset**, before the next rehearsal. Reset affects only synthetic local demo progress. Two seeded gigs are available if time is short; use “Prepare event spreadsheet” to skip typing a new listing.
 
-### Act 2: Explainable Nearby Discovery (Worker Alex)
-1. **Switch Persona / Mode**: Toggle the top bar switch to **Worker** mode.
-2. **Observe Noticeboard**:
-   - The newly posted DFA errand appears at the top of the feed.
-   - Point to the **Nearby Badge** and explainable ranking criteria (distance calculation based on coarse foreground GPS, category matching, and fair budget).
-3. **Inspect Details**: Tap the notice to view full task checklist and safety constraints.
-4. **Submit Application**: Tap `"Apply for this Gig"`, enter bid (`PHP 500`) and note:
-   > *"I live nearby in Mandaluyong and can line up before 7:00 AM."*
-5. Tap `"Submit Application"`.
+## Live script: rehearse with two accounts first
 
-### Act 3: Atomic Agreement & Selection (Employer Maya)
-1. **Switch Back to Employer Mode**: View the gig in `"Posted Notices"`.
-2. **Review Applicant**: View Alex's bid and rating badge.
-3. **Atomic Select**: Tap `"Select Worker"`.
-   - *Highlight for Judges:* Emphasize the atomic database transaction: when an employer selects a worker, all other applicants are notified, and an agreed contract with a locked rate is created instantly.
+1. Sign in as the employer, complete the profile if requested, and select **Offer**. Use the center action to post a small remote gig with a unique rehearsal title. Review all brief-builder output before publishing.
+2. On a second device/session, sign in as a different worker and select **Find**. Pull to refresh, open that gig, and apply.
+3. As employer, open **My Work**, inspect the applicants, confirm worker selection, and open the resulting workspace. Complete any displayed agreement confirmations and configure one small milestone.
+4. As worker, open **My Work**, review the workspace, complete the applicable agreement step, and submit the milestone with a note and optional permitted image evidence.
+5. As employer, refresh, review the submission, approve it, and show the resulting work/activity state. If revision is demonstrated, request revision before the worker resubmits and the employer approves.
+6. Show **Activity** and the profile/settings screens. Describe device alerts as local notifications for events the device has read, not server push to a closed app.
 
-### Act 4: Work Submission with Image Evidence (Worker Alex)
-1. **Switch to Worker**: Tap `Activity` tab -> select active assignment.
-2. **Attach Evidence**:
-   - Tap `"Add Evidence Photo"` (camera or gallery).
-   - Show private client-side image validation (5MB cap, JPEG/PNG/WEBP, stripped EXIF metadata for privacy).
-3. **Submit Work**: Add note *"Arrived at DFA, queue ticket #14 secured."* and tap `"Submit Work for Approval"`.
+The precise live sequence must be rehearsed against the actual hosted state. Account setup, OAuth browser consent, permission prompts, and migration/provisioning should be completed before presentation time. Do not improvise admin provisioning or database resets during judging.
 
-### Act 5: Verification & Completion (Employer Maya)
-1. **Employer Review**: Employer opens the assignment.
-2. **View Evidence**: Shows private signed thumbnail with strict time-limited access.
-3. **Approve & Complete**: Tap `"Approve Work"`.
-   - Contract status advances to `Completed`.
-   - Activity log captures verifiable timestamped milestone.
+## Presentation preparation
 
----
+- Keep the laptop plugged in, close heavy apps, charge the phone, disable unrelated notifications, and increase screen timeout.
+- Have a tested data cable and the APKs available locally. A standalone release APK starts without Metro; live backend operations still require internet.
+- Rehearse both success and denied-permission paths. Use Remote gigs to avoid a location dependency in the main script.
+- Keep synthetic sample photos free of real personal data. Use real hosted accounts only with the owner's authorization.
+- Keep a separately prepared fallback device/emulator on the offline demo APK. Both APKs use the same Android package, so they replace one another on one device.
+- If a network operation fails, explain it and move to the prepared offline device. Cached live reads do not make live writes work offline; drafts require explicit submission after reconnect.
 
-## 3. Resilience & Offline Contingency Demonstration
-
-### Weak-Connectivity Test:
-1. Turn on **Airplane Mode** on the device.
-2. Notice the prominent **Amber Offline Banner** appear at the top:
-   > *"Offline: You're viewing saved data. Changes will sync when reconnected."*
-3. Open discovery feed:
-   - Notice data still renders seamlessly from the user-scoped bounded local cache.
-   - Shows **"Saved snapshot"** badge with exact time.
-4. Draft a new application while offline:
-   - Show that draft inputs are preserved in local storage across screen reloads.
-5. Turn off Airplane Mode:
-   - Banner clears automatically, showing live connectivity restoration.
-
----
-
-## 4. Fail-Safe: Instant Offline Demo Mode Pivot
-
-If external network connectivity completely drops or Wi-Fi is unavailable in the judging hall:
-1. Tap the `"Demo Preview"` button on the sign-in screen.
-2. Show the judges the self-contained offline demonstration sandbox:
-   - Pre-loaded with fictional neighborhood personas (*Maya Santos* and *Alex Reyes*).
-   - Complete multi-role marketplace lifecycle runs entirely in local memory and AsyncStorage.
-   - Prominent header discloses: *"DEMO MODE - LOCAL DATA (No account needed)"*.
-   - One-tap `"Reset demo data"` returns the demo to the clean starting scenario instantly.
+Claims to avoid: ratings that have no data contract, automatic synchronization of queued marketplace writes, guaranteed AI inference, payment/escrow processing, or completed physical-device/Google OAuth acceptance without recorded evidence.

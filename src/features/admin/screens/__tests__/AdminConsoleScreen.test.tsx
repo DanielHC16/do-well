@@ -135,4 +135,24 @@ describe("AdminConsoleScreen", () => {
       expect(gateway.getAdminOverview).toHaveBeenCalledTimes(2),
     );
   });
+
+  it("keeps moderation actions disabled until the server's ten-character note minimum is met", async () => {
+    const gateway = createGateway([report]);
+    const view = await render(<AdminConsoleScreen gateway={gateway} isAdmin />);
+    await view.findByText(report.details);
+
+    await fireEvent.changeText(
+      view.getByLabelText("Moderation note"),
+      "Too short",
+    );
+    expect(view.getByRole("button", { name: "Resolve report" })).toBeDisabled();
+    expect(view.getByRole("button", { name: "Dismiss report" })).toBeDisabled();
+    expect(gateway.resolveReport).not.toHaveBeenCalled();
+
+    await fireEvent.changeText(
+      view.getByLabelText("Moderation note"),
+      "Reviewed safely.",
+    );
+    expect(view.getByRole("button", { name: "Resolve report" })).toBeEnabled();
+  });
 });

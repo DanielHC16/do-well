@@ -93,7 +93,12 @@ export function AdminConsoleScreen({
     decision: "resolved" | "dismissed",
   ) {
     const normalizedNote = reviewNote.trim();
-    if (!normalizedNote || reviewingId) return;
+    if (
+      normalizedNote.length < 10 ||
+      normalizedNote.length > 2000 ||
+      reviewingId
+    )
+      return;
     setReviewingId(report.id);
     setActionMessage(null);
     setActionError(null);
@@ -238,7 +243,7 @@ function ReportCard({
   onNoteChange: (value: string) => void;
   report: AdminReport;
 }>) {
-  const decisionDisabled = busy || note.trim().length < 3;
+  const decisionDisabled = busy || note.trim().length < 10;
   return (
     <View style={styles.reportCard}>
       <View style={styles.reportHeader}>

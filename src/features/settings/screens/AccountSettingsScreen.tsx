@@ -14,7 +14,10 @@ import type { ShellMode } from "@/features/shell/model/shell-mode";
 import { ProfileAvatar } from "@/shared/ui";
 import { AppIcon } from "@/shared/ui/AppIcon";
 
-export type AccountCapabilities = Readonly<{ isAdmin: boolean }>;
+export type AccountCapabilities = Readonly<{
+  isAdmin: boolean;
+  preferredMode: ShellMode;
+}>;
 
 type AccountSettingsScreenProps = Readonly<{
   capabilities: AccountCapabilities;
@@ -31,19 +34,28 @@ export function AccountSettingsScreen({
 }: AccountSettingsScreenProps) {
   const router = useRouter();
   const { mode, switchMode } = useShellMode();
+  const [preferredMode, setPreferredMode] = useState(
+    capabilities.preferredMode,
+  );
   const [savingMode, setSavingMode] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function chooseDefaultMode(nextMode: ShellMode) {
-    if (nextMode === mode || savingMode) return;
+    if (nextMode === preferredMode || savingMode) return;
     setSavingMode(true);
     setMessage(null);
     setError(null);
     try {
       await onPersistPreferredMode(nextMode);
-      await switchMode(nextMode);
+      setPreferredMode(nextMode);
+      if (mode !== nextMode && !(await switchMode(nextMode))) {
+        setError(
+          "Default workspace saved, but this view couldn't switch. Try switching from the header.",
+        );
+        return;
+      }
       setMessage("Default workspace updated.");
     } catch {
       setError("We couldn't update your default workspace. Try again.");
@@ -98,14 +110,14 @@ export function AccountSettingsScreen({
             description="Browse notices, apply for work, and manage assignments."
             label="Find work"
             onPress={() => void chooseDefaultMode("worker")}
-            selected={mode === "worker"}
+            selected={preferredMode === "worker"}
           />
           <WorkspaceOption
             busy={savingMode}
             description="Post notices, choose workers, and review completed work."
             label="Offer work"
             onPress={() => void chooseDefaultMode("employer")}
-            selected={mode === "employer"}
+            selected={preferredMode === "employer"}
           />
         </View>
         {savingMode ? (

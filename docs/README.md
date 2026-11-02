@@ -13,6 +13,8 @@ This directory is the durable source of engineering context. Chat history is not
 
 ## Document map
 
+For current emulator/APK commands and presentation steps, read [DEMO_GUIDE.md](DEMO_GUIDE.md), [DEMO_RUNBOOK.md](DEMO_RUNBOOK.md), and the [2 November readiness audit](reports/2026-11-02-demo-readiness-audit.md). These distinguish the live marketplace from the separate synthetic offline fallback.
+
 | Document | Purpose |
 |---|---|
 | `PRODUCT_REQUIREMENTS.md` | Approved scope, users, flows, exclusions, and acceptance boundaries |

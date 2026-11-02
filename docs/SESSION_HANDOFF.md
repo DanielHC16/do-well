@@ -1,5 +1,14 @@
 # Session Handoff
 
+## Demo-readiness repair — 2026-11-02
+
+- PR [#45](https://github.com/DanielHC16/do-well/pull/45) is merged to main at `1515b1b`, after fully green app/database/security CI run `41474062126` and resolved review findings. Owner authorized the merge in this session.
+- Follow-up branch: `fix/demo-readiness`, from that merge; scope tracked by [#47](https://github.com/DanielHC16/do-well/issues/47). Restores protected Settings/Admin routes, schema-validated existing RPC gateways, fail-closed capability loading/retry and account isolation. Settings uses the server's default workspace; startup hydrates it with bounded per-user offline preference fallback. Failed local activation is reported honestly. Moderation UI matches server's ten-character note minimum.
+- Test-first defects and independent review findings are resolved. Fresh full verification on the combined source: formatting, ESLint, strict TypeScript, **114 suites / 713 tests**, Expo Doctor **20/20**, Android Hermes export **1,735 modules / 5.2MB**. Focused route/gateway/settings/admin/store/provider verification: **7 suites / 34 tests**. Independent final re-review: LGTM.
+- Local standalone demo/live APK builds are in progress. SDK patch alignment and generated Android regeneration are complete; Java17 toolchain is cached, Gradle runs on JBR21. A native NDK-header access failure was reproduced as readable/compilable in isolation; retry runs without competing Metro/Jest jobs. Do not claim an APK until the demo guide records signature/hash/install/launch evidence. No physical phone is connected.
+- [Demo guide](DEMO_GUIDE.md), [presentation script](DEMO_RUNBOOK.md), [readiness audit](reports/2026-11-02-demo-readiness-audit.md) and README now distinguish live authenticated use from the separate visibly synthetic offline runtime. No sign-in Demo Preview switch, ratings, automatic offline-write synchronization, payment integration or proven default model inference is promised.
+- Issue #4 closed as completed M03A foundation after remaining hosted/device acceptance transferred to [#46](https://github.com/DanielHC16/do-well/issues/46). No new local HTTP integration run: Docker engine is unavailable. Existing owner edits to `.gitignore` and `expo-env.d.ts` remain preserved and uncommitted. No schema, hosted provisioning, capability grant, billing/card or paid build service change.
+
 ## Verified current work — 2026-11-02
 
 The owner authorized fixing the latest PR, issue closeout, merging to main, and a zero-cost demo APK. GitHub CLI and connector access are working. PR #44 (redesign) is merged at `2078bca`; the current open PR is [#45](https://github.com/DanielHC16/do-well/pull/45), `feat/competition-video-production`, including assignment-detail snake_case parsing fix `6dffca3` and video workspace `93082f0`.
