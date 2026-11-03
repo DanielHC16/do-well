@@ -1,4 +1,3 @@
-import { Alert } from "react-native";
 import { fireEvent, render } from "@testing-library/react-native";
 
 import { DemoHomeScreen } from "../DemoHomeScreen";
@@ -43,42 +42,17 @@ describe("DemoHomeScreen", () => {
     };
   });
 
-  it("discloses local mode and exposes both presenter personas", async () => {
+  it("keeps account switching in Settings and removes presentation disclaimers", async () => {
     const view = await render(<DemoHomeScreen />);
-
-    expect(view.getByText("DEMO MODE - LOCAL DATA")).toBeVisible();
-    expect(view.getByRole("radio", { name: "Present as Employer" })).toHaveProp(
-      "accessibilityState",
-      {
-        checked: true,
-        disabled: true,
-        selected: true,
-      },
-    );
-    expect(view.getByRole("radio", { name: "Present as Worker" })).toHaveProp(
-      "accessibilityState",
-      {
-        checked: false,
-        disabled: false,
-        selected: false,
-      },
-    );
-  });
-
-  it("requires confirmation before resetting local data", async () => {
-    const alert = jest.spyOn(Alert, "alert");
-    const view = await render(<DemoHomeScreen />);
-
-    await fireEvent.press(
-      view.getByRole("button", { name: "Reset demo data" }),
-    );
-
-    expect(alert).toHaveBeenCalledWith(
-      "Reset demo data?",
-      expect.stringContaining("synthetic"),
-      expect.any(Array),
-    );
-    expect(mockReset).not.toHaveBeenCalled();
+    expect(view.queryAllByRole("radio")).toHaveLength(0);
+    expect(
+      view.queryByText(
+        /DEMO MODE|THE DEMO ROUTE|The flow is real|fictional people/i,
+      ),
+    ).toBeNull();
+    await fireEvent.press(view.getByRole("button", { name: "Settings" }));
+    expect(mockPush).toHaveBeenCalledWith("/(demo)/settings");
+    expect(mockSwitchPersona).not.toHaveBeenCalled();
   });
 
   it("shows a useful empty state", async () => {

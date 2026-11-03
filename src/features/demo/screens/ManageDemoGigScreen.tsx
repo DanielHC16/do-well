@@ -16,13 +16,11 @@ export function ManageDemoGigScreen({ gigId }: Readonly<{ gigId: string }>) {
   const assignment = state.assignments.find((item) => item.gigId === gigId);
 
   if (!gig) {
-    return (
-      <Unavailable message="This local gig does not exist or the demo was reset." />
-    );
+    return <Unavailable message="This gig is no longer available." />;
   }
   if (state.activePersona !== "employer") {
     return (
-      <Unavailable message="Application messages are visible only to the employer presenter." />
+      <Unavailable message="Application messages are visible only to the employer account." />
     );
   }
 
@@ -44,13 +42,22 @@ export function ManageDemoGigScreen({ gigId }: Readonly<{ gigId: string }>) {
           <View style={demoStyles.card}>
             <Text style={styles.cardTitle}>No applications yet</Text>
             <Text style={demoStyles.mutedText}>
-              Switch to the worker presenter and apply to this gig.
+              New applications will appear here.
             </Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Post a gig"
+              disabled={busy}
+              onPress={() => router.push("/(demo)/employer/gigs/new")}
+              style={demoStyles.secondaryButton}
+            >
+              <Text style={demoStyles.secondaryButtonText}>Post a gig</Text>
+            </Pressable>
           </View>
         ) : (
           applications.map((application) => (
             <View key={application.id} style={demoStyles.card}>
-              <Text style={styles.applicantKicker}>DEMO APPLICANT</Text>
+              <Text style={styles.applicantKicker}>APPLICANT</Text>
               <Text style={styles.cardTitle}>{DEMO_WORKER.displayName}</Text>
               <Text style={demoStyles.statusPill}>{application.status}</Text>
               <Text style={demoStyles.mutedText}>{application.message}</Text>
@@ -80,7 +87,7 @@ export function ManageDemoGigScreen({ gigId }: Readonly<{ gigId: string }>) {
         <View style={demoStyles.card}>
           <Text style={styles.cardTitle}>Assignment {assignment.status}</Text>
           <Text style={demoStyles.mutedText}>
-            The selected worker can now submit work from their presenter view.
+            Open the assignment to review the work and its progress.
           </Text>
           <Pressable
             accessibilityLabel="Open assignment"
@@ -105,7 +112,7 @@ function Unavailable({ message }: Readonly<{ message: string }>) {
         onPress={() => router.replace("/(demo)")}
         style={demoStyles.button}
       >
-        <Text style={demoStyles.buttonText}>Back to demo home</Text>
+        <Text style={demoStyles.buttonText}>Back to home</Text>
       </Pressable>
     </DemoShell>
   );

@@ -1,12 +1,10 @@
 import { useRouter } from "expo-router";
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { DemoShell, demoStyles } from "@/features/demo/components/DemoShell";
 import { useDemo } from "@/features/demo/context/useDemo";
 import { DEMO_EMPLOYER, DEMO_WORKER } from "@/features/demo/model/demo-state";
 import { setupTheme } from "@/features/setup/setupTheme";
-
-const journey = ["Post", "Apply", "Select", "Submit", "Approve"] as const;
 
 function formatBudget(amount: number) {
   return new Intl.NumberFormat("en-PH", {
@@ -18,111 +16,37 @@ function formatBudget(amount: number) {
 
 export function DemoHomeScreen() {
   const router = useRouter();
-  const { busy, error, reset, state, switchPersona } = useDemo();
+  const { busy, error, state } = useDemo();
   const isEmployer = state.activePersona === "employer";
   const persona = isEmployer ? DEMO_EMPLOYER : DEMO_WORKER;
   const visibleGigs = isEmployer
     ? state.gigs
     : state.gigs.filter((gig) => gig.status === "published");
-  const journeyStep = getJourneyStep(state);
-
-  function confirmReset() {
-    Alert.alert(
-      "Reset demo data?",
-      "This replaces all local synthetic demo progress with the starting scenario.",
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Reset", style: "destructive", onPress: () => void reset() },
-      ],
-    );
-  }
-
   return (
     <DemoShell
       busy={busy}
       error={error}
-      subtitle="A working neighborhood marketplace, shown with fictional people and local sample data."
+      subtitle={
+        isEmployer
+          ? "Connect with people who can get it done."
+          : "Good opportunities, right in your neighborhood."
+      }
       title={isEmployer ? "Put good work out there." : "Find work worth doing."}
     >
       <View style={styles.personaCard}>
-        <Text style={styles.eyebrow}>YOU ARE PRESENTING AS</Text>
+        <Text style={styles.eyebrow}>WELCOME BACK</Text>
         <Text accessibilityLiveRegion="polite" style={styles.personaName}>
           {persona.displayName}
         </Text>
         <Text style={styles.personaRole}>
-          {isEmployer ? "Employer view" : "Worker view"}
+          {isEmployer ? "Your hiring workspace" : "Your work workspace"}
         </Text>
-        <View accessibilityRole="radiogroup" style={styles.personaButtons}>
-          {(["employer", "worker"] as const).map((role) => {
-            const active = state.activePersona === role;
-            const label = `Present as ${role === "employer" ? "Employer" : "Worker"}`;
-            return (
-              <Pressable
-                accessibilityLabel={label}
-                accessibilityRole="radio"
-                accessibilityState={{ checked: active, selected: active }}
-                disabled={busy || active}
-                key={role}
-                onPress={() => void switchPersona(role)}
-                style={[
-                  styles.personaButton,
-                  active ? styles.personaButtonActive : null,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.personaButtonText,
-                    active ? styles.personaButtonTextActive : null,
-                  ]}
-                >
-                  {role === "employer" ? "Maya · Employer" : "Alex · Worker"}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      </View>
-
-      <View style={styles.journeyCard}>
-        <View style={styles.sectionLead}>
-          <Text style={styles.eyebrow}>THE DEMO ROUTE</Text>
-          <Text style={styles.routeCount}>{journeyStep}/5 complete</Text>
-        </View>
-        <View style={styles.journeyRow}>
-          {journey.map((label, index) => {
-            const complete = index < journeyStep;
-            const current = index === journeyStep;
-            return (
-              <View key={label} style={styles.journeyStep}>
-                <View
-                  style={[
-                    styles.journeyMark,
-                    complete ? styles.journeyMarkDone : null,
-                    current ? styles.journeyMarkCurrent : null,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.journeyNumber,
-                      complete || current ? styles.journeyNumberActive : null,
-                    ]}
-                  >
-                    {complete ? "✓" : index + 1}
-                  </Text>
-                </View>
-                <Text style={styles.journeyLabel}>{label}</Text>
-              </View>
-            );
-          })}
-        </View>
       </View>
 
       {state.assignments.length > 0 ? (
         <View style={styles.section}>
-          <Text style={styles.eyebrow}>ACTIVE HANDOFFS</Text>
-          <Text style={demoStyles.sectionTitle}>
-            {isEmployer ? "Work in progress" : "Your assignments"}
-          </Text>
+          <Text style={styles.eyebrow}>YOUR WORK</Text>
+          <Text style={demoStyles.sectionTitle}>Your assignments</Text>
           {state.assignments.map((assignment) => {
             const gig = state.gigs.find((item) => item.id === assignment.gigId);
             if (!gig) return null;
@@ -152,7 +76,7 @@ export function DemoHomeScreen() {
                       ? isEmployer
                         ? "Ready for your approval"
                         : "Waiting for Maya's approval"
-                      : "Completed in this demo"}
+                      : "Work completed"}
                 </Text>
               </Pressable>
             );
@@ -189,7 +113,7 @@ export function DemoHomeScreen() {
             <Text style={styles.cardTitle}>No gigs yet</Text>
             <Text style={demoStyles.mutedText}>
               {isEmployer
-                ? "Put up the first notice to begin the demo."
+                ? "Post your first gig and find someone to help."
                 : "There are no open notices right now. Check your assignments above."}
             </Text>
             {isEmployer ? (
@@ -250,7 +174,7 @@ export function DemoHomeScreen() {
         <Text style={demoStyles.sectionTitle}>What just happened</Text>
         {state.activity.length === 0 ? (
           <Text style={demoStyles.mutedText}>
-            Your demo actions will collect here.
+            Your recent activity will appear here.
           </Text>
         ) : (
           [...state.activity]
@@ -271,39 +195,8 @@ export function DemoHomeScreen() {
             ))
         )}
       </View>
-
-      <View style={styles.disclosureCard}>
-        <Text style={styles.eyebrow}>WHAT THIS PROVES</Text>
-        <Text style={styles.disclosureTitle}>
-          The flow is real. The people and data are not.
-        </Text>
-        <Text style={demoStyles.mutedText}>
-          This preview runs gigs, applications, assignments, submissions, and
-          approvals locally. It does not claim authentication, cloud sync,
-          payments, identity checks, or AI.
-        </Text>
-      </View>
-
-      <Pressable
-        accessibilityLabel="Reset demo data"
-        accessibilityRole="button"
-        disabled={busy}
-        onPress={confirmReset}
-        style={styles.resetButton}
-      >
-        <Text style={styles.resetText}>Reset the local demo</Text>
-      </Pressable>
     </DemoShell>
   );
-}
-
-function getJourneyStep(state: ReturnType<typeof useDemo>["state"]): number {
-  if (state.assignments.some(({ status }) => status === "completed")) return 5;
-  if (state.assignments.some(({ status }) => status === "submitted")) return 4;
-  if (state.assignments.length > 0) return 3;
-  if (state.applications.length > 0) return 2;
-  if (state.gigs.length > 0) return 1;
-  return 0;
 }
 
 const styles = StyleSheet.create({
@@ -334,85 +227,11 @@ const styles = StyleSheet.create({
     fontSize: setupTheme.type.body,
     fontWeight: "700",
   },
-  personaButtons: {
-    flexDirection: "row",
-    gap: setupTheme.spacing.compact,
-    marginTop: setupTheme.spacing.compact,
-  },
-  personaButton: {
-    alignItems: "center",
-    backgroundColor: setupTheme.color.surface,
-    borderColor: setupTheme.color.foreground,
-    borderRadius: setupTheme.radius.control,
-    borderWidth: 2,
-    flex: 1,
-    justifyContent: "center",
-    minHeight: 52,
-    padding: setupTheme.spacing.compact,
-  },
-  personaButtonActive: { backgroundColor: setupTheme.color.foreground },
-  personaButtonText: {
-    color: setupTheme.color.foreground,
-    fontSize: setupTheme.type.caption,
-    fontWeight: "800",
-    textAlign: "center",
-  },
-  personaButtonTextActive: { color: setupTheme.color.surface },
-  journeyCard: {
-    backgroundColor: setupTheme.color.surface,
-    borderColor: setupTheme.color.foreground,
-    borderRadius: setupTheme.radius.card,
-    borderWidth: 2,
-    gap: setupTheme.spacing.section,
-    padding: setupTheme.spacing.section,
-  },
   sectionLead: {
     alignItems: "flex-end",
     flexDirection: "row",
     justifyContent: "space-between",
     gap: setupTheme.spacing.compact,
-  },
-  routeCount: {
-    color: setupTheme.color.muted,
-    fontSize: setupTheme.type.caption,
-    fontWeight: "800",
-  },
-  journeyRow: { flexDirection: "row", gap: setupTheme.spacing.tight },
-  journeyStep: {
-    alignItems: "center",
-    flex: 1,
-    gap: setupTheme.spacing.compact,
-  },
-  journeyMark: {
-    alignItems: "center",
-    backgroundColor: setupTheme.color.surfaceMuted,
-    borderColor: setupTheme.color.borderSoft,
-    borderRadius: setupTheme.radius.status,
-    borderWidth: 1,
-    height: 34,
-    justifyContent: "center",
-    width: 34,
-  },
-  journeyMarkDone: {
-    backgroundColor: setupTheme.color.readySurface,
-    borderColor: setupTheme.color.ready,
-  },
-  journeyMarkCurrent: {
-    backgroundColor: setupTheme.color.highlight,
-    borderColor: setupTheme.color.foreground,
-    borderWidth: 2,
-  },
-  journeyNumber: {
-    color: setupTheme.color.muted,
-    fontSize: setupTheme.type.caption,
-    fontWeight: "900",
-  },
-  journeyNumberActive: { color: setupTheme.color.foreground },
-  journeyLabel: {
-    color: setupTheme.color.muted,
-    fontSize: setupTheme.type.label,
-    fontWeight: "700",
-    textAlign: "center",
   },
   section: { gap: setupTheme.spacing.section },
   addButton: {
@@ -511,30 +330,5 @@ const styles = StyleSheet.create({
   activityMeta: {
     color: setupTheme.color.muted,
     fontSize: setupTheme.type.caption,
-  },
-  disclosureCard: {
-    backgroundColor: setupTheme.color.readySurface,
-    borderColor: setupTheme.color.foreground,
-    borderRadius: setupTheme.radius.card,
-    borderWidth: 2,
-    gap: setupTheme.spacing.compact,
-    padding: setupTheme.spacing.section,
-  },
-  disclosureTitle: {
-    color: setupTheme.color.foreground,
-    fontSize: setupTheme.type.heading,
-    fontWeight: "900",
-    lineHeight: 28,
-  },
-  resetButton: {
-    alignItems: "center",
-    minHeight: 48,
-    justifyContent: "center",
-  },
-  resetText: {
-    color: setupTheme.color.danger,
-    fontSize: setupTheme.type.body,
-    fontWeight: "800",
-    textDecorationLine: "underline",
   },
 });

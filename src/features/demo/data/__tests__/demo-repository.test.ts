@@ -66,7 +66,7 @@ describe("demo repository", () => {
       expect(result.state).toEqual(createDemoSeed());
       expect(result.recoveryError).toEqual({
         code: "CORRUPTED_STATE_RECOVERED",
-        message: "Saved demo data was invalid and has been reset.",
+        message: "Saved data could not be read and has been reset.",
       });
       expect(JSON.stringify(result.recoveryError)).not.toContain(value);
       expect(values.get(DEMO_STATE_STORAGE_KEY)).toBe(
@@ -137,7 +137,7 @@ describe("demo repository", () => {
     const repository = createDemoRepository(storage);
 
     await expect(repository.save({ schemaVersion: 2 })).rejects.toThrow(
-      "Demo state is invalid and was not saved.",
+      "Your changes are invalid and were not saved.",
     );
     expect(storage.setItem).not.toHaveBeenCalled();
   });

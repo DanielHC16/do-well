@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router";
 import type { PropsWithChildren } from "react";
 import {
   ActivityIndicator,
@@ -10,8 +11,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { setupTheme } from "@/features/setup/setupTheme";
-
-import { DemoBanner } from "./DemoBanner";
 
 type DemoShellProps = PropsWithChildren<
   Readonly<{
@@ -31,20 +30,31 @@ export function DemoShell({
   subtitle,
   title,
 }: DemoShellProps) {
+  const router = useRouter();
   return (
     <SafeAreaView style={styles.safeArea}>
-      <DemoBanner />
+      <View style={styles.navigation}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Home"
+          onPress={() => router.replace("/(demo)")}
+          style={styles.navButton}
+        >
+          <Text style={styles.navText}>DO / WELL</Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Settings"
+          onPress={() => router.push("/(demo)/settings")}
+          style={styles.navButton}
+        >
+          <Text style={styles.navText}>Settings</Text>
+        </Pressable>
+      </View>
       <ScrollView
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.brandRow}>
-          <Text accessibilityLabel="Do Well" style={styles.wordmark}>
-            DO / WELL
-          </Text>
-          <View style={styles.brandRule} />
-          <Text style={styles.brandNote}>NEIGHBORHOOD WORK</Text>
-        </View>
         <View style={styles.heading}>
           <Text accessibilityRole="header" style={styles.title}>
             {title}
@@ -68,12 +78,12 @@ export function DemoShell({
         ) : null}
         {busy ? (
           <View
-            accessibilityLabel="Saving local demo data"
+            accessibilityLabel="Saving changes"
             accessibilityLiveRegion="polite"
             style={styles.busy}
           >
             <ActivityIndicator color={setupTheme.color.foreground} />
-            <Text style={styles.busyText}>Saving on this device...</Text>
+            <Text style={styles.busyText}>Saving changes...</Text>
           </View>
         ) : null}
         {children}
@@ -180,25 +190,28 @@ export const demoStyles = StyleSheet.create({
 });
 
 const styles = StyleSheet.create({
+  navigation: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    backgroundColor: setupTheme.color.foreground,
+    paddingHorizontal: setupTheme.spacing.section,
+  },
+  navButton: {
+    minHeight: setupTheme.size.touchTarget,
+    justifyContent: "center",
+    paddingHorizontal: setupTheme.spacing.compact,
+  },
+  navText: {
+    color: setupTheme.color.surface,
+    fontSize: setupTheme.type.body,
+    fontWeight: "800",
+  },
   safeArea: { backgroundColor: setupTheme.color.background, flex: 1 },
   content: {
     gap: setupTheme.spacing.content,
     padding: setupTheme.spacing.section,
     paddingBottom: 64,
-  },
-  brandRow: { alignItems: "center", flexDirection: "row", gap: 10 },
-  wordmark: {
-    color: setupTheme.color.foreground,
-    fontSize: setupTheme.type.label,
-    fontWeight: "900",
-    letterSpacing: 1.4,
-  },
-  brandRule: { backgroundColor: setupTheme.color.accent, height: 4, width: 24 },
-  brandNote: {
-    color: setupTheme.color.muted,
-    fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 1.1,
   },
   heading: { gap: setupTheme.spacing.compact },
   title: {

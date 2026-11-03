@@ -43,13 +43,11 @@ export function DemoGigDetailScreen({ gigId }: Readonly<{ gigId: string }>) {
   }
 
   if (!gig) {
-    return (
-      <NotAvailable message="This local gig does not exist or the demo was reset." />
-    );
+    return <NotAvailable message="This gig is no longer available." />;
   }
   if (state.activePersona !== "worker") {
     return (
-      <NotAvailable message="Switch to the worker presenter to inspect and apply to this gig." />
+      <NotAvailable message="Open Settings and switch to a worker account to apply." />
     );
   }
 
@@ -77,18 +75,15 @@ export function DemoGigDetailScreen({ gigId }: Readonly<{ gigId: string }>) {
         </Text>
       </View>
 
-      {gig.status !== "published" ? (
-        <View style={demoStyles.card}>
-          <Text style={styles.cardTitle}>Applications are closed</Text>
-          <Text style={demoStyles.mutedText}>
-            The employer has already selected a worker for this gig.
-          </Text>
-        </View>
-      ) : existingApplication ? (
+      {existingApplication ? (
         <View accessibilityRole="summary" style={demoStyles.card}>
-          <Text style={styles.cardTitle}>Application sent</Text>
+          <Text style={styles.cardTitle}>
+            {existingApplication.status === "accepted"
+              ? "You got the job"
+              : "Application sent"}
+          </Text>
           <Text style={demoStyles.mutedText}>
-            Your local application is {existingApplication.status}.
+            Your application is {existingApplication.status}.
           </Text>
           {existingApplication.status === "accepted" ? (
             <Pressable
@@ -106,9 +101,16 @@ export function DemoGigDetailScreen({ gigId }: Readonly<{ gigId: string }>) {
             </Pressable>
           ) : null}
         </View>
+      ) : gig.status !== "published" ? (
+        <View style={demoStyles.card}>
+          <Text style={styles.cardTitle}>Applications are closed</Text>
+          <Text style={demoStyles.mutedText}>
+            The employer has already selected a worker for this gig.
+          </Text>
+        </View>
       ) : (
         <View style={styles.form}>
-          <Text style={demoStyles.sectionTitle}>Apply locally</Text>
+          <Text style={demoStyles.sectionTitle}>Apply for this gig</Text>
           <Text style={demoStyles.label}>Message to the employer</Text>
           <TextInput
             accessibilityLabel="Message to the employer"
@@ -160,7 +162,7 @@ function NotAvailable({ message }: Readonly<{ message: string }>) {
         onPress={() => router.replace("/(demo)")}
         style={demoStyles.button}
       >
-        <Text style={demoStyles.buttonText}>Back to demo home</Text>
+        <Text style={demoStyles.buttonText}>Back to home</Text>
       </Pressable>
     </DemoShell>
   );
