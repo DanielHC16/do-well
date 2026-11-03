@@ -1,8 +1,12 @@
 # Session Handoff
 
-## Offline complete-cycle repair — 2026-11-03 — in progress
+## Offline complete-cycle repair — verified 2026-11-04
 
-Owner requested final-app presentation for the offline APK, automatic counterpart responses, Settings-only account switching, and recovery from Applied. Branch `fix/demo-complete-cycle`, issue [#49](https://github.com/DanielHC16/do-well/issues/49). Scope/acceptance: [plan](plans/2026-11-03-demo-complete-cycle.md); architecture and explicit owner supersession of older on-screen disclosure requirements: [ADR 0010](adr/0010-offline-demo-counterpart-progression.md). No live runtime, hosted operations, schema, credentials, paid service or video changes. Build and verification remain pending until this section and the demo guide record fresh evidence. The live binary remains unchanged.
+Owner requested final-app presentation for the offline APK, automatic counterpart responses, Settings-only account switching, and recovery from Applied. Cohesive repair tracked by [#49](https://github.com/DanielHC16/do-well/issues/49); its linked PR is the integration record under the owner's continuing commit/PR/merge authorization. Scope/acceptance: [plan](plans/2026-11-03-demo-complete-cycle.md); explicit owner supersession of older on-screen disclosure requirements: [ADR 0010](adr/0010-offline-demo-counterpart-progression.md). No live runtime, hosted operations, schema, credentials, paid service or video changes. The live binary remains unchanged.
+
+App source frozen at `67bebeb00229eef60148d80172411121bbf7a4cd`; formatting, lint, strict TypeScript and **118 suites / 733 tests** pass. Independent source review is LGTM after fixing recovery when switching from worker to employer. Fresh local standalone build succeeded in1m48s. Updated root `do-well-apk/do-well-demo-offline.apk`:60,498,386bytes, SHA-256 `EA03C652ED36378D0829A554F28DBE24906B2FD86CF3217725F7E59FC988FE69`. Signature, dual-ABI, embedded bundle, source freeze and private-value checks pass. Full details in [DEMO_GUIDE.md](DEMO_GUIDE.md).
+
+Actual updated APK installed over the old one with data retained. On isolated API35 AVD `do_well_demo_api35`, both role cycles completed in airplane mode without Metro: Maya post→automatic applicant→select→automatic submission→approve; Alex apply→automatic selection→submit→automatic approval. Both five-event timelines and completion states were inspected; both roles/progress survived cold restarts. Settings switching and confirmed reset passed. Rehearsal exited0 with8PASS checks; emulator left on the updated offline APK, Maya starter workspace, offline, ready for presentation. Screenshots and log are ignored `.codex-artifacts/demo-cycle-v2-*` files. Legacy pending-state recovery is regression-tested; the older UI did not successfully seed that specific device state, so no separate device proof is claimed. Physical-phone/hosted acceptance remains #46.
 
 ## Shareable APK folder — 2026-11-03
 

@@ -10,7 +10,7 @@ Do not call the offline sandbox proof of hosted authentication, RLS, image uploa
 
 ## Reliable offline script: 3–4 minutes
 
-Use **Home** to return to the dashboard and **Settings** to change accounts. Neither cycle requires changing accounts in the middle.
+Tap **DO / WELL** in the top-left header (the **Home** accessibility action) to return to the dashboard, and **Settings** to change accounts. Neither cycle requires changing accounts in the middle.
 
 1. **Introduce (15 seconds).** “Do Well organizes neighborhood work from a clear gig to an approved result.” Explain the local sample environment when describing the technical scope.
 2. **Employer: post (40 seconds).** Start as **Maya · Employer**. Create a gig with title “Prepare community event checklist”, a description longer than 20 characters, category `admin`, Remote, and PHP 500. Publish it, then manage that listing.

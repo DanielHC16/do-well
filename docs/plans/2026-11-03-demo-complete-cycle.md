@@ -1,6 +1,6 @@
 # Offline APK: complete job cycle
 
-Status: owner-approved scope, implementation in progress (3 November 2026).
+Status: owner-approved scope (3 November 2026); implementation and standalone emulator acceptance verified 4 November 2026. Integration is tracked by [#49](https://github.com/DanielHC16/do-well/issues/49) and its linked PR.
 
 The owner requested a complete offline job cycle without manually operating both accounts, account switching in Settings, and removal of presentation disclaimers from product screens. This supersedes ADR 0006's on-screen disclosure/manual-persona presentation requirements for this offline runtime only. The APK filename, README, runbook and PR continue to identify the simulated, locally persisted environment and its boundaries.
 

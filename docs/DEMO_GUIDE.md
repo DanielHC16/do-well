@@ -1,8 +1,8 @@
 # Run, install, and present Do Well
 
-Last checked: 2026-11-03 (Asia/Manila). All compilation uses the local Android SDK; no cloud build, card, billing, or paid service is required.
+Last checked: 2026-11-04 (Asia/Manila). All compilation uses the local Android SDK; no cloud build, card, billing, or paid service is required.
 
-The shareable APKs are version-controlled in the root [`do-well-apk/`](../do-well-apk/) folder: [live app](../do-well-apk/do-well-live.apk) and [offline demo](../do-well-apk/do-well-demo-offline.apk). Upload either file to Google Drive for sharing. The [README](../README.md#install-and-run-the-apks) contains the complete emulator and USB-phone installation steps. These are the same verified binaries described below; local build staging/logs stay under ignored `.codex-artifacts/`.
+The shareable APKs are version-controlled in the root [`do-well-apk/`](../do-well-apk/) folder: [live app](../do-well-apk/do-well-live.apk) and [updated complete-cycle offline demo](../do-well-apk/do-well-demo-offline.apk). Replace older shared offline copies with this updated file. The [README](../README.md#install-and-run-the-apks) contains complete emulator and USB-phone installation steps. Current offline verification is below; the live binary remains unchanged. Local build staging/logs stay under ignored `.codex-artifacts/`.
 
 ## Select the APK
 
@@ -119,6 +119,28 @@ Follow the [3–4 minute script](DEMO_RUNBOOK.md). Use the offline APK for a rel
 
 In the updated offline APK, **Settings** contains account switching and the confirmed local reset. Maya can post → review the automatic application → select → review the automatic submission → approve. Alex can apply → open the automatically accepted assignment → submit → receive automatic approval. Existing pending applications recover on startup without clearing data. Product screens use ordinary app copy under [ADR 0010](adr/0010-offline-demo-counterpart-progression.md); accounts and counterpart decisions remain local simulations. For live recovery, preserve drafts, reconnect, refresh authoritative data, and explicitly resubmit; do not promise automatic queued writes.
 
+## Current complete-cycle offline APK
+
+Rebuilt locally on 3 November 2026 from frozen application source `67bebeb00229eef60148d80172411121bbf7a4cd`. Share this updated file:
+
+| Artifact                               |      Bytes | SHA-256                                                            |
+| -------------------------------------- | ---------: | ------------------------------------------------------------------ |
+| `do-well-apk/do-well-demo-offline.apk` | 60,498,386 | `EA03C652ED36378D0829A554F28DBE24906B2FD86CF3217725F7E59FC988FE69` |
+
+Build exited successfully in 1m48s (834 tasks). APK Signature Scheme v2 verifies with one development signer. Archive checks confirm ARM64/x86_64 support, an embedded 4,363,112-byte JavaScript bundle, no bundled `.env`/keystore, and no matches for the five local private credential values inspected in-process. The 314-file source manifest remained unchanged across compilation (SHA-256 `18fa1dfdaf13c1ebc6fd0faeeac81ec762229acb64f9ca468c98d8972bbe160d`). Local logs/manifest: `.codex-artifacts/demo-v2-build.log`, `.codex-artifacts/demo-v2-source-manifest.json`.
+
+Fresh source checks: formatting, lint and strict TypeScript pass; **118 suites / 733 tests** pass. Targeted regressions were observed failing before the fixes, and independent source review is LGTM. The live APK is unchanged and retains its previously verified checksum below.
+
+Actual updated-APK acceptance on 4 November, `do_well_demo_api35` / API35 / x86_64, with airplane mode on and Wi-Fi/mobile data off:
+
+- `adb install -r` succeeded over the prior offline APK and retained the selected Alex account. No uninstall or storage clear.
+- Employer: created **Complete cycle rehearsal**, received Alex's application automatically, selected Alex, reviewed the automatically submitted note and approved it. **Work completed**, completed status and all five timeline events were inspected. Maya stayed selected throughout.
+- Worker: changed to Alex through **Settings**, applied to **Prepare event spreadsheet**, saw **You got the job**, opened the accepted assignment, submitted a note and received automatic approval. Completed status and all five timeline events were inspected.
+- Cold restarts retained each role and its completed assignment. Settings account switching and ordinary product copy were inspected, including the upgraded seed description. Neither role's cycle required an intermediate account switch or Metro.
+- Confirmed **Settings → Reset workspace → Reset** restored Maya's starter listings with no completed assignments. Rehearsal exited0 with eight PASS checks. Emulator left on the updated offline APK, Maya's starting workspace, airplane mode on, Wi-Fi/mobile data off, ready for presentation.
+
+Local evidence: `.codex-artifacts/demo-cycle-v2-rehearsal.log`, `demo-cycle-v2-home.png`, `demo-cycle-v2-settings.png`, `demo-cycle-v2-employer-review.png`, `demo-cycle-v2-employer-complete.png`, `demo-cycle-v2-worker-accepted.png`, `demo-cycle-v2-worker-complete.png`, and `demo-cycle-v2-worker-timeline.png` in the same ignored directory. Recovery of saved pending applications, failed saves/retries and old custom posts is covered by automated regressions; a pending application was not successfully seeded through the older device UI before upgrading, so no separate device proof of that specific legacy state is claimed. Earlier launcher ANRs and stale automation taps were resolved in the emulator/harness without changing app source or deleting storage. No physical phone was connected; #46 remains open.
+
 ## Previous artifact verification (before complete-cycle repair)
 
 Built locally on 3 November 2026 from application source `67b6c774cd399b80fb9347d3c036cac203038206` (PR #48). Both standalone APKs are copied unchanged into the tracked root `do-well-apk/` directory for sharing; ignored build-staging copies remain under `.codex-artifacts/`:
@@ -136,4 +158,4 @@ On the isolated `do_well_demo_api35` AVD (Android 15 / API 35, x86_64, 1080×240
 
 After connectivity was restored, the final live APK installed successfully with `adb install -r` and cold-launched in 3.858s without Metro. An existing authorized employer test account signed in with email/password. The redesigned Home loaded, Profile → Settings opened through the fresh capability query, changing the server-backed default workspace showed **Default workspace updated.**, and the original default was restored successfully. No account was created or granted administrator access. Screenshots are `.codex-artifacts/apk-live-home.png`, `.codex-artifacts/apk-live-settings.png`, and `.codex-artifacts/apk-live-settings-saved.png`; the successful rehearsal log is `.codex-artifacts/apk-live-rehearsal.log`. Credentials were handled only inside the local rehearsal process and were not logged.
 
-The prepared emulator currently has the live APK installed, connectivity enabled, and the authorized test employer signed in; the offline APK is available locally for reinstalling on the fallback device. Prior APK evidence in `COMPETITION_BUILD.md` belongs to earlier revisions. No physical phone was connected. These checks establish one working hosted email sign-in/settings path and the complete synthetic offline lifecycle; they do not close the broader OAuth/device/GPS/photo or full hosted multi-principal acceptance matrix in issue #46.
+At that previous checkpoint, the prepared emulator had the live APK installed, connectivity enabled, and the authorized test employer signed in. The current complete-cycle rehearsal above replaces that emulator state with the updated offline APK. Prior APK evidence in `COMPETITION_BUILD.md` belongs to earlier revisions. No physical phone was connected. These older checks establish one working hosted email sign-in/settings path and the original synthetic offline lifecycle; they do not close the broader OAuth/device/GPS/photo or full hosted multi-principal acceptance matrix in issue #46.

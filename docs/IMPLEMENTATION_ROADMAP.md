@@ -1,8 +1,8 @@
 # Do Well Implementation Plan and Roadmap
 
-## Offline complete-cycle repair — 2026-11-03 — in progress
+## Offline complete-cycle repair — verified 2026-11-04
 
-Owner-approved follow-up [#49](https://github.com/DanielHC16/do-well/issues/49) repairs offline counterpart progression and the hidden assignment CTA, recovers saved pending applications, moves account switching/reset into Settings, and removes product-screen presentation disclaimers. See the [acceptance plan](plans/2026-11-03-demo-complete-cycle.md) and [ADR 0010](adr/0010-offline-demo-counterpart-progression.md). This supersedes earlier offline presentation requirements only. Both role cycles must pass in a rebuilt standalone APK before acceptance; no hosted milestone or issue #46 status is changed.
+Owner-approved follow-up [#49](https://github.com/DanielHC16/do-well/issues/49) repairs offline counterpart progression and the hidden assignment CTA, recovers saved pending applications, moves account switching/reset into Settings, and removes product-screen presentation disclaimers. See the [acceptance plan](plans/2026-11-03-demo-complete-cycle.md) and [ADR 0010](adr/0010-offline-demo-counterpart-progression.md). Source passed formatting/lint/typecheck,118suites/733tests and independent review. Rebuilt APK signature/privacy/source checks pass; actual API35 emulator acceptance passed both complete role cycles, five-event timelines, restart persistence, Settings switching and confirmed reset in airplane mode without Metro. Root offline APK is replaced; live APK unchanged. The issue's linked PR records integration. This supersedes earlier offline presentation requirements only; no hosted milestone or issue #46 status changes.
 
 ## APK distribution follow-up — 2026-11-03
 
@@ -85,32 +85,32 @@ This retains the requested M00–M14 ordering. M10–M13 may be developed in par
 
 ## Status summary
 
-| Milestone | Deliverable                                                               | Status          | Issue                                                  |
-| --------- | ------------------------------------------------------------------------- | --------------- | ------------------------------------------------------ |
-| M00       | Repository security, architecture documentation, private GitHub setup     | **COMPLETED**   | [#1](https://github.com/DanielHC16/do-well/issues/1)   |
-| M01       | Expo initialization, pinned tooling, CI, Android development build        | **COMPLETED**   | [#2](https://github.com/DanielHC16/do-well/issues/2)   |
-| M02       | Supabase local config, schema foundations, migrations and generated types | **COMPLETED**   | [#3](https://github.com/DanielHC16/do-well/issues/3)   |
-| M03A      | Authentication and profile foundation                                     | **COMPLETED**   | [#4](https://github.com/DanielHC16/do-well/issues/4)   |
-| M03B      | Hosted auth and physical-device acceptance                                | **IN PROGRESS** | [#46](https://github.com/DanielHC16/do-well/issues/46) |
-| D01       | Offline Demo Preview: complete local gig lifecycle                        | **COMPLETED**   | [#23](https://github.com/DanielHC16/do-well/issues/23)  |
-| M04       | Shared shell and worker/employer navigation                               | **COMPLETED**   | [#5](https://github.com/DanielHC16/do-well/issues/5)   |
-| M05       | Gig creation and employer management                                      | **COMPLETED**   | [#6](https://github.com/DanielHC16/do-well/issues/6)   |
-| M06       | Nearby/remote discovery and explainable filtering                         | **COMPLETED**   | [#7](https://github.com/DanielHC16/do-well/issues/7)   |
-| M07       | Worker applications and employer selection                                | **COMPLETED**   | [#8](https://github.com/DanielHC16/do-well/issues/8)   |
-| M08       | Agreements, milestones, activity, state transitions                       | **COMPLETED**   | [#9](https://github.com/DanielHC16/do-well/issues/9)   |
-| M09       | Submission, evidence metadata, revision and approval                      | **COMPLETED**   | [#10](https://github.com/DanielHC16/do-well/issues/10) |
-| M10       | Zero-cost AI Job Brief Builder feasibility and implementation             | **COMPLETED**   | [#11](https://github.com/DanielHC16/do-well/issues/11) |
-| M11       | Android foreground location and optional map feasibility                  | **COMPLETED**   | [#12](https://github.com/DanielHC16/do-well/issues/12) |
-| M12       | Local notifications and image evidence integration                        | **COMPLETED**   | [#13](https://github.com/DanielHC16/do-well/issues/13) |
-| M13       | Connectivity resilience, cached reads and offline drafts                  | **COMPLETED**   | [#14](https://github.com/DanielHC16/do-well/issues/14) |
-| M14       | Security verification, end-to-end tests and competition build             | **COMPLETED**   | [#15](https://github.com/DanielHC16/do-well/issues/15) |
-| M15       | Repository truth, zero-secret CI workflow, and productization reset       | **COMPLETED**   | [PR #40](https://github.com/DanielHC16/do-well/pull/40) |
-| M16       | Hosted backend parity and Google authentication acceptance                | **IN PROGRESS** | [Acceptance #46](https://github.com/DanielHC16/do-well/issues/46) |
-| M17       | Settings, workspace preference persistence, and admin capability foundation| **IN PROGRESS** | [PR #40](https://github.com/DanielHC16/do-well/pull/40); missing route integration under repair |
-| M18       | Functional reporting and moderation console                               | **IN PROGRESS** | [PR #41](https://github.com/DanielHC16/do-well/pull/41); admin integration under repair |
-| M19       | Presentation refinement and honest production copy                        | **IN PROGRESS** | [PR #41](https://github.com/DanielHC16/do-well/pull/41), [PR #44](https://github.com/DanielHC16/do-well/pull/44) |
-| M20       | Live demo environment, dual-identity scenario, and release proof           | **IN PROGRESS** | [PR #42](https://github.com/DanielHC16/do-well/pull/42); remaining acceptance #46 |
-| M21       | Frontend marketplace branding, discovery, navigation, and work refinement | **IN PROGRESS** | [Merged redesign PR #44](https://github.com/DanielHC16/do-well/pull/44); remaining device acceptance #46 |
+| Milestone | Deliverable                                                                 | Status          | Issue                                                                                                            |
+| --------- | --------------------------------------------------------------------------- | --------------- | ---------------------------------------------------------------------------------------------------------------- |
+| M00       | Repository security, architecture documentation, private GitHub setup       | **COMPLETED**   | [#1](https://github.com/DanielHC16/do-well/issues/1)                                                             |
+| M01       | Expo initialization, pinned tooling, CI, Android development build          | **COMPLETED**   | [#2](https://github.com/DanielHC16/do-well/issues/2)                                                             |
+| M02       | Supabase local config, schema foundations, migrations and generated types   | **COMPLETED**   | [#3](https://github.com/DanielHC16/do-well/issues/3)                                                             |
+| M03A      | Authentication and profile foundation                                       | **COMPLETED**   | [#4](https://github.com/DanielHC16/do-well/issues/4)                                                             |
+| M03B      | Hosted auth and physical-device acceptance                                  | **IN PROGRESS** | [#46](https://github.com/DanielHC16/do-well/issues/46)                                                           |
+| D01       | Offline Demo Preview: complete local gig lifecycle                          | **COMPLETED**   | [#23](https://github.com/DanielHC16/do-well/issues/23)                                                           |
+| M04       | Shared shell and worker/employer navigation                                 | **COMPLETED**   | [#5](https://github.com/DanielHC16/do-well/issues/5)                                                             |
+| M05       | Gig creation and employer management                                        | **COMPLETED**   | [#6](https://github.com/DanielHC16/do-well/issues/6)                                                             |
+| M06       | Nearby/remote discovery and explainable filtering                           | **COMPLETED**   | [#7](https://github.com/DanielHC16/do-well/issues/7)                                                             |
+| M07       | Worker applications and employer selection                                  | **COMPLETED**   | [#8](https://github.com/DanielHC16/do-well/issues/8)                                                             |
+| M08       | Agreements, milestones, activity, state transitions                         | **COMPLETED**   | [#9](https://github.com/DanielHC16/do-well/issues/9)                                                             |
+| M09       | Submission, evidence metadata, revision and approval                        | **COMPLETED**   | [#10](https://github.com/DanielHC16/do-well/issues/10)                                                           |
+| M10       | Zero-cost AI Job Brief Builder feasibility and implementation               | **COMPLETED**   | [#11](https://github.com/DanielHC16/do-well/issues/11)                                                           |
+| M11       | Android foreground location and optional map feasibility                    | **COMPLETED**   | [#12](https://github.com/DanielHC16/do-well/issues/12)                                                           |
+| M12       | Local notifications and image evidence integration                          | **COMPLETED**   | [#13](https://github.com/DanielHC16/do-well/issues/13)                                                           |
+| M13       | Connectivity resilience, cached reads and offline drafts                    | **COMPLETED**   | [#14](https://github.com/DanielHC16/do-well/issues/14)                                                           |
+| M14       | Security verification, end-to-end tests and competition build               | **COMPLETED**   | [#15](https://github.com/DanielHC16/do-well/issues/15)                                                           |
+| M15       | Repository truth, zero-secret CI workflow, and productization reset         | **COMPLETED**   | [PR #40](https://github.com/DanielHC16/do-well/pull/40)                                                          |
+| M16       | Hosted backend parity and Google authentication acceptance                  | **IN PROGRESS** | [Acceptance #46](https://github.com/DanielHC16/do-well/issues/46)                                                |
+| M17       | Settings, workspace preference persistence, and admin capability foundation | **IN PROGRESS** | [PR #40](https://github.com/DanielHC16/do-well/pull/40); missing route integration under repair                  |
+| M18       | Functional reporting and moderation console                                 | **IN PROGRESS** | [PR #41](https://github.com/DanielHC16/do-well/pull/41); admin integration under repair                          |
+| M19       | Presentation refinement and honest production copy                          | **IN PROGRESS** | [PR #41](https://github.com/DanielHC16/do-well/pull/41), [PR #44](https://github.com/DanielHC16/do-well/pull/44) |
+| M20       | Live demo environment, dual-identity scenario, and release proof            | **IN PROGRESS** | [PR #42](https://github.com/DanielHC16/do-well/pull/42); remaining acceptance #46                                |
+| M21       | Frontend marketplace branding, discovery, navigation, and work refinement   | **IN PROGRESS** | [Merged redesign PR #44](https://github.com/DanielHC16/do-well/pull/44); remaining device acceptance #46         |
 
 ## M00 — Secure repository and approve architecture
 
