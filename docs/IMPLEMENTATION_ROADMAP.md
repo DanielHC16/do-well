@@ -1,10 +1,16 @@
 # Do Well Implementation Plan and Roadmap
 
+## Current app/demo closeout — 2026-11-03
+
+Owner-authorized [PR #48](https://github.com/DanielHC16/do-well/pull/48) repairs Settings/Admin routes and existing RPC integration, scoped account server-state loading, server workspace defaults, moderation validation and report-page replenishment. See [ADR 0009](adr/0009-scoped-account-server-state.md). Final source passed formatting/lint/typecheck, **115 suites / 718 tests**, Doctor **20/20**, and independent review. The [demo guide](DEMO_GUIDE.md) records actual local APK verification and emulator rehearsal; it is the artifact source of truth. GitHub PR/issue state records integration and #47 closeout. Video generation is left as-is, per the owner's current instruction.
+
+PR #45 is merged. Issue #4 is closed for M03A only; [#46](https://github.com/DanielHC16/do-well/issues/46) retains the unfinished hosted authentication and physical-device acceptance matrix. This repair does not silently complete those milestones. The dated reconciliation and milestone records below retain their original checkpoint evidence.
+
 ## Current reconciliation — 2026-11-02
 
-GitHub access is operational. Redesign PR #44 is merged; latest PR #45 is undergoing reproduced video-preparation/CI fixes and review. The owner explicitly authorized merge after verification. Settings and Admin screen components were found unreachable because their routes/gateways are missing; restoring the existing approved M17/M18 behavior is a separate demo-readiness follow-up, not a new milestone.
+GitHub access is operational. Redesign PR #44 is merged; PR #45 is fixed and merged at `1515b1b` after green app/database/security CI and resolved review. The owner explicitly authorized merge after verification. Settings and Admin screen components were found unreachable; restored routes/gateways and workspace/moderation fixes are on `fix/demo-readiness`, tracked by #47 under the existing approved M17/M18 contract.
 
-Issue #4 is closed for completed M03A foundation scope; all unfinished M03B/M16 hosted authentication and physical-device acceptance moved to [#46](https://github.com/DanielHC16/do-well/issues/46). The later 1 November checkpoint records real hosted test-account footage, which is partial rehearsal evidence only. Historical implementation completion does not establish full hosted/device acceptance. Local standalone APK build and corrected demo runbooks are in progress; no current APK success is claimed here.
+Issue #4 is closed for completed M03A foundation scope; all unfinished M03B/M16 hosted authentication and physical-device acceptance moved to [#46](https://github.com/DanielHC16/do-well/issues/46). The later 1 November checkpoint records real hosted test-account footage, which is partial rehearsal evidence only. Historical implementation completion does not establish full hosted/device acceptance. Fresh repair verification: formatting/lint/typecheck,114 suites/713 tests, Doctor20/20 and Android export pass; final reviewer LGTM. Standalone APK build remains in progress; see demo guide for actual artifact evidence.
 
 The M15–M20 references below point to implementation PRs, not nonexistent tracking issues. Earlier dated paragraphs retain historical verification totals and constraints.
 
@@ -372,6 +378,6 @@ Before changing any row to `COMPLETED`:
 
 ## Current milestone and blockers
 
-M21 frontend marketplace refinement remains in progress pending review and Android acceptance. Local implementation verification passed on 2026-10-31: formatting, lint, strict typecheck, 98 suites / 602 tests, and Android Hermes export. The [M21 report](reports/2026-10-31-frontend-marketplace.md) records remaining integration limits and device work. ADB listed no attached device/emulator; no new device testing is claimed. GitHub issue/PR inspection is blocked by missing CLI authentication. Historical milestone evidence below describes prior work and must not be treated as M21 verification.
+GitHub access is working and redesign PR #44 is merged. The owner-authorized [demo-readiness repair #47](https://github.com/DanielHC16/do-well/issues/47) restores Settings/Admin integration and updates release/demo evidence. Full hosted authentication, physical-device, GPS and photo acceptance remain [#46](https://github.com/DanielHC16/do-well/issues/46). Refer to the current session handoff and demo guide for fresh test/build results; older M21 reports describe their dated checkpoints.
 
-The implementation baseline for M00 through M14, D01, and M20 remains completed. The 2026-10-26 Section 11 verification attempt freshly passed 92 Jest suites / 538 tests, formatting, lint, strict typecheck, Expo Doctor 20/20, and Android Hermes export (4.9MB). Hosted migration parity is now applied and verified through `20261026000100_admin_roles_and_reporting.sql`. Local pgTAP and HTTP integration checks remain blocked because Docker is unavailable. Hosted operator apply remains pending until an explicit owner/admin email is configured; the dry-run itself completed without changes. M03B hosted OAuth/physical-device acceptance also remains deferred.
+Historical M00–M14/D01 and M20 implementation records are retained above. The later1 November hosted capture supersedes the old provisioning-pending statement, but does not complete the acceptance matrix. Remote database CI validates migrations/policies; the local Docker engine was unavailable on2 November, so no new local HTTP integration success is claimed.

@@ -2,7 +2,7 @@
 
 ## Status and design goal
 
-**Status:** proposed for approval. The product boundaries and core stack are confirmed, but no application feature exists yet (`README.md:5-15`). Version numbers and optional libraries are selected only during their milestone after compatibility and zero-cost verification.
+**Status:** implemented Expo/Supabase modular monolith, with ongoing hosted/device acceptance in [#46](https://github.com/DanielHC16/do-well/issues/46). Current repair integration is [PR #48](https://github.com/DanielHC16/do-well/pull/48); consult the session handoff and demo guide for verified test/build results. Optional integrations below remain design contracts unless their implementation/evidence is explicitly recorded.
 
 The architecture is an Android-first **modular monolith**: one Expo application, one Supabase project, PostgreSQL/RLS as the authorization boundary, private Storage for evidence, and a small number of Edge Functions only where client-direct access is unsafe. It optimizes for a student team, a reliable competition demonstration, and six months of development—not hypothetical scale.
 
@@ -13,12 +13,12 @@ The architecture is an Android-first **modular monolith**: one Expo application,
 | Client | React Native, TypeScript, Expo development builds, Expo Router | Strict TypeScript; route files stay thin and delegate to feature modules |
 | Backend | Supabase Auth, PostgreSQL, RLS, Storage, Edge Functions where justified | Direct RLS-protected reads/simple writes; SQL RPC for transactional state changes; Edge Functions for AI and privileged side effects |
 | Auth | Google browser OAuth and email/password; one account, two modes | Supabase browser flow, app scheme callback, and the SDK-supported React Native session adapter verified in M03 |
-| Server state | Reliable loading/error/retry behavior | TanStack Query owns remote data, keys, cache invalidation, and bounded retry |
+| Server state | Reliable loading/error/retry behavior | Scoped TanStack Query owns repaired account capability/admin requests and moderation invalidation; older marketplace features retain their existing gateway/effect/cache lifecycle pending separate migration |
 | Local state | Keep dependencies minimal | Component state for forms; a small Context for current user/active mode/connectivity; no general store initially |
 | Validation | Validate every external input and model output | Zod schemas shared by forms, query mapping, and Edge Function contracts; database constraints remain authoritative |
 | Persistence | Weak-connectivity support | Supabase-documented React Native storage for sessions (AsyncStorage baseline); ordinary AsyncStorage for non-sensitive cache metadata/drafts; SecureStore only after token-size/platform validation; file system only for temporary upload staging |
 | Maps | No paid Google Maps dependency | Distance-sorted list is P0; MapLibre/map tiles are optional behind an adapter only after policy and device feasibility pass |
-| AI | Genuine inference plus manual fallback, zero paid services | Provider interface and feasibility spike; likely authenticated LAN Ollama demo if benchmark passes; decision recorded by M10 ADR |
+| Brief assistance | Zero paid services and honest provider status | Default deterministic local template; optional provider adapter is not configured in the default singleton, so model inference is not claimed |
 | Notifications | Android-native behavior | Local notifications first; remote push only if separately approved and verified free |
 
 ## System context
@@ -170,10 +170,11 @@ flowchart TD
 | State | Owner | Persistence |
 |---|---|---|
 | Input text, selected filters, modal visibility | Component/form hook | None unless a declared draft |
-| Remote rows and request status | TanStack Query | Memory; selected bounded snapshots may be persisted after M13 |
+| Account capability/admin remote rows and request status | Scoped TanStack Query ([ADR 0009](adr/0009-scoped-account-server-state.md)) | Memory only; capability/admin data never persisted; new client on account boundary remount |
+| Older marketplace remote rows | Existing feature gateways/hooks and bounded cache | Existing user-scoped snapshots and authorization-error rules remain unchanged; broader query migration is separate |
 | Auth session | Supabase auth client/session provider | SDK-supported React Native adapter selected and tested in M03; AsyncStorage is the documented baseline |
 | Active worker/employer UI mode | `ModeProvider` | AsyncStorage; never used as authorization proof |
-| Connectivity | `ConnectivityProvider` backed by NetInfo | Memory, with event history only in tests/logs |
+| Connectivity | `ConnectivityProvider` backed by `expo-network` and request outcomes | Memory, with event history only in tests/logs |
 | Form drafts and pending-action metadata | Feature draft repository | AsyncStorage, versioned and user-scoped |
 
 Do not add Zustand/Redux unless a measured cross-tree state problem remains after Context and query state; record that decision if introduced.

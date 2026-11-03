@@ -56,4 +56,26 @@ describe("shell mode store", () => {
     );
     expect(storage.getItem).not.toHaveBeenCalled();
   });
+
+  it("hydrates the server default instead of an outdated active workspace", async () => {
+    const { storage, values } = createStorage();
+    values.set("do-well.shell-mode.v1:user-a", "worker");
+    const readServerMode = jest.fn(async () => "employer" as const);
+    const store = createShellModeStore(storage, readServerMode);
+
+    await expect(store.read("user-a")).resolves.toBe("employer");
+    expect(readServerMode).toHaveBeenCalledWith("user-a");
+    expect(values.get("do-well.shell-mode.v1:user-a")).toBe("employer");
+  });
+
+  it("uses only this user's cached workspace when server preference is offline", async () => {
+    const { storage, values } = createStorage();
+    values.set("do-well.shell-mode.v1:user-a", "employer");
+    const store = createShellModeStore(storage, async () => {
+      throw new Error("Offline");
+    });
+
+    await expect(store.read("user-a")).resolves.toBe("employer");
+    await expect(store.read("user-b")).resolves.toBe("worker");
+  });
 });

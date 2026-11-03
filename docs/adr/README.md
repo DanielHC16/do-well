@@ -29,3 +29,4 @@ ADRs capture significant decisions whose reasoning must survive team and session
 | [0006](0006-explicit-local-demo-runtime.md) | Accepted | Explicit, isolated local runtime for the competition demo |
 | [0007](0007-foreground-location-and-list-first-discovery.md) | Accepted | Foreground location and list-first nearby discovery |
 | [0008](0008-identity-workspace-and-admin-capabilities.md) | Accepted | Separation of Identity, Workspace Preference, and Server-Owned Capabilities |
+| [0009](0009-scoped-account-server-state.md) | Accepted requirement applied | Scoped account/admin TanStack Query lifecycle and moderation refetch |

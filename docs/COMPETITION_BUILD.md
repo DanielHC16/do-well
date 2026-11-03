@@ -1,5 +1,7 @@
 # Competition Android Build & Signing Guide
 
+For the current2 November toolchain, quoted PowerShell Gradle arguments, separate live/offline APKs and fresh artifact evidence, use [DEMO_GUIDE.md](DEMO_GUIDE.md). The dated build outputs/checksums below are historical and predate the latest app fixes.
+
 **Document:** `docs/COMPETITION_BUILD.md`  
 **Milestone:** M14 — Verify security and produce competition build  
 **Target Hardware:** Android API 36 / 37 (verified on physical Infinix X6840 and standard emulator)  

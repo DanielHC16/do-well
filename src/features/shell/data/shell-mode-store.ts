@@ -1,5 +1,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+import { fetchAccountCapabilities } from "@/features/settings/data/account-queries";
+import { withTimeout } from "@/shared/api/network-timeout";
+
 import {
   ShellModeSchema,
   ShellUserIdSchema,
@@ -23,10 +26,25 @@ function keyFor(userIdInput: string): string {
   return `do-well.shell-mode.v1:${encodeURIComponent(userId.data)}`;
 }
 
-export function createShellModeStore(storage: StorageLike): ShellModeStore {
+export function createShellModeStore(
+  storage: StorageLike,
+  readServerMode?: (userId: string) => Promise<ShellMode>,
+): ShellModeStore {
   return {
     async read(userId) {
       const key = keyFor(userId);
+      if (readServerMode) {
+        try {
+          const mode = ShellModeSchema.parse(
+            await withTimeout(readServerMode(userId)),
+          );
+          // This cache is a navigation preference only; it grants no capability.
+          await storage.setItem(key, mode);
+          return mode;
+        } catch {
+          // A per-user local preference keeps navigation usable offline.
+        }
+      }
       const stored = await storage.getItem(key);
       if (stored === null) return "worker";
 
@@ -44,4 +62,7 @@ export function createShellModeStore(storage: StorageLike): ShellModeStore {
   };
 }
 
-export const shellModeStore = createShellModeStore(AsyncStorage);
+export const shellModeStore = createShellModeStore(
+  AsyncStorage,
+  async (userId) => (await fetchAccountCapabilities(userId)).preferredMode,
+);

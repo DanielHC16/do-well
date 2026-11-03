@@ -1,12 +1,14 @@
 # Do Well
 
-**Do Well** is an Android-first neighborhood gig marketplace designed for Philippine community conditions. It connects people offering legitimate short-term paid tasks with nearby or remote workers, guiding work through a structured, verifiable lifecycle from clear brief generation to atomic agreement, photo evidence submission, and completion.
+**Do Well** is an Android-first neighborhood gig marketplace designed for Philippine community conditions. It connects people offering short-term paid tasks with nearby or remote workers, with structured briefs, agreements, evidence submission and completion. It does not process payments or verify worker identity.
 
-Built for the **UMAK IT Skills Olympics 2026**, Do Well strictly enforces a **PHP 0 / USD 0** external-service budget cap while providing privacy-first architecture, zero-cost AI assistance, weak-connectivity resilience, and a standalone offline demo runtime.
+Built for the **UMAK IT Skills Olympics 2026**, Do Well follows a **PHP 0 / USD 0** external-service budget cap, with server authorization, local brief templates, weak-connectivity support and a standalone offline demo runtime.
 
 ---
 
-## Architecture & Verified Capabilities
+For the current audit, emulator installation, standalone APKs and a rehearsable presentation, start with [the demo guide](docs/DEMO_GUIDE.md) and [readiness audit](docs/reports/2026-11-02-demo-readiness-audit.md). Hosted/device acceptance still has open checks in [#46](https://github.com/DanielHC16/do-well/issues/46).
+
+## Implemented capabilities
 
 1. **Dual-Mode Noticeboard Shell (M04)**:
    - Unified authenticated account supporting instant switching between **Employer** and **Worker** modes.
@@ -38,9 +40,9 @@ Built for the **UMAK IT Skills Olympics 2026**, Do Well strictly enforces a **PH
    - User-scoped bounded read cache (`@dowell/cache/{userId}/{key}`) in AsyncStorage with 50-entry LRU cap and automatic purge on sign-out.
    - Persistent form draft stores for worker bids and evidence notes.
    - 12-second bounded mutation timeouts and reconciliation helpers to prevent duplicate server writes.
-9. **Zero-Cost AI Job Brief Builder (M10)**:
+9. **Zero-Cost Brief Builder (M10)**:
    - Transforms unstructured employer task descriptions into structured, safety-checked job briefs.
-   - Guaranteed zero-cost operation: robust deterministic heuristic rules engine with zero external API dependencies, zero recurring tokens, and zero privacy leakage.
+   - Default operation uses a deterministic local template/rules engine without an external model provider. Present this as structured assistance, not demonstrated AI inference.
 10. **Offline Demo Preview Mode (D01)**:
     - Self-contained offline demonstration sandbox using fictional personas (*Maya Santos* & *Alex Reyes*) and synthetic local data.
     - Zero network, Docker, or Supabase credentials required for judging.
@@ -58,17 +60,18 @@ Built for the **UMAK IT Skills Olympics 2026**, Do Well strictly enforces a **PH
 
 ## Quality Gates & Verification Matrix
 
-All 15 roadmap milestones (M00–M14, plus D01) are complete and verified on `main`:
+Historical milestone completion is recorded in the roadmap; it does not establish complete hosted authentication or physical-device acceptance. Run these checks on the current revision and consult the [session handoff](docs/SESSION_HANDOFF.md) for recorded results:
 
 | Quality Gate | Command | Status |
 | :--- | :--- | :--- |
-| **Jest Test Suite** | `npm run test:run` | **81 passed / 81 suites, 482 passed / 482 tests** |
-| **TypeScript** | `npm run typecheck` | **0 errors (`strict: true`)** |
-| **ESLint** | `npm run lint` | **0 errors / 0 warnings (`eslint-config-expo`)** |
-| **Prettier** | `npm run format:check` | **100% compliant** |
-| **Expo Doctor** | `npx expo-doctor` | **20/20 checks passed** |
-| **Hermes Android Bundle** | `npx expo export --platform android` | **4.9MB static bundle generated cleanly** |
-| **Database Contract** | `npm run db:test` | **12 pgTAP files / 212 database tests passed** |
+| **Jest Test Suite** | `npm run test:run` | Unit/component/domain tests; excludes HTTP integration |
+| **TypeScript** | `npm run typecheck` | Strict mobile typecheck; video composition is separate |
+| **ESLint** | `npm run lint` | Mobile lint |
+| **Prettier** | `npm run format:check` | Mobile/source formatting |
+| **Expo Doctor** | `npx expo-doctor` | SDK compatibility |
+| **Hermes Android Bundle** | `npx expo export --platform android` | Bundle compilation; not an APK |
+| **Database Contract** | `npm run db:test` | Disposable local Supabase required |
+| **HTTP integration** | `npm run test:auth:integration` | Separate local Auth/JWT and multi-principal workflows |
 
 ---
 
@@ -77,7 +80,7 @@ All 15 roadmap milestones (M00–M14, plus D01) are complete and verified on `ma
 ### Prerequisites
 - Node.js `22.23.2` (pinned in `.nvmrc`)
 - npm `10.9.9` (pinned in `package.json#packageManager`)
-- JDK 17
+- JDK 21 (this machine uses Android Studio's bundled JBR)
 - Android SDK Platform 37, Build-Tools 37.0.0, CMake `3.31.6`
 - Android emulator or USB-connected physical Android device
 
