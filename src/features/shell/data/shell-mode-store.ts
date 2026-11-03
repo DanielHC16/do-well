@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { accountGateway } from "@/features/settings/data/account-gateway";
+import { fetchAccountCapabilities } from "@/features/settings/data/account-queries";
 import { withTimeout } from "@/shared/api/network-timeout";
 
 import {
@@ -64,6 +64,5 @@ export function createShellModeStore(
 
 export const shellModeStore = createShellModeStore(
   AsyncStorage,
-  async (userId) =>
-    (await accountGateway.getCapabilities(userId)).preferredMode,
+  async (userId) => (await fetchAccountCapabilities(userId)).preferredMode,
 );

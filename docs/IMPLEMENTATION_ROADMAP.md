@@ -1,5 +1,11 @@
 # Do Well Implementation Plan and Roadmap
 
+## Current app/demo closeout — 2026-11-03
+
+Owner-authorized [PR #48](https://github.com/DanielHC16/do-well/pull/48) repairs Settings/Admin routes and existing RPC integration, scoped account server-state loading, server workspace defaults, moderation validation and report-page replenishment. See [ADR 0009](adr/0009-scoped-account-server-state.md). Final source passed formatting/lint/typecheck, **115 suites / 718 tests**, Doctor **20/20**, and independent review. The [demo guide](DEMO_GUIDE.md) records actual local APK verification and emulator rehearsal; it is the artifact source of truth. GitHub PR/issue state records integration and #47 closeout. Video generation is left as-is, per the owner's current instruction.
+
+PR #45 is merged. Issue #4 is closed for M03A only; [#46](https://github.com/DanielHC16/do-well/issues/46) retains the unfinished hosted authentication and physical-device acceptance matrix. This repair does not silently complete those milestones. The dated reconciliation and milestone records below retain their original checkpoint evidence.
+
 ## Current reconciliation — 2026-11-02
 
 GitHub access is operational. Redesign PR #44 is merged; PR #45 is fixed and merged at `1515b1b` after green app/database/security CI and resolved review. The owner explicitly authorized merge after verification. Settings and Admin screen components were found unreachable; restored routes/gateways and workspace/moderation fixes are on `fix/demo-readiness`, tracked by #47 under the existing approved M17/M18 contract.

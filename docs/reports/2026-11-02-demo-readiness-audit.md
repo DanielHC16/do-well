@@ -1,5 +1,7 @@
 # Demo readiness audit — 2 November 2026
 
+Follow-up checked 3 November: [PR #48](https://github.com/DanielHC16/do-well/pull/48) restores the account routes/integrations and corrects both automated review findings using scoped TanStack Query and moderation queue refetch. Fresh full checks: **115 suites / 718 tests**, formatting/lint/typecheck, Doctor **20/20**, independent review LGTM. See the [demo guide](../DEMO_GUIDE.md) for final APK/install/rehearsal evidence and the [session handoff](../SESSION_HANDOFF.md) for current boundaries. Video generation is outside the current task; findings below record the earlier audit.
+
 ## Assessment
 
 The app is demo-capable, with release and acceptance gaps. Core production features cover posting, discovery, applications, agreements, milestones, submissions, activity, profiles and reporting. The redesign is merged in PR #44. PR #45 fixes assignment-detail parsing from the real snake_case RPC payload and contains the independent competition-video workspace. Fresh verification and APK evidence belong in the session handoff and demo guide; historical test totals do not establish current success.

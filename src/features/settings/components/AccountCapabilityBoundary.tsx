@@ -1,51 +1,39 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 
 import { ErrorState, Skeleton } from "@/components/ui";
 import { MarketplaceShell } from "@/features/shell/components/MarketplaceShell";
+import { ScopedQueryProvider } from "@/shared/api/ScopedQueryProvider";
 
-import {
-  accountGateway,
-  type AccountCapabilities,
-} from "../data/account-gateway";
+import { type AccountCapabilities } from "../data/account-gateway";
+import { accountCapabilitiesQueryOptions } from "../data/account-queries";
+
+type AccountCapabilityBoundaryProps = Readonly<{
+  children: (capabilities: AccountCapabilities) => ReactNode;
+  userId: string;
+}>;
 
 export function AccountCapabilityBoundary({
   children,
   userId,
-}: Readonly<{
-  children: (capabilities: AccountCapabilities) => ReactNode;
-  userId: string;
-}>) {
-  const [capabilities, setCapabilities] = useState<AccountCapabilities | null>(
-    null,
+}: AccountCapabilityBoundaryProps) {
+  return (
+    <ScopedQueryProvider key={userId}>
+      <CapabilityQuery userId={userId}>{children}</CapabilityQuery>
+    </ScopedQueryProvider>
   );
-  const [failed, setFailed] = useState(false);
-  const [attempt, setAttempt] = useState(0);
+}
 
-  useEffect(() => {
-    let active = true;
-    void accountGateway.getCapabilities(userId).then(
-      (result) => {
-        if (active) setCapabilities(result);
-      },
-      () => {
-        if (active) setFailed(true);
-      },
-    );
-    return () => {
-      active = false;
-    };
-  }, [attempt, userId]);
+function CapabilityQuery({ children, userId }: AccountCapabilityBoundaryProps) {
+  const query = useQuery(accountCapabilitiesQueryOptions(userId));
 
-  if (capabilities) return children(capabilities);
+  if (query.isSuccess) return children(query.data);
   return (
     <MarketplaceShell activeSection="profile" title="Account access">
-      {failed ? (
+      {query.isError ? (
         <ErrorState
           message="We couldn't verify account access. Check your connection and try again."
-          onRetry={() => {
-            setFailed(false);
-            setAttempt((value) => value + 1);
-          }}
+          onRetry={() => void query.refetch()}
         />
       ) : (
         <Skeleton shape="row" count={2} label="Verifying account access" />

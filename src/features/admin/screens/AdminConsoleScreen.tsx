@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -9,6 +10,7 @@ import {
 } from "react-native";
 
 import { setupTheme } from "@/features/setup/setupTheme";
+import { withTimeout } from "@/shared/api/network-timeout";
 import {
   MarketplaceShell,
   marketplaceStyles,
@@ -57,38 +59,52 @@ export function AdminConsoleScreen({
   gateway,
   isAdmin,
 }: AdminConsoleScreenProps) {
-  const [overview, setOverview] = useState<AdminOverview | null>(null);
-  const [reports, setReports] = useState<AdminReport[]>([]);
-  const [loading, setLoading] = useState(isAdmin);
-  const [loadError, setLoadError] = useState(false);
-  const [reviewingId, setReviewingId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const queryKey = ["admin", "overview-and-reports"];
+  const query = useQuery({
+    queryKey,
+    enabled: isAdmin,
+    queryFn: async () => {
+      const [overview, reports] = await withTimeout(
+        Promise.all([gateway.getAdminOverview(), gateway.listAdminReports()]),
+      );
+      return { overview, reports };
+    },
+  });
   const [reviewNote, setReviewNote] = useState("");
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    if (!isAdmin) return;
-    setLoading(true);
-    setLoadError(false);
-    try {
-      const [nextOverview, nextReports] = await Promise.all([
-        gateway.getAdminOverview(),
-        gateway.listAdminReports(),
-      ]);
-      setOverview(nextOverview);
-      setReports(nextReports.filter((report) => report.status === "open"));
-    } catch {
-      setLoadError(true);
-    } finally {
-      setLoading(false);
-    }
-  }, [gateway, isAdmin]);
+  const mutation = useMutation({
+    mutationFn: (input: {
+      reportId: string;
+      decision: "resolved" | "dismissed";
+      note: string;
+    }) =>
+      withTimeout(
+        gateway.resolveReport(input.reportId, input.decision, input.note),
+      ),
+    onSuccess: async (_report, input) => {
+      setReviewNote("");
+      setActionMessage(
+        input.decision === "resolved"
+          ? "Report resolved."
+          : "Report dismissed.",
+      );
+      // Re-read page one so reports beyond the initial twenty replenish the queue.
+      // Refresh errors remain query errors; the decision itself has already saved.
+      await queryClient.invalidateQueries({ queryKey, exact: true });
+    },
+    onError: () => {
+      setActionError("The moderation decision couldn't be saved. Try again.");
+    },
+  });
+  const overview = query.data?.overview;
+  const reports =
+    query.data?.reports.filter((report) => report.status === "open") ?? [];
+  const reviewingId = mutation.isPending ? mutation.variables?.reportId : null;
 
-  useEffect(() => {
-    void Promise.resolve().then(load);
-  }, [load]);
-
-  async function decideReport(
+  function decideReport(
     report: AdminReport,
     decision: "resolved" | "dismissed",
   ) {
@@ -96,29 +112,12 @@ export function AdminConsoleScreen({
     if (
       normalizedNote.length < 10 ||
       normalizedNote.length > 2000 ||
-      reviewingId
+      mutation.isPending
     )
       return;
-    setReviewingId(report.id);
     setActionMessage(null);
     setActionError(null);
-    try {
-      await gateway.resolveReport(report.id, decision, normalizedNote);
-      setReports((current) => current.filter((item) => item.id !== report.id));
-      setOverview((current) =>
-        current
-          ? { ...current, openReports: Math.max(0, current.openReports - 1) }
-          : current,
-      );
-      setReviewNote("");
-      setActionMessage(
-        decision === "resolved" ? "Report resolved." : "Report dismissed.",
-      );
-    } catch {
-      setActionError("The moderation decision couldn't be saved. Try again.");
-    } finally {
-      setReviewingId(null);
-    }
+    mutation.mutate({ reportId: report.id, decision, note: normalizedNote });
   }
 
   if (!isAdmin) {
@@ -145,24 +144,29 @@ export function AdminConsoleScreen({
       subtitle="Review current marketplace activity and resolve community reports with an auditable decision."
       title="Admin Console"
     >
-      {loading ? (
+      {query.isPending || query.isFetching ? (
         <View accessibilityLiveRegion="polite" style={styles.loadingCard}>
           <ActivityIndicator color={setupTheme.color.foreground} />
           <Text style={styles.loadingText}>
             Loading protected admin data...
           </Text>
         </View>
-      ) : loadError ? (
+      ) : query.isError ? (
         <View accessibilityRole="alert" style={styles.errorCard}>
           <Text style={styles.errorTitle}>ADMIN DATA UNAVAILABLE</Text>
           <Text style={styles.errorText}>
             Admin data couldn&apos;t be loaded. Check your connection and try
             again.
           </Text>
+          {actionMessage ? (
+            <Text style={styles.successText}>
+              {actionMessage} Refresh the queue before making another decision.
+            </Text>
+          ) : null}
           <Pressable
             accessibilityLabel="Retry admin data"
             accessibilityRole="button"
-            onPress={() => void load()}
+            onPress={() => void query.refetch()}
             style={marketplaceStyles.primaryButton}
           >
             <Text style={marketplaceStyles.primaryButtonText}>Try again</Text>

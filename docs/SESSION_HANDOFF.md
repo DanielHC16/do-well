@@ -1,5 +1,15 @@
 # Session Handoff
 
+## App and demo preparation — 2026-11-03
+
+The owner renewed authorization to finish functional demo/live APKs, commit, and merge the app repair; video generation is explicitly outside the current task. PR [#45](https://github.com/DanielHC16/do-well/pull/45) already merged at `1515b1b`. The cohesive app repair is [PR #48](https://github.com/DanielHC16/do-well/pull/48), tracked by [#47](https://github.com/DanielHC16/do-well/issues/47); use its GitHub state as the integration record. Earlier dated sections below are historical checkpoints, not current instructions.
+
+Both PR #48 review findings are corrected: scoped TanStack Query replaces manual capability fetching; successful moderation refetches overview and page one so report 21 replenishes the queue. Failed refresh is distinguished from an already-saved decision and hides stale moderation actions. The pinned JS-only dependency, account isolation and no-persisted-authority boundary are recorded in [ADR 0009](adr/0009-scoped-account-server-state.md). Fresh final verification: formatting, lint, strict TypeScript, **115 suites / 718 tests**, Expo Doctor **20/20**; independent final review: LGTM. APK artifact, signature, privacy, checksum, emulator installation and rehearsal evidence is maintained in [DEMO_GUIDE.md](DEMO_GUIDE.md).
+
+The live APK uses the current marketplace and requires internet plus prepared separate accounts. The offline APK uses fictional Maya/Alex and a separate local sandbox. Both share one package and replace one another on one device; neither needs Metro. Follow [DEMO_RUNBOOK.md](DEMO_RUNBOOK.md). All builds are local and zero-cost; development signing is for controlled sideloading. No phone is connected, so physical-device acceptance remains unverified.
+
+Issue #4's completed M03A foundation is closed; remaining hosted auth/physical-device/GPS/photo acceptance stays open in [#46](https://github.com/DanielHC16/do-well/issues/46). No fresh local HTTP integration success is claimed because Docker is unavailable. Preserve the owner's pre-existing `.gitignore` and `expo-env.d.ts` modifications. Secrets, credentials, generated native output and APKs remain ignored. No schema, hosted provisioning, privilege, paid-service or video change belongs to this follow-up.
+
 ## Demo-readiness repair — 2026-11-02
 
 - PR [#45](https://github.com/DanielHC16/do-well/pull/45) is merged to main at `1515b1b`, after fully green app/database/security CI run `41474062126` and resolved review findings. Owner authorized the merge in this session.
