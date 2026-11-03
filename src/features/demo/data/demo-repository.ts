@@ -13,7 +13,7 @@ export type DemoStorage = Readonly<{
 
 export type DemoRecoveryError = Readonly<{
   code: "CORRUPTED_STATE_RECOVERED";
-  message: "Saved demo data was invalid and has been reset.";
+  message: "Saved data could not be read and has been reset.";
 }>;
 
 export type DemoLoadResult = Readonly<{
@@ -29,7 +29,7 @@ export type DemoRepository = Readonly<{
 
 const corruptionError: DemoRecoveryError = {
   code: "CORRUPTED_STATE_RECOVERED",
-  message: "Saved demo data was invalid and has been reset.",
+  message: "Saved data could not be read and has been reset.",
 };
 
 export function createDemoRepository(storage: DemoStorage): DemoRepository {
@@ -47,7 +47,7 @@ export function createDemoRepository(storage: DemoStorage): DemoRepository {
   async function save(stateInput: unknown): Promise<void> {
     const parsed = DemoStateSchema.safeParse(stateInput);
     if (!parsed.success) {
-      throw new Error("Demo state is invalid and was not saved.");
+      throw new Error("Your changes are invalid and were not saved.");
     }
     await enqueueWrite(parsed.data);
   }

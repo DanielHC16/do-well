@@ -8,10 +8,10 @@ The shareable APKs are version-controlled in the root [`do-well-apk/`](../do-wel
 
 There are two compile-time runtimes:
 
-| Runtime             | Purpose                                                                                     | Requirements                                                                                                    |
-| ------------------- | ------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `production` (live) | Current redesigned marketplace, authenticated accounts, hosted operations                   | Internet, configured client-safe Supabase URL/publishable key, separately prepared employer and worker accounts |
-| `demo` (offline)    | Fictional Maya/Alex lifecycle, local text submissions and approval, visible demo disclosure | No account, backend, or Metro; separate older sandbox interface                                                 |
+| Runtime             | Purpose                                                                                                 | Requirements                                                                                                    |
+| ------------------- | ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `production` (live) | Current redesigned marketplace, authenticated accounts, hosted operations                               | Internet, configured client-safe Supabase URL/publishable key, separately prepared employer and worker accounts |
+| `demo` (offline)    | Fictional Maya/Alex lifecycle with automatic counterpart responses, local text submissions and approval | No account, backend, or Metro; standalone local interface                                                       |
 
 Both use package `com.anghulingpullrequest.dowell` and version `0.1.0`; installing one replaces the other. They cannot run side by side as separate apps. Installing with `-r` normally retains app data when the signing certificate matches. Keep the live APK on the primary device and the offline APK on a fallback emulator/device. Never uninstall or clear storage to solve a signature mismatch without considering the existing drafts and session data.
 
@@ -117,15 +117,15 @@ Expo SDK 58 references: [local app compilation](https://docs.expo.dev/guides/loc
 
 Follow the [3–4 minute script](DEMO_RUNBOOK.md). Use the offline APK for a reliable fictional lifecycle and the live APK for current UI/backend capabilities that have actually been rehearsed. “Find”/“Offer” on one live account are workspaces, not a two-person authentication demonstration.
 
-The offline reset is **Reset demo data → Reset** (visible home text: **Reset the local demo**). It affects synthetic demo state. For live recovery, preserve drafts, reconnect, refresh authoritative data, and explicitly resubmit; do not promise automatic queued writes. Hosted outage recovery is a prepared fallback APK/device, not a sign-in button or untested local database switch.
+In the updated offline APK, **Settings** contains account switching and the confirmed local reset. Maya can post → review the automatic application → select → review the automatic submission → approve. Alex can apply → open the automatically accepted assignment → submit → receive automatic approval. Existing pending applications recover on startup without clearing data. Product screens use ordinary app copy under [ADR 0010](adr/0010-offline-demo-counterpart-progression.md); accounts and counterpart decisions remain local simulations. For live recovery, preserve drafts, reconnect, refresh authoritative data, and explicitly resubmit; do not promise automatic queued writes.
 
-## Current artifact verification
+## Previous artifact verification (before complete-cycle repair)
 
 Built locally on 3 November 2026 from application source `67b6c774cd399b80fb9347d3c036cac203038206` (PR #48). Both standalone APKs are copied unchanged into the tracked root `do-well-apk/` directory for sharing; ignored build-staging copies remain under `.codex-artifacts/`:
 
-| Artifact | Bytes | SHA-256 |
-| --- | ---: | --- |
-| `do-well-live.apk` | 60,496,430 | `95AEC80101C992D02712AC4A08649DE7355B39FDE36C906D1B71F43164FA8BCB` |
+| Artifact                   |      Bytes | SHA-256                                                            |
+| -------------------------- | ---------: | ------------------------------------------------------------------ |
+| `do-well-live.apk`         | 60,496,430 | `95AEC80101C992D02712AC4A08649DE7355B39FDE36C906D1B71F43164FA8BCB` |
 | `do-well-demo-offline.apk` | 60,496,430 | `65B1ED12AAA1234B5EEB3BCAA6513F06C4851218B9E3DBB50F583DE2AE8A27D8` |
 
 Both builds exited successfully (offline: 1m25s; live: 56s). Android `apksigner` verified APK Signature Scheme v2 for both, with one development signer. Archive inspection confirmed `arm64-v8a` and `x86_64` libraries and an embedded 4,361,156-byte JavaScript bundle in each. Minimum Android API is 24; target API is 36. In-process privacy inspection found no matches for the five local private credential values checked and no bundled `.env` or keystore files; credential values were not logged.

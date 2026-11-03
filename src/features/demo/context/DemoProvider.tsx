@@ -7,7 +7,12 @@ import {
 } from "react";
 import { ActivityIndicator, Button, Text, View } from "react-native";
 
+import { createDemoSeed, refreshDemoSeedCopy } from "../data/demo-seed";
 import { demoRepository, type DemoRepository } from "../data/demo-repository";
+import {
+  advanceDemoCounterpart,
+  type DemoIdKind,
+} from "../model/demo-counterpart";
 import { transitionDemoState, type DemoAction } from "../model/demo-reducer";
 import type { DemoState } from "../model/demo-schema";
 import { DEMO_EMPLOYER, DEMO_WORKER } from "../model/demo-state";
@@ -17,10 +22,12 @@ import {
   type DemoContextValue,
 } from "./useDemo";
 
-const loadErrorMessage = "Local demo data is unavailable.";
-const saveErrorMessage = "Local demo data could not be saved. Try again.";
+const loadErrorMessage = "Your saved data is unavailable.";
+const saveErrorMessage = "Your changes could not be saved. Try again.";
 
-type IdKind = "gig" | "application" | "assignment" | "activity";
+const seedGigIds = new Set(createDemoSeed().gigs.map(({ id }) => id));
+
+type IdKind = DemoIdKind;
 
 type DemoProviderProps = PropsWithChildren<{
   repository?: DemoRepository;
@@ -65,7 +72,20 @@ export function DemoProvider({
     }
     try {
       const result = await repository.load();
-      replaceState(result.state);
+      const advanced = advanceDemoCounterpart(
+        refreshDemoSeedCopy(result.state),
+        {
+          createId,
+          occurredAt: now(),
+          publishedGigIds: result.state.gigs
+            .filter(({ id }) => !seedGigIds.has(id))
+            .map(({ id }) => id),
+        },
+      );
+      if (!advanced.ok) throw new Error(advanced.error.code);
+      if (advanced.state !== result.state)
+        await repository.save(advanced.state);
+      replaceState(advanced.state);
       if (mountedRef.current) setError(result.recoveryError?.message ?? null);
     } catch {
       stateRef.current = null;
@@ -77,7 +97,7 @@ export function DemoProvider({
       busyRef.current = false;
       if (mountedRef.current) setBusy(false);
     }
-  }, [replaceState, repository]);
+  }, [createId, now, replaceState, repository]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -94,7 +114,16 @@ export function DemoProvider({
       const current = stateRef.current;
       if (busyRef.current || !current) return false;
 
-      const result = transitionDemoState(current, action);
+      const transitioned = transitionDemoState(current, action);
+      const result = transitioned.ok
+        ? advanceDemoCounterpart(transitioned.state, {
+            createId,
+            occurredAt: now(),
+            publishedGigIds: transitioned.state.gigs
+              .filter(({ id }) => !seedGigIds.has(id))
+              .map(({ id }) => id),
+          })
+        : transitioned;
       if (!result.ok) {
         if (mountedRef.current) setError(result.error.message);
         return false;
@@ -117,7 +146,7 @@ export function DemoProvider({
         if (mountedRef.current) setBusy(false);
       }
     },
-    [replaceState, repository],
+    [createId, now, replaceState, repository],
   );
 
   const switchPersona = useCallback(
@@ -251,13 +280,13 @@ export function DemoProvider({
     return (
       <View>
         {busy ? (
-          <ActivityIndicator accessibilityLabel="Loading local demo" />
+          <ActivityIndicator accessibilityLabel="Loading your account" />
         ) : null}
-        <Text>{busy ? "Loading local demo data..." : loadErrorMessage}</Text>
+        <Text>{busy ? "Loading your account data..." : loadErrorMessage}</Text>
         {!busy ? (
           <>
             <Button title="Try again" onPress={() => void load()} />
-            <Button title="Reset demo data" onPress={() => void reset()} />
+            <Button title="Reset app data" onPress={() => void reset()} />
           </>
         ) : null}
       </View>

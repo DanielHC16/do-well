@@ -1,5 +1,9 @@
 # Session Handoff
 
+## Offline complete-cycle repair — 2026-11-03 — in progress
+
+Owner requested final-app presentation for the offline APK, automatic counterpart responses, Settings-only account switching, and recovery from Applied. Branch `fix/demo-complete-cycle`, issue [#49](https://github.com/DanielHC16/do-well/issues/49). Scope/acceptance: [plan](plans/2026-11-03-demo-complete-cycle.md); architecture and explicit owner supersession of older on-screen disclosure requirements: [ADR 0010](adr/0010-offline-demo-counterpart-progression.md). No live runtime, hosted operations, schema, credentials, paid service or video changes. Build and verification remain pending until this section and the demo guide record fresh evidence. The live binary remains unchanged.
+
 ## Shareable APK folder — 2026-11-03
 
 The owner explicitly requested a root `do-well-apk/` folder, both binaries committed and pushed directly to `main`, and a complete README emulator/USB-phone guide. This distribution-only follow-up is an owner-authorized exception to the normal PR path and to ignoring APKs. The two verified APKs are copied unchanged from local staging: `do-well-apk/do-well-live.apk` and `do-well-apk/do-well-demo-offline.apk`, each 60,496,430 bytes. Their SHA-256 values match [DEMO_GUIDE.md](DEMO_GUIDE.md); signature/privacy checks pass on both copied files. Only those two filenames are allowlisted; generated APKs, keys, credentials and `.codex-artifacts/` remain ignored. No app source, native project, signing or video change is made. The README contains complete standalone emulator and USB-phone installation steps; physical-phone acceptance remains #46. Earlier statements that all APKs are uncommitted describe the prior distribution policy and are superseded by this explicit request.

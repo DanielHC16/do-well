@@ -95,14 +95,14 @@ export function CreateDemoGigScreen() {
     return (
       <DemoShell
         title="Employer action"
-        subtitle="Switch to the employer presenter to post a gig."
+        subtitle="Open Settings and switch to an employer account to post a gig."
       >
         <Pressable
           accessibilityRole="button"
           onPress={() => router.replace("/(demo)")}
           style={demoStyles.button}
         >
-          <Text style={demoStyles.buttonText}>Back to demo home</Text>
+          <Text style={demoStyles.buttonText}>Back to home</Text>
         </Pressable>
       </DemoShell>
     );
@@ -112,8 +112,8 @@ export function CreateDemoGigScreen() {
     <DemoShell
       busy={busy}
       error={error}
-      subtitle="Publish a local synthetic listing for the worker presenter."
-      title="Post a demo gig"
+      subtitle="Tell people what you need and find the right person."
+      title="Post a gig"
     >
       <View style={styles.form}>
         <DemoField error={fieldErrors.title} label="Gig title">

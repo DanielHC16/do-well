@@ -1,5 +1,9 @@
 # Do Well Implementation Plan and Roadmap
 
+## Offline complete-cycle repair — 2026-11-03 — in progress
+
+Owner-approved follow-up [#49](https://github.com/DanielHC16/do-well/issues/49) repairs offline counterpart progression and the hidden assignment CTA, recovers saved pending applications, moves account switching/reset into Settings, and removes product-screen presentation disclaimers. See the [acceptance plan](plans/2026-11-03-demo-complete-cycle.md) and [ADR 0010](adr/0010-offline-demo-counterpart-progression.md). This supersedes earlier offline presentation requirements only. Both role cycles must pass in a rebuilt standalone APK before acceptance; no hosted milestone or issue #46 status is changed.
+
 ## APK distribution follow-up — 2026-11-03
 
 Owner requested committing both verified APK snapshots under root `do-well-apk/` and pushing directly to `main`, with complete README emulator and USB-phone instructions. These are unchanged copies of the already-tested app/demo builds, with exact `.gitignore` filename exceptions; other build output and secrets stay excluded. No product milestone or acceptance status changes. The [README](../README.md#install-and-run-the-apks) and [demo guide](DEMO_GUIDE.md) identify the shareable files and installation steps; #46 still tracks broader hosted/device acceptance.

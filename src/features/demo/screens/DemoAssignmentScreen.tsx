@@ -49,7 +49,7 @@ export function DemoAssignmentScreen({
   if (!assignment || !gig) {
     return (
       <DemoShell
-        subtitle="This local assignment does not exist or the demo was reset."
+        subtitle="This assignment is no longer available."
         title="Assignment unavailable"
       >
         <Pressable
@@ -57,7 +57,7 @@ export function DemoAssignmentScreen({
           onPress={() => router.replace("/(demo)")}
           style={demoStyles.button}
         >
-          <Text style={demoStyles.buttonText}>Back to demo home</Text>
+          <Text style={demoStyles.buttonText}>Back to home</Text>
         </Pressable>
       </DemoShell>
     );
@@ -69,14 +69,14 @@ export function DemoAssignmentScreen({
     <DemoShell
       busy={busy}
       error={error}
-      subtitle={`${isWorker ? "Worker" : "Employer"} presenter · ${gig.title}`}
-      title="Demo assignment"
+      subtitle={`${isWorker ? "Worker" : "Employer"} workspace · ${gig.title}`}
+      title="Your assignment"
     >
       <View style={demoStyles.card}>
         <Text style={styles.cardTitle}>{gig.title}</Text>
         <Text style={demoStyles.statusPill}>{assignment.status}</Text>
         <Text style={demoStyles.mutedText}>
-          No payment, identity, or cloud operation occurs in this preview.
+          Follow the work from acceptance to completion.
         </Text>
       </View>
 
@@ -124,7 +124,7 @@ export function DemoAssignmentScreen({
         <View style={demoStyles.card}>
           <Text style={styles.cardTitle}>Waiting for the worker</Text>
           <Text style={demoStyles.mutedText}>
-            Switch presenters so the worker can submit a text work note.
+            The worker is preparing their completed work.
           </Text>
         </View>
       ) : null}
@@ -157,16 +157,16 @@ export function DemoAssignmentScreen({
         <View style={demoStyles.card}>
           <Text style={styles.cardTitle}>Waiting for employer approval</Text>
           <Text style={demoStyles.mutedText}>
-            Switch to the employer presenter to finish the demo journey.
+            Your completed work is ready for the employer to review.
           </Text>
         </View>
       ) : null}
 
       {assignment.status === "completed" ? (
         <View accessibilityRole="summary" style={styles.completedCard}>
-          <Text style={styles.completedTitle}>Demo lifecycle complete</Text>
+          <Text style={styles.completedTitle}>Work completed</Text>
           <Text style={demoStyles.mutedText}>
-            The employer approved the text submission in local synthetic data.
+            The employer approved the completed work. Great job!
           </Text>
         </View>
       ) : null}

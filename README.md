@@ -87,7 +87,9 @@ Alternatively, without ADB: connect using File transfer, copy an APK into the ph
 
 ### Present the demo
 
-For the reliable offline walkthrough, install `do-well-demo-offline.apk` and follow **Maya posts → Alex applies → Maya selects → Alex submits a text note → Maya approves**. Return home between steps using Android's Back gesture (swipe inward from the left edge); scroll to switch presenters or find work. Use **Reset the local demo → Reset** before repeating. The fictional/local-data disclosure stays visible.
+For the offline walkthrough, install `do-well-demo-offline.apk`. As **Maya**, post a gig, review Alex's automatic application, select Alex, open the submitted work, and approve it. As **Alex**, apply to an available gig, open the automatically accepted assignment, and submit a work note; Maya's approval completes it automatically. Each path works without repeatedly switching accounts.
+
+Use **Settings → Switch account** to choose Maya (employer) or Alex (worker). Settings also contains the confirmed reset for a fresh walkthrough. Existing pending applications recover on startup. Product screens use ordinary marketplace language; this offline APK still uses fictional accounts, local data and simulated counterpart responses. It does not contact real employers or process payments. See the [full walkthrough](docs/DEMO_RUNBOOK.md).
 
 The live APK uses the redesigned marketplace and hosted backend. Sign in with prepared separate employer and worker accounts for a two-person workflow. **Find/Offer switches workspaces, not accounts.** Complete account setup and permission prompts before presenting. The complete offline lifecycle and live email sign-in/Settings save were verified on the prepared API 35 emulator; broader OAuth, physical-phone, GPS, and photo acceptance remains [#46](https://github.com/DanielHC16/do-well/issues/46).
 
@@ -128,10 +130,11 @@ See the [step-by-step presentation script](docs/DEMO_RUNBOOK.md) and [build/sign
 9. **Zero-Cost Brief Builder (M10)**:
    - Transforms unstructured employer task descriptions into structured, safety-checked job briefs.
    - Default operation uses a deterministic local template/rules engine without an external model provider. Present this as structured assistance, not demonstrated AI inference.
-10. **Offline Demo Preview Mode (D01)**:
+10. **Offline Job-Cycle Demo (D01)**:
     - Self-contained offline demonstration sandbox using fictional personas (_Maya Santos_ & _Alex Reyes_) and synthetic local data.
     - Zero network, Docker, or Supabase credentials required for judging.
-    - Deterministic one-tap demo reset for repeatable live presentations.
+    - Automatic counterpart responses let either role finish posting/application, selection, submission and approval without repeatedly switching accounts.
+    - Account switching and confirmed workspace reset live in Settings; progress persists across restarts.
 
 ---
 

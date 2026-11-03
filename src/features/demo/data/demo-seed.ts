@@ -23,7 +23,7 @@ const seedDocument = {
       employerId: DEMO_EMPLOYER.id,
       title: "Prepare event spreadsheet",
       description:
-        "Clean and organize a synthetic event attendance spreadsheet for review.",
+        "Clean and organize the event attendance spreadsheet for review.",
       category: "admin",
       workMode: "remote",
       publicArea: null,
@@ -58,4 +58,28 @@ const seedDocument = {
 
 export function createDemoSeed(): DemoState {
   return DemoStateSchema.parse(seedDocument);
+}
+
+// Upgrade only the shipped wording, leaving every user-edited description intact.
+export function refreshDemoSeedCopy(state: DemoState): DemoState {
+  const previous =
+    "Clean and organize a synthetic event attendance spreadsheet for review.";
+  const builtIn = seedDocument.gigs.find(
+    ({ id }) => id === "demo-gig-spreadsheet",
+  );
+  if (
+    !builtIn ||
+    !state.gigs.some(
+      (gig) => gig.id === builtIn.id && gig.description === previous,
+    )
+  )
+    return state;
+  return {
+    ...state,
+    gigs: state.gigs.map((gig) =>
+      gig.id === builtIn.id && gig.description === previous
+        ? { ...gig, description: builtIn.description }
+        : gig,
+    ),
+  };
 }

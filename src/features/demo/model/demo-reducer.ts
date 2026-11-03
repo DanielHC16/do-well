@@ -129,7 +129,7 @@ function success(state: DemoState): DemoTransitionResult {
   const parsed = DemoStateSchema.safeParse(state);
   return parsed.success
     ? { ok: true, state: parsed.data }
-    : failure("INVALID_STATE", "The demo transition produced invalid state.");
+    : failure("INVALID_STATE", "The requested change could not be completed.");
 }
 
 function withActivity(
@@ -147,11 +147,11 @@ export function transitionDemoState(
 ): DemoTransitionResult {
   const stateResult = DemoStateSchema.safeParse(stateInput);
   if (!stateResult.success) {
-    return failure("INVALID_STATE", "The current demo state is invalid.");
+    return failure("INVALID_STATE", "Your saved data could not be read.");
   }
   const actionResult = DemoActionSchema.safeParse(actionInput);
   if (!actionResult.success) {
-    return failure("INVALID_ACTION", "The requested demo action is invalid.");
+    return failure("INVALID_ACTION", "The requested action is invalid.");
   }
 
   const state = stateResult.data;
@@ -166,13 +166,10 @@ export function transitionDemoState(
         roleForActor(action.actorId) !== "employer" ||
         action.gig.employerId !== action.actorId
       ) {
-        return failure(
-          "FORBIDDEN",
-          "Only the demo employer can publish a gig.",
-        );
+        return failure("FORBIDDEN", "Only the employer can publish a gig.");
       }
       if (action.gig.status !== "published") {
-        return failure("INVALID_ACTION", "New demo gigs must be published.");
+        return failure("INVALID_ACTION", "New gigs must be published.");
       }
       if (state.gigs.some(({ id }) => id === action.gig.id)) {
         return failure("DUPLICATE_ID", "That gig already exists.");
@@ -196,7 +193,7 @@ export function transitionDemoState(
         roleForActor(action.actorId) !== "worker" ||
         action.application.workerId !== action.actorId
       ) {
-        return failure("FORBIDDEN", "Only the demo worker can apply.");
+        return failure("FORBIDDEN", "Only the worker can apply.");
       }
       const gig = state.gigs.find(({ id }) => id === action.application.gigId);
       if (!gig) return failure("GIG_NOT_FOUND", "The gig does not exist.");
@@ -218,7 +215,7 @@ export function transitionDemoState(
       ) {
         return failure(
           "DUPLICATE_APPLICATION",
-          "The demo worker has already applied to this gig.",
+          "You have already applied to this gig.",
         );
       }
       if (state.applications.some(({ id }) => id === action.application.id)) {

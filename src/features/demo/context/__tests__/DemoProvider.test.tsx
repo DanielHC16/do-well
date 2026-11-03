@@ -1,8 +1,10 @@
 import { act, fireEvent, render, waitFor } from "@testing-library/react-native";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, Text } from "react-native";
 
 import type { DemoRepository } from "../../data/demo-repository";
+import { createDemoSeed } from "../../data/demo-seed";
+import type { DemoContextValue } from "../useDemo";
 import { DemoStateSchema, type DemoState } from "../../model/demo-schema";
 import { DemoProvider } from "../DemoProvider";
 import { useDemo } from "../useDemo";
@@ -76,25 +78,7 @@ function LifecycleProbe() {
       }))
     )
       return;
-    if (!(await demo.switchPersona("worker"))) return;
-    if (
-      !(await demo.applyToGig(
-        "gig-1",
-        "I can complete the event setup this afternoon.",
-      ))
-    )
-      return;
-    if (!(await demo.switchPersona("employer"))) return;
     if (!(await demo.selectApplication("application-3"))) return;
-    if (!(await demo.switchPersona("worker"))) return;
-    if (
-      !(await demo.submitAssignment(
-        "assignment-5",
-        "Tables and chairs are arranged and ready for the event.",
-      ))
-    )
-      return;
-    if (!(await demo.switchPersona("employer"))) return;
     await demo.approveAssignment("assignment-5");
   }
 
@@ -115,8 +99,8 @@ function LifecycleProbe() {
   );
 }
 
-function createStatefulRepository() {
-  let persisted = initialState;
+function createStatefulRepository(start: DemoState = initialState) {
+  let persisted = start;
   const repository: DemoRepository = {
     load: jest.fn(async () => ({
       state: persisted,
@@ -198,7 +182,7 @@ describe("DemoProvider", () => {
 
     await waitFor(() =>
       expect(
-        view.getByText("false:Local demo data could not be saved. Try again."),
+        view.getByText("false:Your changes could not be saved. Try again."),
       ).toBeVisible(),
     );
   });
@@ -214,7 +198,7 @@ describe("DemoProvider", () => {
     );
 
     await waitFor(() =>
-      expect(view.getByText("Local demo data is unavailable.")).toBeVisible(),
+      expect(view.getByText("Your saved data is unavailable.")).toBeVisible(),
     );
     expect(view.queryByText("private storage detail")).toBeNull();
 
@@ -278,5 +262,311 @@ describe("DemoProvider", () => {
       expect(second.getByText("employer:0:0:0:none")).toBeVisible(),
     );
     expect(getPersisted()).toEqual(initialState);
+  });
+});
+
+describe("automatic counterpart lifecycle", () => {
+  async function setup(
+    start: DemoState,
+    options: { failSave?: boolean; loadFailure?: boolean } = {},
+  ) {
+    const { repository, getPersisted } = createStatefulRepository(start);
+    if (options.failSave) {
+      jest
+        .mocked(repository.save)
+        .mockRejectedValueOnce(new Error("disk full"));
+    }
+    let captured: DemoContextValue | null = null;
+    function Capture() {
+      const demo = useDemo();
+      useEffect(() => {
+        captured = demo;
+      }, [demo]);
+      return <Text>{demo.busy ? "working" : "ready"}</Text>;
+    }
+    const view = await render(
+      <DemoProvider
+        repository={repository}
+        now={() => "2026-11-03T12:00:00.000Z"}
+      >
+        <Capture />
+      </DemoProvider>,
+    );
+    await waitFor(() =>
+      expect(
+        view.getByText(
+          options.loadFailure ? "Your saved data is unavailable." : "ready",
+        ),
+      ).toBeVisible(),
+    );
+    function context(): DemoContextValue {
+      if (!captured) throw new Error("Provider did not load");
+      return captured;
+    }
+    return { view, context, repository, getPersisted };
+  }
+
+  it("gives a new employer post an applicant and completes hiring and review without switching accounts", async () => {
+    const { context, getPersisted, repository } = await setup(initialState);
+    await act(async () => {
+      expect(
+        await context().createGig({
+          title: "Arrange the event venue",
+          description:
+            "Set out tables and chairs before the neighborhood event.",
+          category: "events",
+          workMode: "onsite",
+          publicArea: "Makati",
+          budgetAmount: 900,
+        }),
+      ).toBe(true);
+    });
+    expect(context().state.activePersona).toBe("employer");
+    expect(context().state.applications).toHaveLength(1);
+    const application = context().state.applications[0];
+    if (!application) throw new Error("Expected applicant");
+    expect(application.status).toBe("pending");
+    expect(context().state.assignments).toHaveLength(0);
+    await act(async () => {
+      expect(await context().selectApplication(application.id)).toBe(true);
+    });
+    const assignment = context().state.assignments[0];
+    if (!assignment) throw new Error("Expected assignment");
+    expect(assignment.status).toBe("submitted");
+    expect(assignment.submissionNote).toContain("Arrange the event venue");
+    await act(async () => {
+      expect(await context().approveAssignment(assignment.id)).toBe(true);
+    });
+    expect(context().state.assignments[0]?.status).toBe("completed");
+    expect(context().state.gigs[0]?.status).toBe("completed");
+    expect(context().state.activePersona).toBe("employer");
+    expect(getPersisted()).toEqual(context().state);
+    expect(repository.save).toHaveBeenCalledTimes(3);
+    expect(context().state.activity.map(({ type }) => type)).toEqual([
+      "gig_published",
+      "application_submitted",
+      "worker_selected",
+      "work_submitted",
+      "work_approved",
+    ]);
+  });
+
+  it("accepts a worker application and approves their submitted work without switching accounts", async () => {
+    const { context, getPersisted, repository } = await setup({
+      ...createDemoSeed(),
+      activePersona: "worker",
+    });
+    await act(async () => {
+      expect(
+        await context().applyToGig(
+          "demo-gig-delivery",
+          "I can deliver the supplies today.",
+        ),
+      ).toBe(true);
+    });
+    expect(context().state.applications[0]?.status).toBe("accepted");
+    const assignment = context().state.assignments[0];
+    if (!assignment) throw new Error("Expected assignment");
+    expect(assignment.status).toBe("active");
+    await act(async () => {
+      expect(
+        await context().submitAssignment(
+          assignment.id,
+          "Delivered all sealed supplies to the venue.",
+        ),
+      ).toBe(true);
+    });
+    expect(context().state.assignments[0]?.status).toBe("completed");
+    expect(context().state.gigs[0]?.status).toBe("completed");
+    expect(context().state.activePersona).toBe("worker");
+    expect(getPersisted()).toEqual(context().state);
+    expect(repository.save).toHaveBeenCalledTimes(2);
+  });
+
+  it("recovers an existing pending worker application on load and does not duplicate it on remount", async () => {
+    const start: DemoState = {
+      ...createDemoSeed(),
+      activePersona: "worker",
+      applications: [
+        {
+          id: "already-applied",
+          gigId: "demo-gig-delivery",
+          workerId: "demo-worker",
+          message: "I can help with the delivery today.",
+          status: "pending",
+          createdAt: "2026-11-02T12:00:00.000Z",
+        },
+      ],
+    };
+    const first = await setup(start);
+    expect(first.context().state.applications[0]?.status).toBe("accepted");
+    expect(first.context().state.assignments).toHaveLength(1);
+    expect(first.getPersisted()).toEqual(first.context().state);
+    const persisted = first.getPersisted();
+    await first.view.unmount();
+    const second = await setup(persisted);
+    expect(second.context().state).toEqual(persisted);
+    expect(second.repository.save).not.toHaveBeenCalled();
+  });
+
+  it("keeps a failed application and its automatic acceptance out of state until retry saves both", async () => {
+    const start = { ...createDemoSeed(), activePersona: "worker" as const };
+    const { context, getPersisted, repository } = await setup(start, {
+      failSave: true,
+    });
+    await act(async () => {
+      expect(
+        await context().applyToGig(
+          "demo-gig-delivery",
+          "I can deliver the supplies today.",
+        ),
+      ).toBe(false);
+    });
+    expect(context().state).toEqual(start);
+    expect(getPersisted()).toEqual(start);
+    await act(async () => {
+      expect(
+        await context().applyToGig(
+          "demo-gig-delivery",
+          "I can deliver the supplies today.",
+        ),
+      ).toBe(true);
+    });
+    expect(context().state.applications).toHaveLength(1);
+    expect(context().state.applications[0]?.status).toBe("accepted");
+    expect(context().state.assignments).toHaveLength(1);
+    expect(repository.save).toHaveBeenCalledTimes(2);
+  });
+  it("recovers old employer posts without claiming built-in gigs and stays idempotent on remount", async () => {
+    const seed = createDemoSeed();
+    const template = seed.gigs[0];
+    if (!template) throw new Error("Expected seed gig");
+    const first = await setup({
+      ...seed,
+      gigs: [
+        ...seed.gigs,
+        { ...template, id: "old-custom-post", title: "Previously posted job" },
+      ],
+    });
+    expect(first.context().state.applications).toEqual([
+      expect.objectContaining({ gigId: "old-custom-post", status: "pending" }),
+    ]);
+    expect(
+      first
+        .context()
+        .state.gigs.filter(
+          ({ id, status }) =>
+            id !== "old-custom-post" && status === "published",
+        ),
+    ).toHaveLength(2);
+    const persisted = first.getPersisted();
+    await first.view.unmount();
+    const second = await setup(persisted);
+    expect(second.context().state).toEqual(persisted);
+    expect(second.repository.save).not.toHaveBeenCalled();
+  });
+
+  it("retries failed recovery without changing the stored pending application", async () => {
+    const start: DemoState = {
+      ...createDemoSeed(),
+      activePersona: "worker",
+      applications: [
+        {
+          id: "pending-before-update",
+          gigId: "demo-gig-delivery",
+          workerId: "demo-worker",
+          message: "I can help with the delivery today.",
+          status: "pending",
+          createdAt: "2026-11-02T12:00:00.000Z",
+        },
+      ],
+    };
+    const { context, getPersisted, view, repository } = await setup(start, {
+      failSave: true,
+      loadFailure: true,
+    });
+    expect(getPersisted()).toEqual(start);
+    await fireEvent.press(view.getByRole("button", { name: "Try again" }));
+    await waitFor(() => expect(view.getByText("ready")).toBeVisible());
+    expect(context().state.applications[0]?.status).toBe("accepted");
+    expect(context().state.assignments).toHaveLength(1);
+    expect(repository.save).toHaveBeenCalledTimes(2);
+  });
+
+  it("updates only the original built-in description and preserves edited content on remount", async () => {
+    const seed = createDemoSeed();
+    const original =
+      "Clean and organize a synthetic event attendance spreadsheet for review.";
+    const first = await setup({
+      ...seed,
+      gigs: seed.gigs.map((gig) =>
+        gig.id === "demo-gig-spreadsheet"
+          ? { ...gig, description: original }
+          : gig,
+      ),
+    });
+    expect(
+      first.context().state.gigs.find(({ id }) => id === "demo-gig-spreadsheet")
+        ?.description,
+    ).toBe("Clean and organize the event attendance spreadsheet for review.");
+    expect(first.repository.save).toHaveBeenCalledTimes(1);
+    const persisted = first.getPersisted();
+    await first.view.unmount();
+    const second = await setup({
+      ...persisted,
+      gigs: persisted.gigs.map((gig) =>
+        gig.id === "demo-gig-spreadsheet"
+          ? {
+              ...gig,
+              description: "My own revised event spreadsheet instructions.",
+            }
+          : gig,
+      ),
+    });
+    expect(
+      second
+        .context()
+        .state.gigs.find(({ id }) => id === "demo-gig-spreadsheet")
+        ?.description,
+    ).toBe("My own revised event spreadsheet instructions.");
+    expect(second.repository.save).not.toHaveBeenCalled();
+  });
+
+  it("recovers an old unclaimed post immediately when switching from worker to employer", async () => {
+    const seed = createDemoSeed();
+    const template = seed.gigs[0];
+    if (!template) throw new Error("Expected seed gig");
+    const { context, repository, getPersisted } = await setup({
+      ...seed,
+      activePersona: "worker",
+      gigs: [
+        ...seed.gigs,
+        {
+          ...template,
+          id: "old-post-before-switch",
+          title: "Unclaimed posted job",
+        },
+      ],
+    });
+    expect(context().state.applications).toHaveLength(0);
+    expect(repository.save).not.toHaveBeenCalled();
+    await act(async () => {
+      expect(await context().switchPersona("employer")).toBe(true);
+    });
+    expect(context().state.activePersona).toBe("employer");
+    expect(context().state.applications).toEqual([
+      expect.objectContaining({
+        gigId: "old-post-before-switch",
+        status: "pending",
+      }),
+    ]);
+    expect(
+      context().state.gigs.filter(
+        ({ id, status }) =>
+          id !== "old-post-before-switch" && status === "published",
+      ),
+    ).toHaveLength(2);
+    expect(getPersisted()).toEqual(context().state);
+    expect(repository.save).toHaveBeenCalledTimes(1);
   });
 });
