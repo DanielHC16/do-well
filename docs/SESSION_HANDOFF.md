@@ -1,5 +1,11 @@
 # Session Handoff
 
+## Shareable APK folder — 2026-11-03
+
+The owner explicitly requested a root `do-well-apk/` folder, both binaries committed and pushed directly to `main`, and a complete README emulator/USB-phone guide. This distribution-only follow-up is an owner-authorized exception to the normal PR path and to ignoring APKs. The two verified APKs are copied unchanged from local staging: `do-well-apk/do-well-live.apk` and `do-well-apk/do-well-demo-offline.apk`, each 60,496,430 bytes. Their SHA-256 values match [DEMO_GUIDE.md](DEMO_GUIDE.md); signature/privacy checks pass on both copied files. Only those two filenames are allowlisted; generated APKs, keys, credentials and `.codex-artifacts/` remain ignored. No app source, native project, signing or video change is made. The README contains complete standalone emulator and USB-phone installation steps; physical-phone acceptance remains #46. Earlier statements that all APKs are uncommitted describe the prior distribution policy and are superseded by this explicit request.
+
+Fresh distribution checks: both copied APK signatures and privacy/ABI scans pass; hashes match the previously installed/rehearsed builds, four secret-exposure tests pass, README Prettier and local links pass, and `git diff --check` passes. No phone or emulator was connected during this documentation/copy follow-up; earlier device acceptance evidence remains in the demo guide.
+
 ## App and demo preparation — 2026-11-03
 
 The owner renewed authorization to finish functional demo/live APKs, commit, and merge the app repair; video generation is explicitly outside the current task. PR [#45](https://github.com/DanielHC16/do-well/pull/45) already merged at `1515b1b`. The cohesive app repair is [PR #48](https://github.com/DanielHC16/do-well/pull/48), tracked by [#47](https://github.com/DanielHC16/do-well/issues/47); use its GitHub state as the integration record. Earlier dated sections below are historical checkpoints, not current instructions.

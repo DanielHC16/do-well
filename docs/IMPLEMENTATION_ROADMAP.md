@@ -1,5 +1,9 @@
 # Do Well Implementation Plan and Roadmap
 
+## APK distribution follow-up — 2026-11-03
+
+Owner requested committing both verified APK snapshots under root `do-well-apk/` and pushing directly to `main`, with complete README emulator and USB-phone instructions. These are unchanged copies of the already-tested app/demo builds, with exact `.gitignore` filename exceptions; other build output and secrets stay excluded. No product milestone or acceptance status changes. The [README](../README.md#install-and-run-the-apks) and [demo guide](DEMO_GUIDE.md) identify the shareable files and installation steps; #46 still tracks broader hosted/device acceptance.
+
 ## Current app/demo closeout — 2026-11-03
 
 Owner-authorized [PR #48](https://github.com/DanielHC16/do-well/pull/48) repairs Settings/Admin routes and existing RPC integration, scoped account server-state loading, server workspace defaults, moderation validation and report-page replenishment. See [ADR 0009](adr/0009-scoped-account-server-state.md). Final source passed formatting/lint/typecheck, **115 suites / 718 tests**, Doctor **20/20**, and independent review. The [demo guide](DEMO_GUIDE.md) records actual local APK verification and emulator rehearsal; it is the artifact source of truth. GitHub PR/issue state records integration and #47 closeout. Video generation is left as-is, per the owner's current instruction.

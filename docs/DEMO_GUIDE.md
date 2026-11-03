@@ -2,6 +2,8 @@
 
 Last checked: 2026-11-03 (Asia/Manila). All compilation uses the local Android SDK; no cloud build, card, billing, or paid service is required.
 
+The shareable APKs are version-controlled in the root [`do-well-apk/`](../do-well-apk/) folder: [live app](../do-well-apk/do-well-live.apk) and [offline demo](../do-well-apk/do-well-demo-offline.apk). Upload either file to Google Drive for sharing. The [README](../README.md#install-and-run-the-apks) contains the complete emulator and USB-phone installation steps. These are the same verified binaries described below; local build staging/logs stay under ignored `.codex-artifacts/`.
+
 ## Select the APK
 
 There are two compile-time runtimes:
@@ -13,7 +15,7 @@ There are two compile-time runtimes:
 
 Both use package `com.anghulingpullrequest.dowell` and version `0.1.0`; installing one replaces the other. They cannot run side by side as separate apps. Installing with `-r` normally retains app data when the signing certificate matches. Keep the live APK on the primary device and the offline APK on a fallback emulator/device. Never uninstall or clear storage to solve a signature mismatch without considering the existing drafts and session data.
 
-The release variant embeds JavaScript and assets, so it starts without Metro. The generated local release configuration uses the development/debug signing key: suitable for a controlled demo, not a Play Store production release. Keys and APKs remain ignored and uncommitted.
+The release variant embeds JavaScript and assets, so it starts without Metro. The generated local release configuration uses the development/debug signing key: suitable for a controlled demo, not a Play Store production release. Signing keys and generated build output stay ignored; only the two owner-authorized distribution APKs in `do-well-apk/` are committed.
 
 Run native builds alone on this machine, with `--max-workers=1`; stop Metro exports and test workers first. A concurrent export/native build produced a Windows compiler file-open error even though the NDK header existed and was readable. The identical failed object compiled successfully in isolation with Ninja `-j1`. This is a host resource constraint, not evidence of a missing header.
 
@@ -34,7 +36,7 @@ Wait until the device appears as `device`, not `offline`; `adb -s emulator-5554 
 This session created `do_well_demo_api35` using the already installed Android 15 / API 35 Google Play x86_64 image, with a fresh 8GB data partition. Its files are in the ignored `.codex-artifacts/do-well-demo-api35.avd/` directory. The older `medium_phone` emulator has only about 337MB free; Android refused APK installation there even after safe cache trimming. Its existing apps, sessions, and drafts were preserved. Use the new AVD for the demo; keep that ignored directory if you want to retain it. On another computer, create an API 35 x86_64 virtual device with at least 8GB internal storage in Android Studio and substitute its name.
 
 ```powershell
-adb -s emulator-5554 install -r .codex-artifacts/do-well-demo-offline.apk
+adb -s emulator-5554 install -r do-well-apk/do-well-demo-offline.apk
 adb -s emulator-5554 shell am force-stop com.anghulingpullrequest.dowell
 adb -s emulator-5554 shell am start -W -n com.anghulingpullrequest.dowell/.MainActivity
 ```
@@ -119,7 +121,7 @@ The offline reset is **Reset demo data → Reset** (visible home text: **Reset t
 
 ## Current artifact verification
 
-Built locally on 3 November 2026 from application source `67b6c774cd399b80fb9347d3c036cac203038206` (PR #48). Both standalone APKs are present under the ignored `.codex-artifacts/` directory:
+Built locally on 3 November 2026 from application source `67b6c774cd399b80fb9347d3c036cac203038206` (PR #48). Both standalone APKs are copied unchanged into the tracked root `do-well-apk/` directory for sharing; ignored build-staging copies remain under `.codex-artifacts/`:
 
 | Artifact | Bytes | SHA-256 |
 | --- | ---: | --- |
@@ -128,7 +130,7 @@ Built locally on 3 November 2026 from application source `67b6c774cd399b80fb9347
 
 Both builds exited successfully (offline: 1m25s; live: 56s). Android `apksigner` verified APK Signature Scheme v2 for both, with one development signer. Archive inspection confirmed `arm64-v8a` and `x86_64` libraries and an embedded 4,361,156-byte JavaScript bundle in each. Minimum Android API is 24; target API is 36. In-process privacy inspection found no matches for the five local private credential values checked and no bundled `.env` or keystore files; credential values were not logged.
 
-The ignored final source manifest covers 203 application/configuration/package/asset files; all remained unchanged across both builds. Its SHA-256 is `23f6eefd1f05f494be225f9b15ac792c046ba24fa09f436543ea157e02514243`. Logs are `.codex-artifacts/apk-demo-final-build.log` and `.codex-artifacts/apk-live-final-build.log`. Documentation-only commits after the source revision do not change these binaries. APKs and signing keys are deliberately excluded from Git.
+The ignored final source manifest covers 203 application/configuration/package/asset files; all remained unchanged across both builds. Its SHA-256 is `23f6eefd1f05f494be225f9b15ac792c046ba24fa09f436543ea157e02514243`. Logs are `.codex-artifacts/apk-demo-final-build.log` and `.codex-artifacts/apk-live-final-build.log`. Documentation/distribution-only commits after the source revision do not change these binaries. The owner explicitly authorized committing the two APK snapshots in `do-well-apk/`; signing keys, account credentials and generated build output remain excluded.
 
 On the isolated `do_well_demo_api35` AVD (Android 15 / API 35, x86_64, 1080×2400), the final offline APK installed successfully with `adb install -r` and cold-launched in 3.067s without Metro. Airplane mode was enabled and Wi-Fi/mobile data disabled. The actual UI rehearsal created a new listing, applied as Alex, selected Alex as Maya, submitted a work note as Alex, and approved it as Maya; **Demo lifecycle complete** was visible. **Reset demo data → Reset** succeeded and returned the presenter to Maya's starting home. Screenshots are ignored local files `.codex-artifacts/apk-demo-first-launch.png` and `.codex-artifacts/apk-demo-lifecycle-complete.png`; the successful rehearsal log is `.codex-artifacts/apk-demo-rehearsal.log`.
 
