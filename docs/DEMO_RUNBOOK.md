@@ -10,6 +10,8 @@ Do not call the offline sandbox proof of hosted authentication, RLS, image uploa
 
 ## Reliable offline script: 3–4 minutes
 
+On the prepared emulator, use Android's back gesture (swipe inward from the left edge) to return to the home screen between steps. Scroll to the top to switch Maya/Alex, and scroll down to find gigs, assignments, or reset.
+
 1. **Introduce (20 seconds).** “Do Well helps people organize neighborhood work from a clear gig to an approved result. This demonstration uses fictional people and data stored on this device.” Point to the persistent demo disclosure.
 2. **Post (40 seconds).** Start as **Maya · Employer**. Tap **＋ POST** (accessibility label: **Create and publish a gig**). Use title “Prepare community event checklist”, a description longer than 20 characters, category `admin`, Remote, and PHP 500. Tap **Create and publish**. This is a synthetic listing, not a hosted write.
 3. **Apply (30 seconds).** Return home, choose **Alex · Worker**, open the new listing, enter a short message about helping, and submit the application.

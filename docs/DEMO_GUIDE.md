@@ -1,6 +1,6 @@
 # Run, install, and present Do Well
 
-Last checked: 2026-11-02 (Asia/Manila). All compilation uses the local Android SDK; no cloud build, card, billing, or paid service is required.
+Last checked: 2026-11-03 (Asia/Manila). All compilation uses the local Android SDK; no cloud build, card, billing, or paid service is required.
 
 ## Select the APK
 
@@ -19,17 +19,19 @@ Run native builds alone on this machine, with `--max-workers=1`; stop Metro expo
 
 ## Start this machine's emulator and install
 
-Run PowerShell in the repository root. Android Studio's Device Manager can also start **medium_phone**.
+Run PowerShell in the repository root. Android Studio's Device Manager can also start **do_well_demo_api35**.
 
 ```powershell
 $env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
 $env:Path = "$env:ANDROID_HOME\platform-tools;$env:ANDROID_HOME\emulator;$env:Path"
 emulator -list-avds
-Start-Process -FilePath "$env:ANDROID_HOME\emulator\emulator.exe" -ArgumentList @('-avd', 'medium_phone') -WindowStyle Hidden
+Start-Process -FilePath "$env:ANDROID_HOME\emulator\emulator.exe" -ArgumentList @('-avd', 'do_well_demo_api35') -WindowStyle Hidden
 adb devices -l
 ```
 
 Wait until the device appears as `device`, not `offline`; `adb -s emulator-5554 shell getprop sys.boot_completed` should return `1`. Substitute the serial shown by `adb devices` if different.
+
+This session created `do_well_demo_api35` using the already installed Android 15 / API 35 Google Play x86_64 image, with a fresh 8GB data partition. Its files are in the ignored `.codex-artifacts/do-well-demo-api35.avd/` directory. The older `medium_phone` emulator has only about 337MB free; Android refused APK installation there even after safe cache trimming. Its existing apps, sessions, and drafts were preserved. Use the new AVD for the demo; keep that ignored directory if you want to retain it. On another computer, create an API 35 x86_64 virtual device with at least 8GB internal storage in Android Studio and substitute its name.
 
 ```powershell
 adb -s emulator-5554 install -r .codex-artifacts/do-well-demo-offline.apk
@@ -74,20 +76,27 @@ With the session setup above and dependencies present, generate ignored Android 
 npx.cmd expo prebuild --platform android --no-install
 ```
 
+For this machine's bounded build, set the following line in the generated, ignored `android/app/build.gradle` inside its `react { ... }` block after prebuild. This limits Metro as well as Gradle; prebuild can regenerate the file:
+
+```groovy
+extraPackagerArgs = ["--max-workers", "1"]
+```
+
 Then build the offline artifact. All `-P` arguments are quoted because PowerShell can split dotted Gradle properties or comma-separated architecture lists:
 
 ```powershell
 $env:EXPO_PUBLIC_APP_RUNTIME = 'demo'
 $env:CI = '1'
-.\android\gradlew.bat -p android assembleRelease '-PreactNativeArchitectures=arm64-v8a,x86_64' '-Pexpo.android.cmakeObjectPathMax=240' --max-workers=1 --no-daemon '-Dorg.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=512m'
+.\android\gradlew.bat -p android :app:createBundleReleaseJsAndAssets --rerun :app:assembleRelease '-PreactNativeArchitectures=arm64-v8a,x86_64' '-Pexpo.android.cmakeObjectPathMax=240' --max-workers=1 --no-daemon '-Dorg.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=512m'
 New-Item -ItemType Directory -Force .codex-artifacts | Out-Null
 Copy-Item -LiteralPath android/app/build/outputs/apk/release/app-release.apk -Destination .codex-artifacts/do-well-demo-offline.apk
 ```
 
-For the live build, set `$env:EXPO_PUBLIC_APP_RUNTIME = 'production'` and force the JavaScript bundling task to run again before assembling:
+For the live build, change the runtime and force the JavaScript bundling task to run again before assembling:
 
 ```powershell
-.\android\gradlew.bat -p android :app:createBundleReleaseJsAndAssets --rerun assembleRelease '-PreactNativeArchitectures=arm64-v8a,x86_64' '-Pexpo.android.cmakeObjectPathMax=240' --max-workers=1 --no-daemon '-Dorg.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=512m'
+$env:EXPO_PUBLIC_APP_RUNTIME = 'production'
+.\android\gradlew.bat -p android :app:createBundleReleaseJsAndAssets --rerun :app:assembleRelease '-PreactNativeArchitectures=arm64-v8a,x86_64' '-Pexpo.android.cmakeObjectPathMax=240' --max-workers=1 --no-daemon '-Dorg.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=512m'
 Copy-Item -LiteralPath android/app/build/outputs/apk/release/app-release.apk -Destination .codex-artifacts/do-well-live.apk
 ```
 
@@ -110,4 +119,19 @@ The offline reset is **Reset demo data → Reset** (visible home text: **Reset t
 
 ## Current artifact verification
 
-Build, signature, ABI, checksum, and emulator results will be recorded here after the commands complete. Prior APK evidence in `COMPETITION_BUILD.md` belongs to earlier revisions and must not be treated as verification of these artifacts.
+Built locally on 3 November 2026 from application source `67b6c774cd399b80fb9347d3c036cac203038206` (PR #48). Both standalone APKs are present under the ignored `.codex-artifacts/` directory:
+
+| Artifact | Bytes | SHA-256 |
+| --- | ---: | --- |
+| `do-well-live.apk` | 60,496,430 | `95AEC80101C992D02712AC4A08649DE7355B39FDE36C906D1B71F43164FA8BCB` |
+| `do-well-demo-offline.apk` | 60,496,430 | `65B1ED12AAA1234B5EEB3BCAA6513F06C4851218B9E3DBB50F583DE2AE8A27D8` |
+
+Both builds exited successfully (offline: 1m25s; live: 56s). Android `apksigner` verified APK Signature Scheme v2 for both, with one development signer. Archive inspection confirmed `arm64-v8a` and `x86_64` libraries and an embedded 4,361,156-byte JavaScript bundle in each. Minimum Android API is 24; target API is 36. In-process privacy inspection found no matches for the five local private credential values checked and no bundled `.env` or keystore files; credential values were not logged.
+
+The ignored final source manifest covers 203 application/configuration/package/asset files; all remained unchanged across both builds. Its SHA-256 is `23f6eefd1f05f494be225f9b15ac792c046ba24fa09f436543ea157e02514243`. Logs are `.codex-artifacts/apk-demo-final-build.log` and `.codex-artifacts/apk-live-final-build.log`. Documentation-only commits after the source revision do not change these binaries. APKs and signing keys are deliberately excluded from Git.
+
+On the isolated `do_well_demo_api35` AVD (Android 15 / API 35, x86_64, 1080×2400), the final offline APK installed successfully with `adb install -r` and cold-launched in 3.067s without Metro. Airplane mode was enabled and Wi-Fi/mobile data disabled. The actual UI rehearsal created a new listing, applied as Alex, selected Alex as Maya, submitted a work note as Alex, and approved it as Maya; **Demo lifecycle complete** was visible. **Reset demo data → Reset** succeeded and returned the presenter to Maya's starting home. Screenshots are ignored local files `.codex-artifacts/apk-demo-first-launch.png` and `.codex-artifacts/apk-demo-lifecycle-complete.png`; the successful rehearsal log is `.codex-artifacts/apk-demo-rehearsal.log`.
+
+After connectivity was restored, the final live APK installed successfully with `adb install -r` and cold-launched in 3.858s without Metro. An existing authorized employer test account signed in with email/password. The redesigned Home loaded, Profile → Settings opened through the fresh capability query, changing the server-backed default workspace showed **Default workspace updated.**, and the original default was restored successfully. No account was created or granted administrator access. Screenshots are `.codex-artifacts/apk-live-home.png`, `.codex-artifacts/apk-live-settings.png`, and `.codex-artifacts/apk-live-settings-saved.png`; the successful rehearsal log is `.codex-artifacts/apk-live-rehearsal.log`. Credentials were handled only inside the local rehearsal process and were not logged.
+
+The prepared emulator currently has the live APK installed, connectivity enabled, and the authorized test employer signed in; the offline APK is available locally for reinstalling on the fallback device. Prior APK evidence in `COMPETITION_BUILD.md` belongs to earlier revisions. No physical phone was connected. These checks establish one working hosted email sign-in/settings path and the complete synthetic offline lifecycle; they do not close the broader OAuth/device/GPS/photo or full hosted multi-principal acceptance matrix in issue #46.

@@ -13,7 +13,7 @@
 | **Judging Venue Wi-Fi Failure**               | Network requests timeout or fail to resolve.                            | Show previously loaded, labelled cached snapshots if available. Preserve drafts; live writes require reconnect and explicit submission.                                     | Move to a prepared device/emulator with the standalone offline demo APK; follow [DEMO_GUIDE.md](DEMO_GUIDE.md). Runtime is compiled into the APK, not a welcome-screen switch. |
 | **Hosted Supabase Outage / Rate Limit**       | Gateway errors (`503 Service Unavailable` or `Network request failed`). | Stop live mutations and explain the outage. A local Docker stack is useful only if separately configured and rehearsed; starting Docker does not retarget an installed APK. | Use the prepared offline demo APK with its visible synthetic-data disclosure.                                                                                                  |
 | **Corrupted Local Draft or Cache State**      | App opens with unexpected form values or stale UI.                      | Sign out from Profile screen (triggers automatic cache purge via `AuthProvider`).                                                                                           | Clear app data in Android Settings -> Apps -> Do Well -> Clear Storage.                                                                                                        |
-| **Physical Device Battery / Display Failure** | Device crashes or disconnects during judging.                           | Open the prepared emulator. This machine's verified AVD name is `medium_phone`; list available AVDs with `emulator -list-avds`.                                             | Install the already-built APK and launch it using [DEMO_GUIDE.md](DEMO_GUIDE.md). Avoid a native compilation during the presentation.                                          |
+| **Physical Device Battery / Display Failure** | Device crashes or disconnects during judging.                           | Open the prepared emulator. This machine's verified AVD name is `do_well_demo_api35`; list available AVDs with `emulator -list-avds`.                                             | Install the already-built APK and launch it using [DEMO_GUIDE.md](DEMO_GUIDE.md). Avoid a native compilation during the presentation.                                          |
 
 ---
 
@@ -51,7 +51,7 @@ If any API key or credential is suspected of exposure:
    - Access Google Cloud Console -> Credentials.
    - Delete affected client ID/secret and generate new Android OAuth client ID matching SHA-1 fingerprint of signing keystore.
 3. **Audit Verification**:
-   - Run `npm run test:run -- tests/security/secret-exposure.test.ts`.
+   - Run `npm run test:run -- tests/security/secret-exposure.test.js`.
 
 ---
 
